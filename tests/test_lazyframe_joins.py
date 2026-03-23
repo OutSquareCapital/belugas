@@ -125,3 +125,64 @@ def test_join_left_on_right_on_length_mismatch() -> None:
         _ = pql.LazyFrame(left).join(
             pql.LazyFrame(right), left_on=["id1", "id2"], right_on="id1"
         )
+
+
+def test_join_asof_with_by() -> None:
+    left = pl.DataFrame({"t": [1, 4, 9], "g": ["x", "x", "y"], "a": [1, 2, 3]})
+    right = pl.DataFrame({"t": [0, 3, 8], "g": ["x", "x", "y"], "b": [100, 200, 300]})
+    assert_lf_eq_pl(
+        pql.LazyFrame(left).join_asof(
+            pql.LazyFrame(right),
+            on="t",
+            by="g",
+            strategy="backward",
+        ),
+        left.lazy().join_asof(
+            right.lazy(),
+            on="t",
+            by="g",
+            strategy="backward",
+        ),
+    )
+
+
+def test_join_asof_overlap_column_suffix() -> None:
+    left = pl.DataFrame({"t": [1, 4, 9], "a": [1, 2, 3]})
+    right = pl.DataFrame({"t": [0, 3, 8], "a": [100, 200, 300]})
+    assert_lf_eq_pl(
+        pql.LazyFrame(left).join_asof(
+            pql.LazyFrame(right), on="t", strategy="backward"
+        ),
+        left.lazy().join_asof(right.lazy(), on="t", strategy="backward"),
+    )
+
+
+def test_join_without_keys_error() -> None:
+    left = pl.DataFrame({"id": [1, 2], "a": [10, 20]})
+    right = pl.DataFrame({"id": [1, 2], "b": [100, 200]})
+    with pytest.raises(ValueError, match="Either"):
+        _ = pql.LazyFrame(left).join(pql.LazyFrame(right), how="inner")
+
+
+def test_join_on_and_left_right_on_error() -> None:
+    left = pl.DataFrame({"id": [1, 2], "a": [10, 20]})
+    right = pl.DataFrame({"id": [1, 2], "b": [100, 200]})
+    with pytest.raises(ValueError, match="If `on` is specified"):
+        _ = pql.LazyFrame(left).join(
+            pql.LazyFrame(right),
+            on="id",
+            left_on="id",
+            right_on="id",
+            how="inner",
+        )
+
+
+def test_join_asof_on_without_by() -> None:
+    left = pl.DataFrame({"t": [1, 4, 9], "a": [1, 2, 3]})
+    right = pl.DataFrame({"t": [0, 3, 8], "b": [100, 200, 300]})
+    assert_lf_eq_pl(
+        pql.LazyFrame(left).join_asof(
+            pql.LazyFrame(right), on="t", strategy="backward"
+        ),
+        left.lazy().join_asof(right.lazy(), on="t", strategy="backward"),
+    )
