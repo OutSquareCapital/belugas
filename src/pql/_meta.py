@@ -127,20 +127,14 @@ class ExprMeta(ABC):
                         return base_names
 
     def with_alias_mapper(self, mapper: Callable[[str], str]) -> Self:
-        match self.alias_name:
-            case pc.Some(current):
+        def _get_mapper() -> Callable[[str], str]:
+            match self.alias_name:
+                case pc.Some(current):
+                    return lambda name: mapper(current(name))
+                case _:
+                    return mapper
 
-                def _composed(name: str) -> str:
-                    return mapper(current(name))
-
-                composed = _composed
-            case _:
-
-                def _composed(name: str) -> str:
-                    return mapper(name)
-
-                composed = _composed
-        return replace(self, alias_name=pc.Some(composed))
+        return replace(self, alias_name=pc.Some(_get_mapper()))
 
     def clear_alias(self) -> Self:
         return replace(self, alias_name=pc.NONE)
