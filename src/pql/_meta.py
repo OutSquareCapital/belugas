@@ -18,7 +18,7 @@ from .sql.utils import TryIter, try_chain, try_iter
 if TYPE_CHECKING:
     from duckdb import DuckDBPyRelation, Expression
     from narwhals.typing import IntoFrameT
-    from pyochain.traits import PyoCollection, PyoIterable
+    from pyochain.traits import PyoCollection, PyoIterable, PyoKeysView
 
     from ._datatypes import DataType
     from .sql.typing import IntoExpr, IntoExprColumn
@@ -198,7 +198,7 @@ class ResolvedExpr(NamedTuple):
 
 @dataclass(slots=True, init=False)
 class ExprPlan:
-    schema: Schema
+    cols: PyoKeysView[str]
     projections: pc.Seq[ResolvedExpr]
 
     def __init__(
@@ -224,7 +224,7 @@ class ExprPlan:
                         resolved, output_name, kind=ExprKind.ROW
                     ).into_iter()
 
-        self.schema = schema
+        self.cols = schema.keys()
         expr_map = (
             pc.Iter(named_exprs.items())
             .map_star(lambda k, v: _resolve(v, pc.Some(k)))
@@ -298,7 +298,7 @@ class ExprPlan:
     def resolve(self) -> pc.Iter[Expression]:
 
         def _resolved(updates: pc.Dict[str, sql.SqlExpr]) -> pc.Iter[sql.SqlExpr]:
-            match updates.any(lambda name: name in self.schema):
+            match updates.any(lambda name: name in self.cols):
                 case False:
                     return (
                         updates.items()
@@ -308,7 +308,7 @@ class ExprPlan:
                     )
                 case True:
                     return (
-                        self.schema.iter()
+                        self.cols.iter()
                         .map(
                             lambda name: updates.get_item(name).map_or(
                                 sql.col(name), lambda c: c.alias(name)
@@ -317,7 +317,7 @@ class ExprPlan:
                         .chain(
                             updates.items()
                             .iter()
-                            .filter_star(lambda name, _expr: name not in self.schema)
+                            .filter_star(lambda name, _expr: name not in self.cols)
                             .map_star(lambda name, e: e.alias(name))
                         )
                     )
