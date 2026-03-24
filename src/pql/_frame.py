@@ -338,30 +338,22 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
                 case _:
                     return sql.col(name)
 
-        def _proj(*, unnest: bool) -> pc.Iter[Expression]:
+        def _proj(*, unnest: bool) -> pc.Iter[sql.SqlExpr]:
             replace = sql.unnest(target) if unnest else sql.lit(None)
             return self.columns.iter().map(
-                lambda name: _project_col(
-                    name, unnest=unnest, replace=replace
-                ).into_duckdb()
+                lambda name: _project_col(name, unnest=unnest, replace=replace)
             )
 
-        return self._new(
-            target.is_not_null()
-            .and_(target.len().gt(0))
-            .pipe(
-                lambda cond: (
-                    self.inner()
-                    .filter(cond.into_duckdb())
-                    .select(*_proj(unnest=True))
-                    .union(
-                        self.inner()
-                        .filter(cond.not_().into_duckdb())
-                        .select(*_proj(unnest=False))
-                    )
-                )
-            )
+        cond = target.is_not_null().and_(target.len().gt(0))
+
+        return (
+            self.filter(cond)
+            .select(_proj(unnest=True))
+            .union(self.filter(cond.not_()).select(_proj(unnest=False)))
         )
+
+    def union(self, other: Self) -> Self:
+        return self._new(self.inner().union(other.inner()))
 
     def rename(self, mapping: Mapping[str, str]) -> Self:
         """Rename columns."""
