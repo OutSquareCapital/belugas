@@ -38,7 +38,7 @@ DUCK_PYGMENT_MAP = pc.Dict.from_ref(
 
 def _get_names(lf: LazyFrame, col_name: str) -> pc.Set[str]:
 
-    return lf.inner().select(col_name).fetchall().iter().flatten().collect(pc.Set)
+    return lf.select(col_name).fetch_all().iter().flatten().collect(pc.Set)
 
 
 type ProcessedToken = tuple[int, TokenType, str]
@@ -83,13 +83,12 @@ def _get_kwords():  # noqa: ANN202
 
     return (
         meta.keywords()
-        .inner()
         .select(
             when(col("keyword_category").is_in(lit("reserved"), lit("unreserved")))
             .then(name.str.upper())
             .otherwise(name)
         )
-        .fetchall()
+        .fetch_all()
         .iter()
         .flatten()
         .map(lambda x: (x, Keyword))  # pyright: ignore[reportAny]

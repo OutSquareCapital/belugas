@@ -58,7 +58,7 @@ def test_empty_frame(sample_df: pl.DataFrame) -> None:
 
 def test_repr(sample_df: pl.DataFrame) -> None:
     lf = pql.LazyFrame(sample_df)
-    assert repr(lf) == repr(lf.inner()) == repr(lf.inner().inner())
+    assert repr(lf) == repr(lf.inner())
 
 
 def test_clone(sample_df: pl.DataFrame) -> None:

@@ -2,6 +2,8 @@ from collections.abc import Callable, Iterable
 from typing import final
 
 import pyochain as pc
+import sqlglot
+from duckdb import Expression
 from sqlglot import exp
 
 from ._core import DuckHandler, func, into_glot
@@ -173,7 +175,7 @@ def mean_horizontal(exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> SqlExpr:
     )
 
 
-def into_expr(value: IntoExpr, *, as_col: bool = False) -> SqlExpr:
+def into_expr(value: IntoExpr, *, as_col: bool = False) -> SqlExpr:  # noqa: PLR0911
     """Convert a value to a `SqlExpr`.
 
     Args:
@@ -196,5 +198,7 @@ def into_expr(value: IntoExpr, *, as_col: bool = False) -> SqlExpr:
             return col(value)
         case exp.Expr():
             return SqlExpr(value)
+        case Expression():
+            return SqlExpr(sqlglot.parse_one(str(value), dialect="duckdb"))  # pyright: ignore[reportUnknownMemberType]
         case _:
             return lit(value)

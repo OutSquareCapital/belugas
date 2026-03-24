@@ -43,16 +43,13 @@ def into_relation(  # noqa: PLR0911
     data: IntoRel, orient: Orientation = "col"
 ) -> duckdb.DuckDBPyRelation:
     from .._frame import LazyFrame
-    from ._code_gen import Relation
     from ._core import DuckHandler
 
     match data:
         case duckdb.DuckDBPyRelation():
             return data
-        case Relation():
-            return data.inner()
         case LazyFrame():
-            return data.inner().inner()
+            return data.inner()
         case exp.Expr():
             return duckdb.values(DuckHandler(data).into_duckdb())
         case DuckHandler():

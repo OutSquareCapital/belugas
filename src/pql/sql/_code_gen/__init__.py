@@ -1,5 +1,4 @@
 from . import meta as meta
-from ._core import Relation
 from ._fns import (
     ArrayFns,
     DateTimeFns,
@@ -24,7 +23,6 @@ __all__ = [
     "ListFns",
     "MapFns",
     "RegexFns",
-    "Relation",
     "StringFns",
     "StructFns",
     "meta",

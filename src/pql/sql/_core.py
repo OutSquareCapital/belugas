@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Concatenate, Self, overload, override
 
@@ -133,15 +133,6 @@ def _glot_into_duckdb(expr: exp.Expr) -> duckdb.Expression:  # noqa: C901, PLR09
             return ordered
         case _:
             return duckdb.SQLExpression(expr.sql(dialect="duckdb"))
-
-
-def into_duckdb_mapping(value: Mapping[str, IntoExpr]) -> pc.Dict[str, IntoDuckExpr]:
-    return (
-        pc.Iter(value.items())
-        .iter()
-        .map_star(lambda k, v: (k, into_duckdb(v)))
-        .collect(pc.Dict)
-    )
 
 
 @overload

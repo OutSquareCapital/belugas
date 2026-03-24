@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, Protocol, Self, runtime_checkable
 
+import duckdb
 from narwhals._native import NativeFrame
 from narwhals.typing import IntoFrame
 from sqlglot import exp
@@ -74,7 +75,7 @@ type AnyArray = NPArrayLike[Any, Any]  # pyright: ignore[reportExplicitAny]
 
 
 type IntoDict[K, V] = Mapping[K, V] | Iterable[tuple[K, V]]
-type ExprLike = SqlExpr | Expr | DuckHandler
+type ExprLike = SqlExpr | Expr | DuckHandler | duckdb.Expression
 """Types that are already expressions wrappers and can be used directly as expressions."""
 type BlobLiteral = DuckBlobLit
 type NonNestedLiteral = DuckNonNestedLit

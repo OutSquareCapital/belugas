@@ -35,24 +35,6 @@ console = Console()
 
 
 @app.command()
-def gen_core(
-    stub_path: InputPath = STUB_PATH,
-    output_path: OutputPath = REL_OUTPUT,
-    *,
-    check_only: CheckArg = False,
-) -> None:
-    """Generate typed DuckDB wrappers from the database."""
-    from . import core_generator
-
-    content = core_generator.generate(SELF_PATH, stub_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    res = output_path.write_text(content, encoding="utf-8")
-    console.print(Text("Generated ").append(output_path.as_posix(), style="cyan"))
-    _run_ruff(check_only=check_only, dest=output_path)
-    console.print(f"Done with exit code {res}!", style="bold green")
-
-
-@app.command()
 def gen_fns(
     data_path: InputPath = DATA_PATH,
     output: OutputPath = FNS_OUTPUT,

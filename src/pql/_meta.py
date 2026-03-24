@@ -16,6 +16,7 @@ from ._schema import Schema
 from .sql.utils import TryIter, try_chain, try_iter
 
 if TYPE_CHECKING:
+    from duckdb import DuckDBPyRelation, Expression
     from narwhals.typing import IntoFrameT
     from pyochain.traits import PyoCollection, PyoIterable
 
@@ -65,13 +66,13 @@ class Marker(StrEnum):
                 return result
 
     @classmethod
-    def empty_frame(cls) -> sql.Relation:
-        return sql.Relation(sql.into_relation({cls.EMPTY: ()}))
+    def empty_frame(cls) -> DuckDBPyRelation:
+        return sql.into_relation({cls.EMPTY: ()})
 
     @classmethod
     def windowed(
-        cls, lf: sql.Relation, cols: PyoIterable[ResolvedExpr]
-    ) -> sql.Relation:
+        cls, lf: DuckDBPyRelation, cols: PyoIterable[ResolvedExpr]
+    ) -> DuckDBPyRelation:
         def _uses_temp(expr: sql.SqlExpr) -> bool:
             return pc.Iter(expr.inner().find_all(exp.Column)).any(
                 lambda col: (
@@ -83,9 +84,8 @@ class Marker(StrEnum):
 
         match cols.any(lambda p: p.name != cls.TEMP and _uses_temp(p.expr)):
             case True:
-                return lf.select(
-                    sql.row_number().over().sub(1).alias(cls.TEMP), sql.all()
-                )
+                row_nb = sql.row_number().over().sub(1).alias(cls.TEMP).into_duckdb()
+                return lf.select(row_nb, sql.all().into_duckdb())
             case False:
                 return lf
 
@@ -241,13 +241,17 @@ class ExprPlan:
             try_chain(exprs, more_exprs).flat_map(_resolve).chain(expr_map).collect()
         )
 
-    def aliased_sql(self) -> pc.Iter[sql.SqlExpr]:
-        return self.projections.iter().map(ResolvedExpr.as_aliased)
+    def aliased_sql(self) -> pc.Iter[Expression]:
+        return (
+            self.projections.iter()
+            .map(ResolvedExpr.as_aliased)
+            .map(lambda e: e.into_duckdb())
+        )
 
-    def select_context(self, lf: sql.Relation) -> sql.Relation:
+    def select_context(self, lf: DuckDBPyRelation) -> DuckDBPyRelation:
         def _non_empty_slct(
-            projs: pc.Seq[ResolvedExpr], lf: sql.Relation
-        ) -> sql.Relation:
+            projs: pc.Seq[ResolvedExpr], lf: DuckDBPyRelation
+        ) -> DuckDBPyRelation:
             match projs.all(lambda r: r.kind == ExprKind.UNIQUE):
                 case True:
                     return self.aliased_sql().into(
@@ -266,32 +270,38 @@ class ExprPlan:
             lambda projs: _non_empty_slct(projs, Marker.windowed(lf, projs))
         ).unwrap_or_else(Marker.empty_frame)
 
-    def with_columns_context(self, lf: sql.Relation) -> sql.Relation:
-        def _resolve(lf: sql.Relation) -> sql.Relation:
+    def with_columns_context(self, lf: DuckDBPyRelation) -> DuckDBPyRelation:
+        def _resolve(lf: DuckDBPyRelation) -> DuckDBPyRelation:
             match self.projections.any(lambda r: r.kind == ExprKind.SCALAR):
                 case True:
                     return self.resolve().into(lf.aggregate)
                 case False:
                     return self.resolve().into(lambda exprs: lf.select(*exprs))
 
-        return Marker.windowed(lf, self.projections).pipe(_resolve)
+        return _resolve(Marker.windowed(lf, self.projections))
 
     def with_fields_context(self, expr: sql.SqlExpr) -> sql.SqlExpr:
-        return self.aliased_sql().into(lambda args: expr.struct.insert(*args))
+        return (
+            self.projections.iter()
+            .map(ResolvedExpr.as_aliased)
+            .into(lambda args: expr.struct.insert(*args))
+        )
 
-    def group_by_all_context(self, lf: sql.Relation) -> sql.Relation:
+    def group_by_all_context(self, lf: DuckDBPyRelation) -> DuckDBPyRelation:
         return self.aliased_sql().into(lf.aggregate, "ALL")
 
     def agg_context(
         self,
-        keys: PyoIterable[sql.SqlExpr],
-        aggregator: Callable[[pc.Iter[sql.SqlExpr]], sql.Relation],
-    ) -> sql.Relation:
-        plan = self.projections.iter().map(lambda p: p.implode_or_scalar())
+        keys: PyoIterable[Expression],
+        aggregator: Callable[[pc.Iter[Expression]], DuckDBPyRelation],
+    ) -> DuckDBPyRelation:
+        plan = self.projections.iter().map(
+            lambda p: p.implode_or_scalar().into_duckdb()
+        )
 
         return keys.iter().chain(plan).into(aggregator)
 
-    def resolve(self) -> pc.Iter[sql.SqlExpr]:
+    def resolve(self) -> pc.Iter[Expression]:
 
         def _resolved(updates: pc.Dict[str, sql.SqlExpr]) -> pc.Iter[sql.SqlExpr]:
             match updates.any(lambda name: name in self.schema):
@@ -323,6 +333,7 @@ class ExprPlan:
             .map(lambda r: (r.name, r.expr))
             .collect(pc.Dict)
             .into(_resolved)
+            .map(lambda c: c.into_duckdb())
         )
 
 
