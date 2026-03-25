@@ -51,7 +51,7 @@ class Marker(StrEnum):
             match node:
                 case exp.Column() if node.name == Marker.MULTI:
                     return target
-                case exp.Star():
+                case exp.Star() | exp.Columns():
                     return target
                 case _:
                     return node
@@ -157,8 +157,10 @@ class MultiMeta(ExprMeta):
             output_names = self.get_output_names(base_names, alias_override)
             return NamesBuilder(base_names, output_names, template, resolved_fn)
 
-        is_star = self.alias_name.is_none() and template.inner().is_star
-        match (alias_override.is_none(), is_star):
+        is_native_multi = (
+            self.alias_name.is_none() and isinstance(template.inner(), exp.Columns)
+        ) or template.inner().is_star
+        match (alias_override.is_none(), is_native_multi):
             case (True, True):
                 return resolved_fn(template, template.get_name()).into_iter()
             case (True, _):
@@ -197,6 +199,9 @@ class ResolvedExpr(NamedTuple):
         output_name = alias_override.unwrap_or(resolved.get_name())
         return cls(resolved, output_name, kind=ExprKind.ROW)
 
+    def is_multi(self) -> bool:
+        return isinstance(self.expr.inner(), exp.Columns) or self.expr.inner().is_star
+
     def implode_or_scalar(self) -> sql.SqlExpr:
         match self.kind:
             case ExprKind.SCALAR:
@@ -205,10 +210,10 @@ class ResolvedExpr(NamedTuple):
                 expr = self.expr.implode().list.distinct()
             case _:
                 expr = self.expr.implode()
-        return expr if self.expr.inner().is_star else expr.alias(self.name)
+        return expr if self.is_multi() else expr.alias(self.name)
 
     def as_aliased(self) -> sql.SqlExpr:
-        return self.expr if self.expr.inner().is_star else self.expr.alias(self.name)
+        return self.expr if self.is_multi() else self.expr.alias(self.name)
 
     def into_iter(self) -> pc.Iter[Self]:
         return pc.Iter.once(self)

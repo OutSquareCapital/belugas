@@ -62,13 +62,25 @@ class SqlExpr(Fns):  # noqa: PLW1641
 
     __slots__: ClassVar[Iterable[str]] = ()
 
-    def _binop[T: exp.Binary](self, cls: type[T], other: IntoExpr) -> Self:
-        expr = exp.Paren(this=cls(this=self.inner(), expression=into_glot(other)))
+    def _build_op[T: exp.Binary](
+        self, op: type[T], left: exp.Expr, right: exp.Expr
+    ) -> Self:
+
+        def _cols_op(expr: exp.Expr) -> exp.Expr:
+            match expr:
+                case exp.Star():
+                    return exp.Columns(this=expr.copy())
+                case _:
+                    return expr
+
+        expr = exp.Paren(this=op(this=_cols_op(left), expression=_cols_op(right)))
         return self._new(expr)
 
-    def _rbinop[T: exp.Binary](self, cls: type[T], other: IntoExpr) -> Self:
-        expr = exp.Paren(this=cls(this=into_glot(other), expression=self.inner()))
-        return self._new(expr)
+    def _binop[T: exp.Binary](self, op: type[T], other: IntoExpr) -> Self:
+        return self._build_op(op, self.inner(), into_glot(other))
+
+    def _rbinop[T: exp.Binary](self, op: type[T], other: IntoExpr) -> Self:
+        return self._build_op(op, into_glot(other), self.inner())
 
     def __add__(self, other: IntoExpr) -> Self:
         return self._binop(exp.Add, other)
