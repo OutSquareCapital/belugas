@@ -62,14 +62,22 @@ Also the goal isn't the same, as Ibis is more focused on providing a high level 
 
 ## Architecture
 
-The goal is to use as much as possible of the existing [Expression](https://duckdb.org/docs/stable/clients/python/expression) and [Relational](https://duckdb.org/docs/stable/clients/python/relational_api) API's.
-raw SQL is only used when no other choice exist.
+`pql` two main public classes are `LazyFrame` and `Expr`.
 
-The `sql` folder is the internal API to create duckdb Expressions.
-It handles data conversions, chainable API wrapping, and datatypes parsing and typing.
-Then it is used in the top level modules who wraps this sql API to provide the user-facing API.
+### Expr
 
-### Scripts
+Expressions are the base building blocks of the API.
+an `Expr` is a wrapper around an internal `SqlExpr` class.
+This responsibility separation allows to separate metadata handling (column names resolution mainly, `Selectors` implementation, etc.. ), and internal implementation of custom expressions (e.g `Expr.str.titlecase()`).
+`SqlExpr` in turn wraps a `sqlglot.Expression` object, which is the AST used to generate the final SQL query.
+Once needed, the `sqlglot.Expression` is converted to a native `duckdb.Expression` object, which is the one used to execute the query.
+
+### LazyFrame
+
+This class wraps a `duckdb.DuckDBPyRelation` object, and is the main entry point for users.
+It provides methods that give context for the `Expr` objects, and also handle the final SQL query generation and execution.
+
+## Scripts
 
 Scripts are used for code generation and API comparison at dev time.
 They are not meant to be used by end users, and are not part of the public API.
@@ -80,16 +88,15 @@ More infos with the following command:
 uv run -m scripts --help
 ```
 
-#### Comparator
+### Comparator
 
 The **compare** command will create the [coverage](API_COVERAGE.md) report to compare `pql` vs `polar`s and `narwhals` API's.
 
-#### Generators
+### Generators
 
-The **gen-{fns, core, themes}** commands will respectively generate python code for:
+The **gen-{fns, themes}** commands will respectively generate python code for:
 
 - [The functions from the `table_functions` DuckDB table](src/pql/sql/_code_gen/_fns.py)
-- [A core API wrapper around `DuckDBPyRelation` and `Expression`](src/pql/sql/_code_gen/_core.py)
 - [A `Literal` for SQL display theming](src/pql/_typing.py) (see `Theme` type)
 
 **Note** that if you never generated the `table_functions` code, you need first to run `fns-to_parquet` once to get the parquet file with the data casted and updated, and then `gen-fns` to generate the code.
