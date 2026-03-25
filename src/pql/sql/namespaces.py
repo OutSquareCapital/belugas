@@ -7,8 +7,6 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import TYPE_CHECKING, final
 
-from pql.sql.typing import IntoExprColumn
-
 from ._code_gen import (
     ArrayFns,
     DateTimeFns,

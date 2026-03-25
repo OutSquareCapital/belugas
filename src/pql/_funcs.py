@@ -7,6 +7,7 @@ from sqlglot import exp
 from . import sql
 from ._expr import Expr
 from ._meta import ExprKind, Marker, MultiMeta, Resolver, SingleMeta
+from .sql import SqlExpr
 from .sql._core import args_into_glot
 from .sql.typing import IntoExpr, IntoExprColumn, PythonLiteral
 from .sql.utils import TryIter, try_chain, try_iter
@@ -37,14 +38,14 @@ def len() -> Expr:
 
 
 def _agg_expr(
-    agg: Callable[[sql.SqlExpr], sql.SqlExpr],
+    agg: Callable[[SqlExpr], SqlExpr],
     cols: TryIter[str],
     more_cols: Iterable[str],
 ) -> Expr:
 
-    def _columns_expr(inner_cols: pc.Seq[str]) -> sql.SqlExpr:
+    def _columns_expr(inner_cols: pc.Seq[str]) -> SqlExpr:
         expr = exp.Columns(this=inner_cols.into(args_into_glot))
-        return sql.SqlExpr(expr)
+        return SqlExpr(expr)
 
     names = try_chain(cols, more_cols).collect().then_some()
     meta = MultiMeta(
@@ -52,30 +53,30 @@ def _agg_expr(
     )
     inner_expr = (
         names.map(_columns_expr)
-        .unwrap_or_else(lambda: sql.SqlExpr(exp.Columns(this=exp.Star())))
+        .unwrap_or_else(lambda: SqlExpr(exp.Columns(this=exp.Star())))
         .pipe(agg)
     )
     return Expr(inner_expr, meta)
 
 
 def sum(cols: TryIter[str], *more_cols: str) -> Expr:
-    return _agg_expr(sql.SqlExpr.sum, cols, more_cols)
+    return _agg_expr(SqlExpr.sum, cols, more_cols)
 
 
 def mean(cols: TryIter[str], *more_cols: str) -> Expr:
-    return _agg_expr(sql.SqlExpr.mean, cols, more_cols)
+    return _agg_expr(SqlExpr.mean, cols, more_cols)
 
 
 def median(cols: TryIter[str], *more_cols: str) -> Expr:
-    return _agg_expr(sql.SqlExpr.median, cols, more_cols)
+    return _agg_expr(SqlExpr.median, cols, more_cols)
 
 
 def min(cols: TryIter[str], *more_cols: str) -> Expr:
-    return _agg_expr(sql.SqlExpr.min, cols, more_cols)
+    return _agg_expr(SqlExpr.min, cols, more_cols)
 
 
 def max(cols: TryIter[str], *more_cols: str) -> Expr:
-    return _agg_expr(sql.SqlExpr.max, cols, more_cols)
+    return _agg_expr(SqlExpr.max, cols, more_cols)
 
 
 def coalesce(exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> Expr:
@@ -95,7 +96,7 @@ def all(exclude: TryIter[IntoExprColumn] = None) -> Expr:
 def _horizontal_fn(
     exprs: TryIter[IntoExpr],
     more_exprs: Iterable[IntoExpr],
-    fn: Callable[..., sql.SqlExpr],
+    fn: Callable[..., SqlExpr],
 ) -> Expr:
     meta = (
         try_iter(exprs)

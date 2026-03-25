@@ -17,6 +17,7 @@ from ._funcs import col
 from ._joins import JoinBuilder, JoinKeys
 from ._meta import ExprPlan, Marker
 from ._schema import Schema
+from .sql import SqlExpr
 from .sql.utils import TryIter, TrySeq, check_by_arg, try_chain, try_iter, try_seq
 
 if TYPE_CHECKING:
@@ -49,16 +50,16 @@ if TYPE_CHECKING:
     )
 
 MAX_I64 = 9_223_372_036_854_775_807
-PIVOT_AGG: dict[PivotAgg, Callable[[sql.SqlExpr], sql.SqlExpr]] = {
-    "min": sql.SqlExpr.min,
-    "max": sql.SqlExpr.max,
-    "first": sql.SqlExpr.first,
-    "last": sql.SqlExpr.last,
-    "sum": sql.SqlExpr.sum,
-    "mean": sql.SqlExpr.mean,
-    "median": sql.SqlExpr.median,
-    "len": sql.SqlExpr.count,
-    "count": sql.SqlExpr.count,
+PIVOT_AGG: dict[PivotAgg, Callable[[SqlExpr], SqlExpr]] = {
+    "min": SqlExpr.min,
+    "max": SqlExpr.max,
+    "first": SqlExpr.first,
+    "last": SqlExpr.last,
+    "sum": SqlExpr.sum,
+    "mean": SqlExpr.mean,
+    "median": SqlExpr.median,
+    "len": SqlExpr.count,
+    "count": SqlExpr.count,
 }
 
 
@@ -77,10 +78,10 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
         qry = sql.from_query(expr.sql(dialect="duckdb"), **kwargs)
         return self.__class__(qry)
 
-    def _iter_slct(self, func: Callable[[str], sql.SqlExpr]) -> Self:
+    def _iter_slct(self, func: Callable[[str], SqlExpr]) -> Self:
         return self.select(self.columns.iter().map(func))
 
-    def _iter_agg(self, func: Callable[[sql.SqlExpr], sql.SqlExpr]) -> Self:
+    def _iter_agg(self, func: Callable[[SqlExpr], SqlExpr]) -> Self:
         return self._new(
             self.columns.iter()
             .map(lambda c: func(sql.col(c)).alias(c).into_duckdb())
@@ -123,14 +124,14 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
     ) -> Self:
         """Filter rows based on predicates and equality constraints."""
 
-        def _constraint(k: str, val: IntoExpr) -> sql.SqlExpr:
+        def _constraint(k: str, val: IntoExpr) -> SqlExpr:
             return sql.col(k).eq(sql.into_expr(val))
 
         expr = (
             try_chain(predicates, more_predicates)
             .map(lambda value: sql.into_expr(value, as_col=True))
             .chain(pc.Iter(constraints.items()).map_star(_constraint))
-            .into(sql.reduce, sql.SqlExpr.and_)
+            .into(sql.reduce, SqlExpr.and_)
             .into_duckdb()
         )
         return self._new(self.inner().filter(expr))
@@ -225,7 +226,7 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
                 sql.lit(1).count().over().alias(Marker.LEN),
             )
 
-        def _from_end_start(off: int) -> sql.SqlExpr:
+        def _from_end_start(off: int) -> SqlExpr:
             return Marker.IDX.to_expr().ge(Marker.LEN.to_expr().add(off))
 
         def _filter_lf(
@@ -318,9 +319,7 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
         )
         is_single_explode = to_explode.length() == 1
 
-        def _project_col(
-            name: str, *, unnest: bool, replace: sql.SqlExpr
-        ) -> sql.SqlExpr:
+        def _project_col(name: str, *, unnest: bool, replace: SqlExpr) -> SqlExpr:
             match (unnest, name in to_explode_names):
                 case (True, True):
                     match is_single_explode:
@@ -334,7 +333,7 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
                 case _:
                     return sql.col(name)
 
-        def _proj(*, unnest: bool) -> pc.Iter[sql.SqlExpr]:
+        def _proj(*, unnest: bool) -> pc.Iter[SqlExpr]:
             replace = sql.unnest(target) if unnest else sql.lit(None)
             return self.columns.iter().map(
                 lambda name: _project_col(name, unnest=unnest, replace=replace)
@@ -401,7 +400,7 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
 
     def count(self) -> Self:
         """Return the count of each column."""
-        return self._iter_agg(sql.SqlExpr.count)
+        return self._iter_agg(SqlExpr.count)
 
     def describe(self) -> Self:
         """Return descriptive statistics."""
@@ -409,32 +408,32 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
 
     def sum(self) -> Self:
         """Aggregate the sum of each column."""
-        return self._iter_agg(sql.SqlExpr.sum)
+        return self._iter_agg(SqlExpr.sum)
 
     def mean(self) -> Self:
         """Aggregate the mean of each column."""
-        return self._iter_agg(sql.SqlExpr.mean)
+        return self._iter_agg(SqlExpr.mean)
 
     def median(self) -> Self:
         """Aggregate the median of each column."""
-        return self._iter_agg(sql.SqlExpr.median)
+        return self._iter_agg(SqlExpr.median)
 
     def min(self) -> Self:
         """Aggregate the minimum of each column."""
-        return self._iter_agg(sql.SqlExpr.min)
+        return self._iter_agg(SqlExpr.min)
 
     def max(self) -> Self:
         """Aggregate the maximum of each column."""
-        return self._iter_agg(sql.SqlExpr.max)
+        return self._iter_agg(SqlExpr.max)
 
     def std(self, ddof: int = 1) -> Self:
         """Aggregate the standard deviation of each column."""
-        fn = partial(sql.SqlExpr.std, ddof=ddof)
+        fn = partial(SqlExpr.std, ddof=ddof)
         return self._iter_agg(fn)
 
     def var(self, ddof: int = 1) -> Self:
         """Aggregate the variance of each column."""
-        fn = partial(sql.SqlExpr.var, ddof=ddof)
+        fn = partial(SqlExpr.var, ddof=ddof)
         return self._iter_agg(fn)
 
     def null_count(self) -> Self:
@@ -560,7 +559,7 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
                 condition=join_keys.left.iter()
                 .zip(join_keys.right)
                 .map_star(builder.equals)
-                .reduce(sql.SqlExpr.and_)
+                .reduce(SqlExpr.and_)
                 .into_duckdb(),
                 how=how,
             )
@@ -609,7 +608,7 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
         _ = on_opt.map(lambda _: drop_keys.add(on_keys.right))
         builder = JoinBuilder(suffix, self.columns, drop_keys)
 
-        def _get_strategy(expr: sql.SqlExpr) -> sql.SqlExpr:
+        def _get_strategy(expr: SqlExpr) -> SqlExpr:
             other = builder.rhs(on_keys.right)
             match strategy:
                 case "backward":
@@ -622,7 +621,7 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
             .zip(by_keys.right)
             .map_star(builder.equals)
             .chain(builder.lhs(on_keys.left).pipe(_get_strategy).pipe(pc.Iter.once))
-            .reduce(sql.SqlExpr.and_)
+            .reduce(SqlExpr.and_)
         )
         selected = (
             builder.left.iter()
@@ -649,7 +648,7 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
 
         def _marker(
             subset_cols: Iterable[IntoExprColumn],
-        ) -> pc.Result[sql.SqlExpr, ValueError]:
+        ) -> pc.Result[SqlExpr, ValueError]:
             match (
                 keep,
                 pc.Option(order_by).map(lambda value: try_iter(value).collect()),
@@ -740,7 +739,7 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
         multi = val_cols.length() > 1
         agg = PIVOT_AGG[aggregate_function]
 
-        def _aliased(col: str) -> sql.SqlExpr:
+        def _aliased(col: str) -> SqlExpr:
             expr = sql.col(col).pipe(agg)
             return expr.alias(col) if multi else expr
 
@@ -787,8 +786,8 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
             match multi:
                 case True:
 
-                    def _rename_col(val_col: str) -> pc.Iter[sql.SqlExpr]:
-                        def _swap(on_val: str) -> sql.SqlExpr:
+                    def _rename_col(val_col: str) -> pc.Iter[SqlExpr]:
+                        def _swap(on_val: str) -> SqlExpr:
                             in_ = f"{on_val}_{val_col}"
                             out = f"{val_col}{separator}{on_val}"
                             return sql.col(in_).alias(out)

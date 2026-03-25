@@ -13,7 +13,7 @@ from . import _datatypes as dt, sql  # pyright: ignore[reportPrivateUsage]
 from ._expr import Expr
 from ._meta import ExprPlan
 from ._schema import Schema
-from .sql import namespaces as nm
+from .sql import SqlExpr, namespaces as nm
 
 if TYPE_CHECKING:
     from ._typing import TransferEncoding
@@ -22,17 +22,17 @@ if TYPE_CHECKING:
 
 
 class Lit:
-    TITLECASE: sql.SqlExpr = sql.lit(r"[a-z]*[^a-z]*")
-    NONE: sql.SqlExpr = sql.lit(None)
-    G_PARAM: sql.SqlExpr = sql.lit("g")
-    EMPTY_STR: sql.SqlExpr = sql.lit("")
-    ESCAPE_REGEX: sql.SqlExpr = sql.lit(r"([.^$*+?{}\[\]\\|()])")
-    ESCAPE_REPLACE: sql.SqlExpr = sql.lit(r"\\\1")
-    ESCAPE: sql.SqlExpr = sql.lit(" ")
-    STR_AGG: sql.SqlExpr = sql.lit("string_agg")
-    DAY: sql.SqlExpr = sql.lit("day")
-    MONTH: sql.SqlExpr = sql.lit("month")
-    ZERO: sql.SqlExpr = sql.lit("0")
+    TITLECASE: SqlExpr = sql.lit(r"[a-z]*[^a-z]*")
+    NONE: SqlExpr = sql.lit(None)
+    G_PARAM: SqlExpr = sql.lit("g")
+    EMPTY_STR: SqlExpr = sql.lit("")
+    ESCAPE_REGEX: SqlExpr = sql.lit(r"([.^$*+?{}\[\]\\|()])")
+    ESCAPE_REPLACE: SqlExpr = sql.lit(r"\\\1")
+    ESCAPE: SqlExpr = sql.lit(" ")
+    STR_AGG: SqlExpr = sql.lit("string_agg")
+    DAY: SqlExpr = sql.lit("day")
+    MONTH: SqlExpr = sql.lit("month")
+    ZERO: SqlExpr = sql.lit("0")
 
 
 class Sec(IntEnum):
@@ -51,7 +51,7 @@ class Sec(IntEnum):
 @dataclass(slots=True)
 class ExprNameSpaceBase(sql.CoreHandler[Expr]):
     @override
-    def _new(self, expr: sql.SqlExpr) -> Expr:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def _new(self, expr: SqlExpr) -> Expr:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.inner()._new(expr)  # pyright: ignore[reportPrivateUsage]
 
 
@@ -105,7 +105,7 @@ class ExprStringNameSpace(ExprNameSpaceBase):
         """Replace first matching substring with a new string value."""
         pattern_expr = sql.lit(re.escape(pattern) if literal else pattern)
 
-        def _replace_once(expr: sql.SqlExpr) -> sql.SqlExpr:
+        def _replace_once(expr: SqlExpr) -> SqlExpr:
             return expr.str.replace(pattern_expr, value)
 
         match n:

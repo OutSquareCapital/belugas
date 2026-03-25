@@ -13,6 +13,7 @@ from sqlglot import exp
 
 from . import sql
 from ._schema import Schema
+from .sql import SqlExpr
 from .sql.utils import TryIter, try_chain, try_iter
 
 if TYPE_CHECKING:
@@ -38,11 +39,11 @@ class Marker(StrEnum):
 
     IDX = "__pql_idx__"
 
-    def to_expr(self) -> sql.SqlExpr:
+    def to_expr(self) -> SqlExpr:
         return sql.col(self.value)
 
     @classmethod
-    def replace_col(cls, template: sql.SqlExpr, column_name: str) -> sql.SqlExpr:
+    def replace_col(cls, template: SqlExpr, column_name: str) -> SqlExpr:
         target = exp.column(column_name)
 
         def _replacer(node: exp.Expr) -> exp.Expr:
@@ -52,7 +53,7 @@ class Marker(StrEnum):
                 case _:
                     return node
 
-        return sql.SqlExpr(template.inner().transform(_replacer))  # pyright: ignore[reportUnknownMemberType, reportAny]
+        return SqlExpr(template.inner().transform(_replacer))  # pyright: ignore[reportUnknownMemberType, reportAny]
 
     @classmethod
     def drop_marker(cls, result: IntoFrameT, cols: Collection[str]) -> IntoFrameT:
@@ -97,7 +98,7 @@ class ExprMeta(ABC):
 
     @abstractmethod
     def into_resolved(
-        self, template: sql.SqlExpr, schema: Schema, alias_override: pc.Option[str]
+        self, template: SqlExpr, schema: Schema, alias_override: pc.Option[str]
     ) -> pc.Iter[ResolvedExpr]: ...
 
     def get_output_names(
@@ -133,7 +134,7 @@ class SingleMeta(ExprMeta):
 
     @override
     def into_resolved(
-        self, template: sql.SqlExpr, schema: Schema, alias_override: pc.Option[str]
+        self, template: SqlExpr, schema: Schema, alias_override: pc.Option[str]
     ) -> pc.Iter[ResolvedExpr]:
         output_names = self.get_output_names(pc.Seq((self.root_name,)), alias_override)
         return ResolvedExpr(template, output_names.first(), self.kind).into_iter()
@@ -146,7 +147,7 @@ class MultiMeta(ExprMeta):
 
     @override
     def into_resolved(
-        self, template: sql.SqlExpr, schema: Schema, alias_override: pc.Option[str]
+        self, template: SqlExpr, schema: Schema, alias_override: pc.Option[str]
     ) -> pc.Iter[ResolvedExpr]:
         resolved_fn = partial(ResolvedExpr, kind=self.kind)
 
@@ -172,7 +173,7 @@ class MultiMeta(ExprMeta):
 class NamesBuilder(NamedTuple):
     base: PyoCollection[str]
     output: PyoCollection[str]
-    template: sql.SqlExpr
+    template: SqlExpr
     fn: partial[ResolvedExpr]
 
     def _to_resolved(self, name: str, output: str) -> ResolvedExpr:
@@ -189,7 +190,7 @@ class NamesBuilder(NamedTuple):
 class ResolvedExpr(NamedTuple):
     """A fully resolved expression ready for SQL emission."""
 
-    expr: sql.SqlExpr
+    expr: SqlExpr
     name: str
     kind: ExprKind
 
@@ -202,7 +203,7 @@ class ResolvedExpr(NamedTuple):
     def is_multi(self) -> bool:
         return isinstance(self.expr.inner(), exp.Columns) or self.expr.inner().is_star
 
-    def implode_or_scalar(self) -> sql.SqlExpr:
+    def implode_or_scalar(self) -> SqlExpr:
         match self.kind:
             case ExprKind.SCALAR:
                 expr = self.expr
@@ -212,7 +213,7 @@ class ResolvedExpr(NamedTuple):
                 expr = self.expr.implode()
         return expr if self.is_multi() else expr.alias(self.name)
 
-    def as_aliased(self) -> sql.SqlExpr:
+    def as_aliased(self) -> SqlExpr:
         return self.expr if self.is_multi() else self.expr.alias(self.name)
 
     def into_iter(self) -> pc.Iter[Self]:
@@ -298,7 +299,7 @@ class ExprPlan:
     def with_columns_context(self, lf: DuckDBPyRelation) -> DuckDBPyRelation:
 
         def _resolve() -> pc.Iter[Expression]:
-            def _resolved(updates: pc.Dict[str, sql.SqlExpr]) -> pc.Iter[sql.SqlExpr]:
+            def _resolved(updates: pc.Dict[str, SqlExpr]) -> pc.Iter[SqlExpr]:
                 match updates.any(lambda name: name in self.cols):
                     case False:
                         return (
@@ -340,7 +341,7 @@ class ExprPlan:
 
         return _get_lf(Marker.windowed(lf, self.projections))
 
-    def with_fields_context(self, expr: sql.SqlExpr) -> sql.SqlExpr:
+    def with_fields_context(self, expr: SqlExpr) -> SqlExpr:
         return (
             self.projections.iter()
             .map(ResolvedExpr.as_aliased)
@@ -361,7 +362,7 @@ class ExprPlan:
                     pc.Option(star.args.get("except_"))
                     .map(pc.Iter[exp.Expr])
                     .unwrap_or_else(pc.Iter[exp.Expr].new)
-                    .filter_map(lambda e: sql.SqlExpr(e).root_column_name())
+                    .filter_map(lambda e: SqlExpr(e).root_column_name())
                     .collect(pc.Set)
                 )
 
@@ -401,7 +402,7 @@ class Resolver:
             lambda exc: (
                 try_iter(exc)
                 .map(lambda value: sql.into_expr(value, as_col=True))
-                .filter_map(sql.SqlExpr.root_column_name)
+                .filter_map(SqlExpr.root_column_name)
                 .collect(pc.Set)
                 .into(Resolver.exclude)
             )

@@ -9,6 +9,7 @@ import pyochain as pc
 
 from . import sql
 from ._meta import ExprKind, ExprMeta, Marker
+from .sql import SqlExpr
 from .sql.utils import TryIter, try_chain, try_iter
 
 if TYPE_CHECKING:
@@ -34,29 +35,29 @@ _NONE = sql.lit(None)
 
 
 @dataclass(slots=True, init=False)
-class Expr(sql.CoreHandler[sql.SqlExpr]):
-    _inner: sql.SqlExpr
+class Expr(sql.CoreHandler[SqlExpr]):
+    _inner: SqlExpr
     meta: ExprMeta
 
-    def __init__(self, inner: sql.SqlExpr, meta: ExprMeta) -> None:
+    def __init__(self, inner: SqlExpr, meta: ExprMeta) -> None:
         self._inner = inner
         self.meta = replace(meta)
 
     @override
-    def _new(self, value: sql.SqlExpr, meta: pc.Option[ExprMeta] = pc.NONE) -> Self:
+    def _new(self, value: SqlExpr, meta: pc.Option[ExprMeta] = pc.NONE) -> Self:
         return self.__class__(value, meta.unwrap_or(self.meta))
 
     def _with_meta(
         self,
-        value: sql.SqlExpr,
+        value: SqlExpr,
         **changes: str | bool | ExprKind | pc.Option[Callable[[str], str]],
     ) -> Self:
         return self._new(value, pc.Some(replace(self.meta, **changes)))
 
-    def _as_window(self, expr: sql.SqlExpr) -> Self:
+    def _as_window(self, expr: SqlExpr) -> Self:
         return self._with_meta(expr, kind=ExprKind.WINDOW)
 
-    def _as_scalar(self, expr: sql.SqlExpr) -> Self:
+    def _as_scalar(self, expr: SqlExpr) -> Self:
         return self._with_meta(expr, kind=ExprKind.SCALAR)
 
     def _clear_alias_name(self) -> Expr:
@@ -64,7 +65,7 @@ class Expr(sql.CoreHandler[sql.SqlExpr]):
 
     def _rolling_agg(
         self,
-        agg: Callable[[sql.SqlExpr], sql.SqlExpr],
+        agg: Callable[[SqlExpr], SqlExpr],
         window_size: int,
         min_samples: int | None,
         *,
@@ -72,8 +73,8 @@ class Expr(sql.CoreHandler[sql.SqlExpr]):
     ) -> Self:
         spec = sql.BoundsValues.rolling(window_size, center=center)
 
-        def _clause(e: sql.SqlExpr) -> sql.SqlExpr:
-            return sql.SqlExpr(sql.rolling_agg(e.inner(), Marker.TEMP, spec))
+        def _clause(e: SqlExpr) -> SqlExpr:
+            return SqlExpr(sql.rolling_agg(e.inner(), Marker.TEMP, spec))
 
         return (
             sql.when(self.inner().count().pipe(_clause).ge(min_samples or window_size))
@@ -411,9 +412,7 @@ class Expr(sql.CoreHandler[sql.SqlExpr]):
         center: bool = False,
     ) -> Self:
         """Compute rolling max."""
-        return self._rolling_agg(
-            sql.SqlExpr.max, window_size, min_samples, center=center
-        )
+        return self._rolling_agg(SqlExpr.max, window_size, min_samples, center=center)
 
     def rolling_min(
         self,
@@ -423,9 +422,7 @@ class Expr(sql.CoreHandler[sql.SqlExpr]):
         center: bool = False,
     ) -> Self:
         """Compute rolling mean."""
-        return self._rolling_agg(
-            sql.SqlExpr.min, window_size, min_samples, center=center
-        )
+        return self._rolling_agg(SqlExpr.min, window_size, min_samples, center=center)
 
     def rolling_mean(
         self,
@@ -435,9 +432,7 @@ class Expr(sql.CoreHandler[sql.SqlExpr]):
         center: bool = False,
     ) -> Self:
         """Compute rolling mean."""
-        return self._rolling_agg(
-            sql.SqlExpr.mean, window_size, min_samples, center=center
-        )
+        return self._rolling_agg(SqlExpr.mean, window_size, min_samples, center=center)
 
     def rolling_median(
         self,
@@ -448,7 +443,7 @@ class Expr(sql.CoreHandler[sql.SqlExpr]):
     ) -> Self:
         """Compute rolling mean."""
         return self._rolling_agg(
-            sql.SqlExpr.median, window_size, min_samples, center=center
+            SqlExpr.median, window_size, min_samples, center=center
         )
 
     def rolling_sum(
@@ -459,9 +454,7 @@ class Expr(sql.CoreHandler[sql.SqlExpr]):
         center: bool = False,
     ) -> Self:
         """Compute rolling sum."""
-        return self._rolling_agg(
-            sql.SqlExpr.sum, window_size, min_samples, center=center
-        )
+        return self._rolling_agg(SqlExpr.sum, window_size, min_samples, center=center)
 
     def rolling_std(
         self,

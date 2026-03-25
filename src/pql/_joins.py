@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from pyochain.traits import PyoCollection
 
     from ._typing import JoinKeysRes, JoinStrategy
+    from .sql import SqlExpr
 type OptSeq = pc.Option[pc.Seq[str]]
 
 _RHS = partial(sql.col, table="rhs")
@@ -25,20 +26,20 @@ class JoinBuilder:
     right: PyoCollection[str]
 
     @staticmethod
-    def rhs(name: str) -> sql.SqlExpr:
+    def rhs(name: str) -> SqlExpr:
         return _RHS(name)
 
     @staticmethod
-    def lhs(name: str) -> sql.SqlExpr:
+    def lhs(name: str) -> SqlExpr:
         return _LHS(name)
 
-    def equals(self, left: str, right: str) -> sql.SqlExpr:
+    def equals(self, left: str, right: str) -> SqlExpr:
         return self.lhs(left).eq(self.rhs(right))
 
-    def _aliased(self, name: str) -> sql.SqlExpr:
+    def _aliased(self, name: str) -> SqlExpr:
         return self.rhs(name).alias(f"{name}{self.suffix}")
 
-    def for_inner_left(self, name: str) -> pc.Option[sql.SqlExpr]:
+    def for_inner_left(self, name: str) -> pc.Option[SqlExpr]:
         match (name in self.left, name in self.right):
             case (_, True):
                 return pc.NONE
@@ -47,14 +48,14 @@ class JoinBuilder:
             case _:
                 return pc.Some(self.rhs(name))
 
-    def for_outer(self, name: str) -> sql.SqlExpr:
+    def for_outer(self, name: str) -> SqlExpr:
         match name in self.left:
             case True:
                 return self._aliased(name)
             case False:
                 return self.rhs(name)
 
-    def for_right(self, name: str) -> sql.SqlExpr:
+    def for_right(self, name: str) -> SqlExpr:
         match (name in self.left, name in self.right):
             case (True, False):
                 return self._aliased(name)

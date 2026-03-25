@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING, final
 
 import pyochain as pc
 
-from . import sql
 from ._expr import Expr
 from ._funcs import col, len
 from ._meta import ExprPlan
 from ._schema import Schema
+from .sql import SqlExpr
 
 if TYPE_CHECKING:
     from ._frame import LazyFrame
@@ -23,13 +23,11 @@ class LazyGroupBy:
     __slots__ = ("_aggregator", "_frame", "_keys", "_schema")
 
     def __init__(
-        self, frame: LazyFrame, keys: pc.Seq[sql.SqlExpr], group_expr: pc.Option[str]
+        self, frame: LazyFrame, keys: pc.Seq[SqlExpr], group_expr: pc.Option[str]
     ) -> None:
         self._frame = frame
         self._keys = keys
-        keys_names = (
-            keys.iter().filter_map(sql.SqlExpr.root_column_name).collect(pc.Set)
-        )
+        keys_names = keys.iter().filter_map(SqlExpr.root_column_name).collect(pc.Set)
         self._schema = (
             frame.schema.items()
             .iter()
