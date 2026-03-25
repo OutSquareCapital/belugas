@@ -6,7 +6,7 @@ import sqlglot
 from duckdb import Expression
 from sqlglot import exp
 
-from ._core import DuckHandler, func, into_glot
+from ._core import DuckHandler, args_into_glot, func, into_glot
 from ._expr import SqlExpr
 from .typing import IntoExpr, IntoExprColumn, PythonLiteral
 from .utils import TryIter, try_chain, try_iter
@@ -107,8 +107,8 @@ def lit(value: PythonLiteral) -> SqlExpr:
 
 def coalesce(exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> SqlExpr:
     """Create a COALESCE expression."""
-    exprs = try_chain(exprs, more_exprs).map(into_glot)
-    return SqlExpr(exp.Coalesce(this=exprs.first(), expressions=exprs.collect(list)))
+    exprs = try_chain(exprs, more_exprs).into(args_into_glot)
+    return SqlExpr(exp.Coalesce(this=exprs[0], expressions=exprs))
 
 
 _HORIZONTAL_ERR = "At least one expression is required."

@@ -7,6 +7,7 @@ from sqlglot import exp
 from . import sql
 from ._expr import Expr
 from ._meta import ExprKind, Marker, MultiMeta, Resolver, SingleMeta
+from .sql._core import args_into_glot
 from .sql.typing import IntoExpr, IntoExprColumn, PythonLiteral
 from .sql.utils import TryIter, try_chain, try_iter
 
@@ -42,7 +43,7 @@ def _agg_expr(
 ) -> Expr:
 
     def _columns_expr(inner_cols: pc.Seq[str]) -> sql.SqlExpr:
-        expr = exp.Columns(this=inner_cols.iter().map(exp.convert).collect(list))
+        expr = exp.Columns(this=inner_cols.into(args_into_glot))
         return sql.SqlExpr(expr)
 
     names = try_chain(cols, more_cols).collect().then_some()

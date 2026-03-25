@@ -10,7 +10,7 @@ from sqlglot import exp
 from pql.sql.typing import IntoExprColumn
 
 from ._code_gen import Fns
-from ._core import func, into_glot
+from ._core import args_into_glot, func, into_glot
 from ._window import FrameBound, OverBuilder, get_order, get_partition, make_spec
 
 if TYPE_CHECKING:
@@ -29,10 +29,6 @@ if TYPE_CHECKING:
         WindowExclude,
     )
     from .utils import TryIter
-
-
-def _args_into_glot(args: Iterable[IntoExpr]) -> list[exp.Expr]:
-    return pc.Iter(args).filter_map(lambda x: pc.Option(x).map(into_glot)).collect(list)
 
 
 @cache
@@ -285,8 +281,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
                 return pc.NONE
 
     def is_in(self, *args: IntoExpr) -> Self:
-        exprs = pc.Iter(args).map(into_glot).collect(list)
-        return self._new(exp.In(this=self.inner(), expressions=exprs))
+        return self._new(exp.In(this=self.inner(), expressions=args_into_glot(args)))
 
     def is_not_in(self, *args: IntoExpr) -> Self:
         return self._new(exp.Not(this=self.is_in(*args).inner()))
@@ -669,7 +664,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         Returns:
             Self
         """
-        expr = exp.Greatest(this=self.inner(), expressions=_args_into_glot(args))
+        expr = exp.Greatest(this=self.inner(), expressions=args_into_glot(args))
         return self._new(expr)
 
     def least(self, *args: IntoExpr) -> Self:
@@ -687,7 +682,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         Returns:
             Self
         """
-        expr = exp.Least(this=self.inner(), expressions=_args_into_glot(args))
+        expr = exp.Least(this=self.inner(), expressions=args_into_glot(args))
         return self._new(expr)
 
     def over(  # noqa: PLR0913

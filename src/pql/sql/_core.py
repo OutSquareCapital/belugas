@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Concatenate, Self, overload, override
 
@@ -184,7 +184,10 @@ def into_glot(value: IntoExpr) -> exp.Expr:
             return exp.convert(value)
 
 
+def args_into_glot(args: Iterable[IntoExpr]) -> list[exp.Expr]:
+    return pc.Iter(args).filter_map(pc.Option).map(into_glot).collect(list)
+
+
 def func(name: str, *args: IntoExpr) -> exp.Expr:
     """Create a SQL function expression."""
-    arguments = pc.Iter(args).filter_map(pc.Option).map(into_glot).collect(list)
-    return exp.Anonymous(this=name, expressions=arguments)
+    return exp.Anonymous(this=name, expressions=args_into_glot(args))
