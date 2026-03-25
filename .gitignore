@@ -12,5 +12,6 @@ wheels/
 
 # temp file
 t.py
+f.py
 # data
 *.parquet
