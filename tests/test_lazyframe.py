@@ -41,7 +41,13 @@ def test_properties(sample_df: pl.DataFrame) -> None:
     assert lf.width == sample_df.width
     assert set(lf.schema.keys()) == set(sample_df.columns)
     assert lf.schema == lf.collect_schema()
+    assert lf.shape == sample_df.shape
     assert isinstance(lf.lazy(), pl.LazyFrame)
+
+
+def test_show(sample_df: pl.DataFrame) -> None:
+    lf = pql.LazyFrame(sample_df)
+    assert lf.show() is None
 
 
 def test_empty_frame(sample_df: pl.DataFrame) -> None:

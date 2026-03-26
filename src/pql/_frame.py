@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, SupportsInt
 
 import pyochain as pc
 from duckdb import DuckDBPyRelation, Expression
@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from _duckdb import ExplainType
     from _duckdb._enums import (  # pyright: ignore[reportMissingModuleSource]
         ExplainTypeLiteral,
+        RenderModeLiteral,
     )
     from pyochain.traits import PyoIterable
 
@@ -932,3 +933,23 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
 
     def fetch_all(self) -> pc.Vec[tuple[Any, ...]]:  # pyright: ignore[reportExplicitAny]
         return pc.Vec.from_ref(self.inner().fetchall())
+
+    def show(
+        self,
+        max_width: SupportsInt | None = None,
+        max_rows: SupportsInt | None = None,
+        max_col_width: SupportsInt | None = None,
+        null_value: str | None = None,
+        render_mode: RenderModeLiteral | None = None,
+    ) -> None:
+        return self.inner().show(
+            max_width=max_width,
+            max_rows=max_rows,
+            max_col_width=max_col_width,
+            null_value=null_value,
+            render_mode=render_mode,
+        )
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        return self.inner().shape

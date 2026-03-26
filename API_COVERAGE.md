@@ -9,7 +9,7 @@ Each summary cell is relative to Polars.
 
 | Class               | Coverage                                                                                     | Implemented | Matched | Missing | Mismatched | Extra |
 | ------------------- | -------------------------------------------------------------------------------------------- | ----------- | ------- | ------- | ---------- | ----- |
-| LazyFrame           | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (37.5%) | 80          | 30      | 26      | 24         | 6     |
+| LazyFrame           | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (37.5%) | 80          | 30      | 25      | 25         | 7     |
 | Expr                | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (43.0%) | 214         | 92      | 90      | 32         | 1     |
 | LazyGroupBy         | <span style="color: #27ae60;">██████</span><span style="color: #bdc3c7;">░░░░</span> (62.5%) | 16          | 10      | 4       | 2          | 0     |
 | ExprStrNameSpace    | <span style="color: #e74c3c;">██</span><span style="color: #bdc3c7;">░░░░░░░░</span> (29.8%) | 47          | 14      | 10      | 23         | 2     |
@@ -25,7 +25,7 @@ Each summary cell is relative to Polars.
 
 ## LazyFrame
 
-### [x] Missing Methods (26)
+### [x] Missing Methods (25)
 
 - `collect_async`
   - **Polars**: (gevent: bool, engine: EngineType, optimizations: QueryOptFlags) -> Awaitable[DataFrame] | _GeventDataFrameResult[DataFrame]
@@ -63,8 +63,6 @@ Each summary cell is relative to Polars.
   - **Polars**: (file: IOBase | str | Path | None, format: SerializationFormat) -> bytes | str | None
 - `set_sorted`
   - **Polars**: (column: str | list[str], *more_columns: str, descending: bool | list[bool], nulls_last: bool | list[bool]) -> LazyFrame
-- `show`
-  - **Polars**: (limit: int | None, ascii_tables: bool | None, decimal_separator: str | None, thousands_separator: str | bool | None, float_precision: int | None, fmt_float: FloatFmt | None, fmt_str_lengths: int | None, fmt_table_cell_list_len: int | None, tbl_cell_alignment: Alignment | None, tbl_cell_numeric_alignment: Alignment | None, tbl_cols: int | None, tbl_column_data_type_inline: bool | None, tbl_dataframe_shape_below: bool | None, tbl_formatting: TableFormatNames | None, tbl_hide_column_data_types: bool | None, tbl_hide_column_names: bool | None, tbl_hide_dtype_separator: bool | None, tbl_hide_dataframe_shape: bool | None, tbl_width_chars: int | None, trim_decimal_zeros: bool | None) -> None
 - `show_graph`
   - **Polars**: (optimized: bool, show: bool, output_path: str | Path | None, raw_output: bool, figsize: tuple[float, float], type_coercion: bool,_type_check: bool, predicate_pushdown: bool, projection_pushdown: bool, simplify_expression: bool, slice_pushdown: bool, comm_subplan_elim: bool, comm_subexpr_elim: bool, cluster_with_columns: bool, collapse_joins: bool, engine: EngineType, plan_stage: PlanStage,_check_order: bool, optimizations: QueryOptFlags) -> str | None
 - `sink_batches`
@@ -80,7 +78,7 @@ Each summary cell is relative to Polars.
 - `update`
   - **Polars**: (other: LazyFrame, on: str | Sequence[str] | None, how: Literal['left', 'inner', 'full'], left_on: str | Sequence[str] | None, right_on: str | Sequence[str] | None, include_nulls: bool, maintain_order: MaintainOrderJoin | None) -> LazyFrame
 
-### [!] Signature Mismatches (24)
+### [!] Signature Mismatches (25)
 
 - `cast`
   - **Polars**: (`dtypes: Mapping[ColumnNameOrSelector | PolarsDataType, PolarsDataType | PythonDataType] | PolarsDataType | pl.DataTypeExpr | Schema`, `strict: bool`) -> LazyFrame
@@ -133,6 +131,9 @@ Each summary cell is relative to Polars.
 - `shift`
   - **Polars**: (`n: int | IntoExprColumn`, `fill_value: IntoExpr | None`) -> LazyFrame
   - **pql**: (n: int, fill_value: IntoExpr) -> Self
+- `show`
+  - **Polars**: (`limit: int | None`, `ascii_tables: bool | None`, `decimal_separator: str | None`, `thousands_separator: str | bool | None`, `float_precision: int | None`, `fmt_float: FloatFmt | None`, `fmt_str_lengths: int | None`, `fmt_table_cell_list_len: int | None`, `tbl_cell_alignment: Alignment | None`, `tbl_cell_numeric_alignment: Alignment | None`, `tbl_cols: int | None`, `tbl_column_data_type_inline: bool | None`, `tbl_dataframe_shape_below: bool | None`, `tbl_formatting: TableFormatNames | None`, `tbl_hide_column_data_types: bool | None`, `tbl_hide_column_names: bool | None`, `tbl_hide_dtype_separator: bool | None`, `tbl_hide_dataframe_shape: bool | None`, `tbl_width_chars: int | None`, `trim_decimal_zeros: bool | None`) -> None
+  - **pql**: (`max_width: SupportsInt | None`, `max_rows: SupportsInt | None`, `max_col_width: SupportsInt | None`, `null_value: str | None`, `render_mode: RenderModeLiteral | None`) -> None
 - `sink_csv`
   - **Polars**: (`path: str | Path | IO[bytes] | IO[str] | PartitionBy`, `include_bom: bool`, `compression: Literal['uncompressed', 'gzip', 'zstd']`, `compression_level: int | None`, `check_extension: bool`, include_header: bool, separator: str, `line_terminator: str`, `quote_char: str`, `batch_size: int`, `datetime_format: str | None`, `date_format: str | None`, `time_format: str | None`, `float_scientific: bool | None`, `float_precision: int | None`, `decimal_comma: bool`, `null_value: str | None`, `quote_style: CsvQuoteStyle | None`, `maintain_order: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `sync_on_close: SyncOnCloseMethod | None`, `mkdir: bool`, `lazy: bool`, `engine: EngineType`, `optimizations: QueryOptFlags`) -> LazyFrame | None
   - **pql**: (path: str | Path, separator: str, include_header: bool) -> None
@@ -155,12 +156,13 @@ Each summary cell is relative to Polars.
   - **Polars**: (name: str, `offset: int`) -> LazyFrame
   - **pql**: (name: str, `order_by: TrySeq[str]`) -> Self
 
-### [+] Extra Methods (pql-only) (6)
+### [+] Extra Methods (pql-only) (7)
 
 - `fetch_all`
 - `group_by_all`
 - `inner`
 - `join_cross`
+- `shape`
 - `sql_query`
 - `union`
 
@@ -1079,7 +1081,7 @@ Each summary cell is relative to Polars.
   - **pql**: (`arr: AnyArray`, orient: Orientation) -> LazyFrame
 - `from_records`
   - **Polars**: (`data: Sequence[Any]`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `strict: bool`, `orient: Orientation | None`, `infer_schema_length: int | None`) -> DataFrame
-  - **pql**: (`data: SeqIntoVals`) -> LazyFrame
+  - **pql**: (`data: SeqIntoVals`, orient: Orientation) -> LazyFrame
 - `lit`
   - **Polars**: (value: Any, `dtype: PolarsDataType | DataTypeExpr | None`, `allow_object: bool`) -> Expr
   - **pql**: (value: PythonLiteral) -> Expr
