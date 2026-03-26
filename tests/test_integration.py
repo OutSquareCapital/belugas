@@ -7,7 +7,7 @@ import pql
 from ._utils import assert_lf_eq_pl
 
 
-# TODO: We need to implement sort and drop nulls at the expression level to be able to compare them.
+# TODO: We need to implement drop_nulls at the expression level to be able to compare them.
 def tst_funcs() -> None:
     pql_lf = pql.meta.functions()
     pl_lf = pql_lf.collect()
@@ -29,12 +29,18 @@ def tst_funcs() -> None:
         pql_lf.drop(unwanted)
         .filter(pql.col("function_name").str.contains(pql.lit("xor")))
         .group_by("function_name")
-        .agg(pql.all(exclude="function_name").unique())
+        .agg(
+            pql.all(exclude=("parameter_types", "function_name")).unique(),
+            pql.col("parameter_types").list.unique().list.sort().list.explode(),
+        )
         .sort("function_name"),
         pl_lf.lazy()
         .drop(unwanted)
         .filter(pl.col("function_name").str.contains(pl.lit("xor")))
         .group_by("function_name")
-        .agg(pl.all().exclude("function_name").unique().sort().drop_nulls())
+        .agg(
+            pl.all().exclude(("parameter_types", "function_name")).unique(),
+            pl.col("parameter_types").list.unique().list.sort().list.explode(),
+        )
         .sort("function_name"),
     )
