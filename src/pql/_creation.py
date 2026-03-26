@@ -47,5 +47,5 @@ def from_dicts(data: Sequence[Mapping[str, PythonLiteral]]) -> LazyFrame:
     return LazyFrame(sql.from_dicts(data))
 
 
-def from_records(data: SeqIntoVals) -> LazyFrame:
-    return LazyFrame(sql.from_records(data))
+def from_records(data: SeqIntoVals, orient: Orientation = "col") -> LazyFrame:
+    return LazyFrame(sql.from_records(data, orient=orient))

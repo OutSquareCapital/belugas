@@ -10,7 +10,7 @@ import pyochain as pc
 from sqlglot import exp
 
 from ._funcs import unnest
-from .typing import FrameLike, NPArrayLike
+from .typing import FrameLike, NPArrayLike, PythonLiteral
 
 if TYPE_CHECKING:
     from narwhals.typing import IntoFrame
@@ -20,7 +20,6 @@ if TYPE_CHECKING:
         IntoDict,
         IntoRel,
         Orientation,
-        PythonLiteral,
         SeqIntoVals,
     )
 
@@ -61,7 +60,7 @@ def into_relation(  # noqa: PLR0911
         case FrameLike():
             return from_df(data)
         case Sequence():
-            return from_records(data)
+            return from_records(data, orient=orient)
 
 
 _QRY_ERR = "No relation provided"
@@ -93,7 +92,9 @@ def from_dicts(data: Sequence[Mapping[str, PythonLiteral]]) -> duckdb.DuckDBPyRe
     )
 
 
-def from_records(data: SeqIntoVals) -> duckdb.DuckDBPyRelation:
+def from_records(
+    data: SeqIntoVals, orient: Orientation = "col"
+) -> duckdb.DuckDBPyRelation:
     from ._core import DuckHandler
 
     match data[0]:
@@ -101,13 +102,29 @@ def from_records(data: SeqIntoVals) -> duckdb.DuckDBPyRelation:
             vals = cast(Sequence[Mapping[str, Any]], data)  # pyright: ignore[reportExplicitAny]
             return from_dicts(vals)
         case Sequence():
-            vals = cast(Sequence[Sequence[Any]], data)  # pyright: ignore[reportExplicitAny]
-            return (
-                pc.Iter(vals)
-                .enumerate()
-                .map_star(lambda k, v: (_named(k), v))
-                .into(from_dict)
-            )
+            vals = cast(Sequence[Sequence[PythonLiteral]], data)
+
+            match orient:
+                case "col":
+                    return (
+                        pc.Iter(vals)
+                        .enumerate()
+                        .map_star(lambda k, v: (_named(k), v))
+                        .into(from_dict)
+                    )
+
+                case "row":
+                    width = len(vals[0])
+                    return (
+                        pc.Iter(range(width))
+                        .map(
+                            lambda j: (
+                                _named(j),
+                                pc.Iter(vals).map(lambda row: row[j]).collect(tuple),
+                            )
+                        )
+                        .into(from_dict)
+                    )
         case exp.Expr():
             vals = cast(Sequence[exp.Expr], data)
 

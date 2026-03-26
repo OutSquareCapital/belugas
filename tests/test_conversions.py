@@ -154,6 +154,19 @@ def test_from_seq_of_seqs() -> None:
     assert_eq(pql.from_records(seqs).collect(), pl.from_records(seqs))
 
 
+@pytest.mark.parametrize("orient", ["row", "col"])
+def test_from_seq_of_seqs_orient(orient: pql.sql.typing.Orientation) -> None:
+    seqs = ((1, 2, 3), (4, 5, 6))
+    assert_eq(
+        pql.LazyFrame(seqs, orient=orient).collect(),
+        pl.DataFrame(seqs, orient=orient),
+    )
+    assert_eq(
+        pql.from_records(seqs, orient=orient).collect(),
+        pl.from_records(seqs, orient=orient),
+    )
+
+
 def test_from_seq_of_vals() -> None:
     vals = pc.Iter(range(10)).map(lambda _: 42).collect()
     assert_eq(pql.LazyFrame(vals).collect(), pl.DataFrame(vals))

@@ -85,9 +85,11 @@ type PythonLiteral = DuckPyLit
 type NestedLiteral = DuckNestedLit
 """Python literal types (can convert into a `lit` expression)."""
 type ExprIntoVals = DuckHandler | exp.Expr
+type SeqRowVals = Sequence[PythonLiteral]
 type SeqIntoVals = (
     Sequence[exp.Expr]
     | Sequence[Mapping[str, PythonLiteral]]
+    | Sequence[SeqRowVals]
     | Sequence[PythonLiteral]
     | AnyArray
 )
