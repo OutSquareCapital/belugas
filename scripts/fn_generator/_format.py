@@ -64,13 +64,13 @@ def _expr_call(
         pl.when(py.glot_name.is_not_null())
         .then(
             formatter(
-                "glot_func(exp.{glot_name}, self.inner(){dk_args}{dk_varargs})",
+                "func(exp.{glot_name}, self.inner(){dk_args}{dk_varargs})",
                 glot_name=py.glot_name,
             )
         )
         .otherwise(
             formatter(
-                'func("{sql_name}", self.inner(){dk_args}{dk_varargs})',
+                'anon("{sql_name}", self.inner(){dk_args}{dk_varargs})',
                 sql_name=py.sql_name,
             )
         )

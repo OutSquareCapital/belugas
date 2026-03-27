@@ -73,7 +73,7 @@ from __future__ import annotations
 
 from sqlglot import exp
 
-from .._core import DuckHandler, NameSpaceHandler, func, glot_func
+from .._core import DuckHandler, NameSpaceHandler, anon, func
 
 if TYPE_CHECKING:
     from ..typing import SeqLiteral, {Pql.BLOB_LITERAL}, {Pql.INTO_EXPR_COLUMN}, {Pql.INTO_EXPR}

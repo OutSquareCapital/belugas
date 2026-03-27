@@ -10,7 +10,7 @@ from sqlglot import exp
 from pql.sql.typing import IntoExprColumn
 
 from ._code_gen import Fns
-from ._core import args_into_glot, func, into_glot
+from ._core import anon, args_into_glot, into_glot
 from ._window import FrameBound, OverBuilder, get_order, get_partition, make_spec
 
 if TYPE_CHECKING:
@@ -647,7 +647,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         Returns:
             Self
         """
-        return self._new(func("log", x, self.inner()))
+        return self._new(anon("log", x, self.inner()))
 
     def greatest(self, *args: IntoExpr) -> Self:
         """Returns the largest value.

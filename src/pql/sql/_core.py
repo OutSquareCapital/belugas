@@ -188,11 +188,11 @@ def args_into_glot(args: Iterable[IntoExpr]) -> list[exp.Expr]:
     return pc.Iter(args).filter_map(pc.Option).map(into_glot).collect(list)
 
 
-def func(name: str, *args: IntoExpr) -> exp.Expr:
-    """Create a SQL function expression."""
+def anon(name: str, *args: IntoExpr) -> exp.Expr:
+    """Create a SQL anonymous function expression."""
     return exp.Anonymous(this=name, expressions=args_into_glot(args))
 
 
-def glot_func(node: type[exp.Func], *args: IntoExpr) -> exp.Expr:
+def func(node: type[exp.Func], *args: IntoExpr) -> exp.Expr:
     """Create a concrete sqlglot function expression from positional args."""
     return node.from_arg_list(args_into_glot(args))  # pyright: ignore[reportUnknownMemberType]
