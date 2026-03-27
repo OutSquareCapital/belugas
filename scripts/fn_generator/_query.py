@@ -21,6 +21,7 @@ from ._str_builder import EMPTY_STR, format_kwords
 
 
 def run_qry(lf: pl.LazyFrame) -> pl.LazyFrame:
+    glot_name = pl.col("glot_name")
     py = PyCols()
     params = Params()
     dk = DuckCols()
@@ -48,7 +49,13 @@ def run_qry(lf: pl.LazyFrame) -> pl.LazyFrame:
                 how="left",
             )
         )
-        .pipe(lambda lf: lf.join(lf.pipe(_glot_name_map, dk), on=dk.function_name))
+        .join(_glot_name_map(), on="function_name", how="left")
+        .with_columns(
+            pl.when(pl.col("alias_root").is_not_null())
+            .then(glot_name.drop_nulls().first().over("alias_root"))
+            .otherwise(glot_name)
+            .alias("glot_name"),
+        )
         .with_columns(
             dk.function_name.alias(py.sql_name.meta.output_name()),
             dk.function_name.replace_strict(
@@ -157,6 +164,7 @@ def _alias_map(lf: pl.LazyFrame, dk: DuckCols) -> pl.LazyFrame:
         )
         .select(
             dk.function_name,
+            pl.col("alias_root"),
             pl.col("alias_group")
             .list.set_difference(pl.concat_list(dk.function_name))
             .alias("aliases"),
@@ -164,30 +172,13 @@ def _alias_map(lf: pl.LazyFrame, dk: DuckCols) -> pl.LazyFrame:
     )
 
 
-def _glot_name_map(lf: pl.LazyFrame, dk: DuckCols) -> pl.LazyFrame:
-    glot_name = pl.col("glot_name")
+def _glot_name_map() -> pl.LazyFrame:
     return (
-        lf.select(
-            dk.function_name,
-            pl.coalesce(dk.alias_of, dk.function_name).alias("alias_root"),
-        )
-        .unique()
-        .join(
-            pc.Iter(exp.FUNCTION_BY_NAME.items())
-            .map_star(lambda sql_name, fn: (sql_name.lower(), fn.__name__))
-            .into(
-                pl.LazyFrame,
-                schema={"function_name": pl.String, "glot_name": pl.String},
-            ),
-            on="function_name",
-            how="left",
-        )
-        .select(
-            dk.function_name,
-            pl.when(pl.col("alias_root").is_not_null())
-            .then(glot_name.drop_nulls().first().over("alias_root"))
-            .otherwise(glot_name)
-            .alias("glot_name"),
+        pc.Iter(exp.FUNCTION_BY_NAME.items())
+        .map_star(lambda sql_name, fn: (sql_name.lower(), fn.__name__))
+        .into(
+            pl.LazyFrame,
+            schema={"function_name": pl.String, "glot_name": pl.String},
         )
     )
 

@@ -6294,7 +6294,7 @@ class StringFns[T: Fns](NameSpaceHandler[T]):
         Returns:
             T
         """
-        return self._new(func(exp.StringToArray, self.inner(), separator))
+        return self._new(func(exp.Split, self.inner(), separator))
 
     def split_regex(
         self, regex: IntoExprColumn, options: IntoExprColumn | None = None
@@ -6517,7 +6517,7 @@ class StringFns[T: Fns](NameSpaceHandler[T]):
         Returns:
             T
         """
-        return self._new(func(exp.StringToArray, self.inner(), separator))
+        return self._new(func(exp.Split, self.inner(), separator))
 
     def to_base(
         self,
