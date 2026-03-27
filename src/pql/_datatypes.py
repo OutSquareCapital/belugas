@@ -59,23 +59,7 @@ class DataType(ABC):
 
     @ClassInstMethod
     def is_[T: DataType](self, other: T) -> TypeIs[T]:
-        """Check if this DataType is the same as another DataType.
-
-        This is a stricter check than `self == other`, as it enforces an exact
-        match of all dtype attributes for nested and/or uninitialised dtypes.
-
-        Parameters
-        ----------
-        other
-            the other Polars dtype to compare with.
-
-        Examples:
-        --------
-        >>> pl.List == pl.List(pl.Int32)
-        True
-        >>> pl.List.is_(pl.List(pl.Int32))
-        False
-        """
+        """Check if this DataType is the same as another DataType."""
         return self == other and hash(self) == hash(other)
 
     @classmethod
