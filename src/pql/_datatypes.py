@@ -4,17 +4,22 @@ from __future__ import annotations
 
 from abc import ABC
 from collections.abc import Callable, Iterable
-from dataclasses import MISSING, Field, dataclass, field, fields
+from dataclasses import dataclass, field
 from enum import Enum as PyEnum
+from functools import partial
 from typing import TYPE_CHECKING, Any, Concatenate, Self, TypeIs, final, overload
 
+import duckdb
 import pyochain as pc
-
-from . import sql
+from sqlglot import exp
 
 if TYPE_CHECKING:
-    from .sql._datatypes import DType
-    from .sql.typing import DTypeIds, EpochTimeUnit, IntoDict, StrIntoDType
+    from duckdb.sqltypes import DuckDBPyType
+
+    from .sql.typing import EpochTimeUnit, IntoDict
+
+
+build = partial(exp.DataType.build, dialect="duckdb")  # pyright: ignore[reportUnknownMemberType]
 
 
 @dataclass(slots=True)
@@ -37,25 +42,32 @@ class ClassInstMethod[**P, R]:
 class DataType(ABC):
     """Base class for data types."""
 
-    raw: sql.SqlType
+    raw: exp.DataType
 
-    @staticmethod
-    def __from_sql__(dtype: sql.SqlType) -> DataType:
-        """Recursively convert a raw SQL type to a PQL DataType using the strategy pattern.
+    @classmethod
+    def from_duckdb(cls, dtype: DuckDBPyType) -> DataType:
+        """Convert a DuckDBPyType to a PQL DataType."""
+        return cls.from_sql(build(str(dtype)))
 
-        This is not meant to be called directly by the user, and is only used internally by the schema property in `LazyFrame`.
-        """
-        return (
-            NESTED_MAP.get_item(dtype.type_id)
-            .map(lambda constructor: constructor.__from_raw__(dtype))
-            .unwrap_or_else(
-                lambda: (
-                    NON_NESTED_MAP.get_item(dtype.type_id)
-                    .ok_or_else(lambda: f"Unsupported data type: {dtype}")
-                    .unwrap()
+    @classmethod
+    def from_sql(cls, dtype: exp.DataType) -> DataType:
+        """Convert a sqlglot DataType to a PQL DataType."""
+        dt_enum: exp.DType = dtype.this  # pyright: ignore[reportAny]
+        match dt_enum:
+            case exp.DType.ARRAY if not dtype.args.get("values"):
+                return List.__from_raw__(dtype)
+            case _:
+                return (
+                    NESTED_MAP.get_item(dt_enum)
+                    .map(lambda constructor: constructor.__from_raw__(dtype))
+                    .unwrap_or_else(
+                        lambda: (
+                            NON_NESTED_MAP.get_item(dt_enum)
+                            .ok_or_else(lambda: f"Unsupported data type: {dtype}")
+                            .unwrap()
+                        )
+                    )
                 )
-            )
-        )
 
     @ClassInstMethod
     def is_[T: DataType](self, other: T) -> TypeIs[T]:
@@ -102,6 +114,14 @@ class DataType(ABC):
         """Check whether the data type is a nested type."""
         return issubclass(cls, NestedType)
 
+    def to_sql(self) -> str:
+        """Convert this DataType to a SQL string."""
+        return self.raw.sql(dialect="duckdb")
+
+    def to_duckdb(self) -> DuckDBPyType:
+        """Convert this DataType to a DuckDBPyType."""
+        return duckdb.dtype(self.to_sql())
+
 
 @dataclass(slots=True, init=False, unsafe_hash=True)
 class StringType(DataType):
@@ -144,66 +164,54 @@ class NestedType(DataType):
 
 
 @dataclass(slots=True, init=False, unsafe_hash=True)
-class ComplexDataType[T: sql.SqlType](DataType):
-    """Base class for complex data types."""
-
-    raw: T
+class ComplexDataType(DataType):
+    """Base class for complex data types that need reverse-construction from parsed sqlglot AST."""
 
     @classmethod
-    def __from_raw__(cls, raw: T) -> DataType:
-        """Create a new instance of the complex data type from the raw SQL type.
-
-        This is not meant to be called directly by the user, and is only used internally by the strategy pattern.
-
-        Populate the dataclass fields with their default values by iterating over them, since we bypass the `__init__()` method.
-        """
-
-        def _set_attr(dataclass_field: Field[object]) -> None:
-            if dataclass_field.default_factory is not MISSING:
-                setattr(
-                    instance, dataclass_field.name, dataclass_field.default_factory()
-                )
-
+    def __from_raw__(cls, raw: exp.DataType) -> DataType:
         instance = cls.__new__(cls)
-        pc.Iter(fields(cls)).for_each(_set_attr)
         instance.raw = raw
+        instance._init_cache()
         return instance
+
+    def _init_cache(self) -> None:
+        """Initialize lazy caches for nested type properties. Override in subclasses."""
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Time(TemporalType):
-    raw: DType = field(init=False, default=sql.ScalarType.TIME)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.TIME))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class TimeTZ(TemporalType):
-    raw: DType = field(init=False, default=sql.ScalarType.TIME_TZ)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.TIMETZ))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Duration(TemporalType):
-    raw: DType = field(init=False, default=sql.ScalarType.INTERVAL)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.INTERVAL))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Date(TemporalType):
-    raw: DType = field(init=False, default=sql.ScalarType.DATE)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.DATE))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class DatetimeTZ(TemporalType):
-    raw: DType = sql.ScalarType.TIMESTAMP_TZ
+    raw: exp.DataType = field(init=False, default=build(exp.DType.TIMESTAMPTZ))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Datetime(TemporalType):
-    raw: sql.DType
+    raw: exp.DataType
     time_unit: EpochTimeUnit
 
     def __init__(self, time_unit: EpochTimeUnit = "ns") -> None:
@@ -216,224 +224,247 @@ class Datetime(TemporalType):
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Boolean(DataType):
-    raw: DType = field(init=False, default=sql.ScalarType.BOOLEAN)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.BOOLEAN))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Number(NumericType):
-    raw: DType = field(init=False, default=sql.ScalarType.BIGNUM)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.BIGNUM))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class UUID(NumericType):
-    raw: DType = field(init=False, default=sql.ScalarType.UUID)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.UUID))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Float32(FloatType):
-    raw: DType = field(init=False, default=sql.ScalarType.FLOAT)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.FLOAT))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Float64(FloatType):
-    raw: DType = field(init=False, default=sql.ScalarType.DOUBLE)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.DOUBLE))
 
 
 @final
 @dataclass(slots=True, init=False, unsafe_hash=True)
-class Decimal(NumericType, ComplexDataType[sql.DecimalType]):
+class Decimal(NumericType, ComplexDataType):
     def __init__(self, precision: int = 18, scale: int = 0) -> None:
-        self.raw = sql.DecimalType.new(precision, scale)
+        self.raw = exp.DataType(
+            this=exp.DType.DECIMAL,
+            expressions=[
+                exp.DataTypeParam(this=exp.Literal.number(precision)),  # pyright: ignore[reportUnknownMemberType]
+                exp.DataTypeParam(this=exp.Literal.number(scale)),  # pyright: ignore[reportUnknownMemberType]
+            ],
+        )
 
     @property
     def precision(self) -> int:
-        return self.raw.precision.value
+        return int(self.raw.expressions[0].this.this)  # pyright: ignore[reportAny]
 
     @property
     def scale(self) -> int:
-        return self.raw.scale.value
+        return int(self.raw.expressions[1].this.this)  # pyright: ignore[reportAny]
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Int8(SignedIntegerType):
-    raw: DType = field(init=False, default=sql.ScalarType.TINYINT)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.TINYINT))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Int16(SignedIntegerType):
-    raw: DType = field(init=False, default=sql.ScalarType.SMALLINT)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.SMALLINT))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Int32(SignedIntegerType):
-    raw: DType = field(init=False, default=sql.ScalarType.INTEGER)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.INT))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Int64(SignedIntegerType):
-    raw: DType = field(init=False, default=sql.ScalarType.BIGINT)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.BIGINT))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Int128(SignedIntegerType):
-    raw: DType = field(init=False, default=sql.ScalarType.HUGEINT)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.INT128))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class UInt8(UnsignedIntegerType):
-    raw: DType = field(init=False, default=sql.ScalarType.UTINYINT)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.UTINYINT))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class UInt16(UnsignedIntegerType):
-    raw: DType = field(init=False, default=sql.ScalarType.USMALLINT)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.USMALLINT))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class UInt32(UnsignedIntegerType):
-    raw: DType = field(init=False, default=sql.ScalarType.UINTEGER)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.UINT))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class UInt64(UnsignedIntegerType):
-    raw: DType = field(init=False, default=sql.ScalarType.UBIGINT)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.UBIGINT))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class UInt128(UnsignedIntegerType):
-    raw: DType = field(init=False, default=sql.ScalarType.UHUGEINT)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.UINT128))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Binary(DataType):
-    raw: DType = field(init=False, default=sql.ScalarType.BLOB)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.BLOB))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Geometry(DataType):
-    raw: DType = field(init=False, default=sql.ScalarType.GEOMETRY)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.GEOMETRY))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class String(StringType):
-    raw: DType = field(init=False, default=sql.ScalarType.VARCHAR)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.VARCHAR))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Json(StringType):
-    raw: DType = field(init=False, default=sql.ScalarType.JSON)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.JSON))
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class BitString(StringType):
-    raw: DType = field(init=False, default=sql.ScalarType.BIT)
+    raw: exp.DataType = field(init=False, default=build(exp.DType.BIT))
 
 
 @final
 @dataclass(slots=True, init=False, unsafe_hash=True)
-class Enum(StringType, ComplexDataType[sql.EnumType]):
+class Enum(StringType, ComplexDataType):
     def __init__(self, categories: Iterable[str] | type[PyEnum]) -> None:
-        self.raw = sql.EnumType.new(categories)
+        match categories:
+            case type():
+                values: pc.Iter[str] = pc.Iter(categories).map(lambda i: i.value)  # pyright: ignore[reportAny]
+            case Iterable():
+                values = pc.Iter(categories)
+
+        self.raw = exp.DataType(
+            this=exp.DType.ENUM,
+            expressions=values.map(exp.Literal.string).collect(list),  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+        )
 
     @property
-    def categories(self) -> pc.Vec[str]:
-        return self.raw.child.values
+    def categories(self) -> pc.Seq[str]:
+        return (
+            pc.Iter(self.raw.expressions).map(lambda lit: lit.this).collect()  # pyright: ignore[reportAny]
+        )
 
 
 @final
 @dataclass(slots=True, init=False, unsafe_hash=True)
-class Union(NestedType, ComplexDataType[sql.UnionType]):
-    _fields: pc.Option[pc.Seq[DataType]] = field(default_factory=lambda: pc.NONE)
-
+class Union(NestedType, ComplexDataType):
     def __init__(self, fields: Iterable[DataType]) -> None:
-        self.raw = (
-            pc.Iter(fields).map(lambda f: f.raw.to_duckdb()).into(sql.UnionType.new)
+        exprs = (
+            pc.Iter(fields)
+            .enumerate()
+            .map_star(
+                lambda i, f: exp.ColumnDef(this=exp.to_identifier(f"v{i}"), kind=f.raw)
+            )
+            .collect(list)
         )
+        self.raw = exp.DataType(this=exp.DType.UNION, expressions=exprs, nested=True)
 
     @property
     def fields(self) -> pc.Seq[DataType]:
-        if self._fields.is_none():
-            self._fields = pc.Some(
-                self.raw.fields.iter()
-                .map(lambda field: DataType.__from_sql__(field.dtype))
-                .collect()
-            )
-        return self._fields.unwrap()
+        return (
+            pc.Iter(self.raw.expressions)
+            .map(lambda col_def: self.from_sql(col_def.kind))  # pyright: ignore[reportAny]
+            .collect()
+        )
 
 
 @final
 @dataclass(slots=True, init=False, unsafe_hash=True)
-class Map(NestedType, ComplexDataType[sql.MapType]):
-    _key: pc.Option[DataType] = field(default_factory=lambda: pc.NONE)
-    _value: pc.Option[DataType] = field(default_factory=lambda: pc.NONE)
-
+class Map(NestedType, ComplexDataType):
     def __init__(self, key: DataType, value: DataType) -> None:
-        self.raw = sql.MapType.new(key.raw.to_duckdb(), value.raw.to_duckdb())
-
-    @property
-    def key(self) -> DataType:
-        if self._key.is_none():
-            self._key = pc.Some(DataType.__from_sql__(self.raw.key.dtype))
-        return self._key.unwrap()
-
-    @property
-    def value(self) -> DataType:
-        if self._value.is_none():
-            self._value = pc.Some(DataType.__from_sql__(self.raw.value.dtype))
-        return self._value.unwrap()
-
-
-@final
-@dataclass(slots=True, init=False, unsafe_hash=True)
-class Struct(NestedType, ComplexDataType[sql.StructType]):
-    _fields: pc.Option[pc.Dict[str, DataType]] = field(default_factory=lambda: pc.NONE)
-
-    def __init__(self, fields: IntoDict[str, DataType]) -> None:
-        self.raw = (
-            pc.Dict(fields)
-            .items()
-            .iter()
-            .map_star(lambda name, col: (name, col.raw.to_duckdb()))
-            .into(sql.StructType.new)
+        self.raw = exp.DataType(
+            this=exp.DType.MAP, expressions=[key.raw, value.raw], nested=True
         )
 
     @property
-    def fields(self) -> pc.Dict[str, DataType]:
-        if self._fields.is_none():
-            self._fields = pc.Some(
-                self.raw.fields.iter()
-                .map(lambda field: (field.name, DataType.__from_sql__(field.dtype)))
-                .collect(pc.Dict)
-            )
-        return self._fields.unwrap()
+    def key(self) -> DataType:
+        return self.from_sql(self.raw.expressions[0])  # pyright: ignore[reportAny]
+
+    @property
+    def value(self) -> DataType:
+        return self.from_sql(self.raw.expressions[1])  # pyright: ignore[reportAny]
 
 
 @final
 @dataclass(slots=True, init=False, unsafe_hash=True)
-class Array(NestedType, ComplexDataType[sql.ArrayType]):
-    _inner: pc.Option[DataType] = field(default_factory=lambda: pc.NONE)
+class Struct(NestedType, ComplexDataType):
+    def __init__(self, fields: IntoDict[str, DataType]) -> None:
+        exprs = (
+            pc.Dict(fields)
+            .items()
+            .iter()
+            .map_star(
+                lambda name, col: exp.ColumnDef(
+                    this=exp.to_identifier(name), kind=col.raw
+                )
+            )
+            .collect(list)
+        )
+        self.raw = exp.DataType(this=exp.DType.STRUCT, expressions=exprs, nested=True)
 
+    @property
+    def fields(self) -> pc.Dict[str, DataType]:
+        return (
+            pc.Iter(self.raw.expressions)
+            .map(
+                lambda col_def: (  # pyright: ignore[reportAny]
+                    col_def.this.this,  # pyright: ignore[reportAny]
+                    self.from_sql(col_def.kind),  # pyright: ignore[reportAny]
+                )
+            )
+            .collect(pc.Dict)
+        )
+
+
+@final
+@dataclass(slots=True, init=False, unsafe_hash=True)
+class Array(NestedType, ComplexDataType):
     def __init__(self, inner: DataType, size: int = 1) -> None:
-        self.raw = sql.ArrayType.new(inner.raw.to_duckdb(), size)
+        self.raw = exp.DataType(
+            this=exp.DType.ARRAY,
+            expressions=[inner.raw],
+            values=[exp.Literal.number(size)],  # pyright: ignore[reportUnknownMemberType]
+            nested=True,
+        )
 
     def with_dim(self, size: int) -> Self:
         """Add another level of nesting to the array."""
@@ -441,83 +472,82 @@ class Array(NestedType, ComplexDataType[sql.ArrayType]):
 
     @property
     def inner(self) -> DataType:
-        if self._inner.is_none():
-            self._inner = pc.Some(DataType.__from_sql__(self.raw.child.dtype))
-        return self._inner.unwrap()
+        return self.from_sql(self.raw.expressions[0])  # pyright: ignore[reportAny]
 
     @property
     def shape(self) -> int:
-        return self.raw.size.value
+        values = self.raw.args.get("values")
+        return int(values[0].this) if values else 1  # pyright: ignore[reportAny]
 
 
 @final
 @dataclass(slots=True, init=False, unsafe_hash=True)
-class List(NestedType, ComplexDataType[sql.ListType]):
-    _inner: pc.Option[DataType] = field(default_factory=lambda: pc.NONE)
-
+class List(NestedType, ComplexDataType):
     def __init__(self, inner: DataType) -> None:
-        self.raw = sql.ListType.new(inner.raw.to_duckdb())
+        self.raw = exp.DataType(
+            this=exp.DType.ARRAY, expressions=[inner.raw], nested=True
+        )
 
     @property
     def inner(self) -> DataType:
-        if self._inner.is_none():
-            self._inner = pc.Some(DataType.__from_sql__(self.raw.child.dtype))
-        return self._inner.unwrap()
+        return self.from_sql(self.raw.expressions[0])  # pyright: ignore[reportAny]
 
 
-PRECISION_MAP: pc.Dict[EpochTimeUnit, sql.DType] = pc.Dict.from_ref(
+PRECISION_MAP: pc.Dict[EpochTimeUnit, exp.DataType] = pc.Dict.from_ref(
     {
-        "s": sql.ScalarType.TIMESTAMP_S,
-        "ms": sql.ScalarType.TIMESTAMP_MS,
-        "us": sql.ScalarType.TIMESTAMP,
-        "ns": sql.ScalarType.TIMESTAMP_NS,
+        "s": build(exp.DType.TIMESTAMP_S),
+        "ms": build(exp.DType.TIMESTAMP_MS),
+        "us": build(exp.DType.TIMESTAMP),
+        "ns": build(exp.DType.TIMESTAMP_NS),
     }
 )
 
 
-NESTED_MAP: pc.Dict[DTypeIds, type[ComplexDataType[Any]]] = pc.Dict.from_ref(  # pyright: ignore[reportExplicitAny]
+NESTED_MAP: pc.Dict[exp.DType, type[ComplexDataType]] = pc.Dict.from_ref(
     {
-        "list": List,
-        "struct": Struct,
-        "map": Map,
-        "union": Union,
-        "array": Array,
-        "enum": Enum,
-        "decimal": Decimal,
+        exp.DType.LIST: List,
+        exp.DType.ARRAY: Array,
+        exp.DType.STRUCT: Struct,
+        exp.DType.MAP: Map,
+        exp.DType.UNION: Union,
+        exp.DType.ENUM: Enum,
+        exp.DType.DECIMAL: Decimal,
     }
 )
 
-NON_NESTED_MAP: pc.Dict[StrIntoDType, DataType] = pc.Dict.from_ref(
+NON_NESTED_MAP: pc.Dict[exp.DType, DataType] = pc.Dict.from_ref(
     {
-        "bigint": Int64(),
-        "bit": BitString(),
-        "bignum": Number(),
-        "blob": Binary(),
-        "boolean": Boolean(),
-        "date": Date(),
-        "double": Float64(),
-        "float": Float32(),
-        "hugeint": Int128(),
-        "geometry": Geometry(),
-        "integer": Int32(),
-        "interval": Duration(),
-        "json": Json(),
-        "smallint": Int16(),
-        "timestamp_s": Datetime("s"),
-        "timestamp_ms": Datetime("ms"),
-        "timestamp": Datetime(),
-        "timestamp_ns": Datetime("ns"),
-        "timestamp with time zone": DatetimeTZ(),
-        "time": Time(),
-        "time_ns": Time(),
-        "time with time zone": TimeTZ(),
-        "tinyint": Int8(),
-        "uuid": UUID(),
-        "uhugeint": UInt128(),
-        "ubigint": UInt64(),
-        "uinteger": UInt32(),
-        "usmallint": UInt16(),
-        "utinyint": UInt8(),
-        "varchar": String(),
+        exp.DType.BIGINT: Int64(),
+        exp.DType.BIT: BitString(),
+        exp.DType.BIGNUM: Number(),
+        exp.DType.VARBINARY: Binary(),
+        exp.DType.BOOLEAN: Boolean(),
+        exp.DType.DATE: Date(),
+        exp.DType.DOUBLE: Float64(),
+        exp.DType.FLOAT: Float32(),
+        exp.DType.INT128: Int128(),
+        exp.DType.GEOMETRY: Geometry(),
+        exp.DType.INT: Int32(),
+        exp.DType.INTERVAL: Duration(),
+        exp.DType.JSON: Json(),
+        exp.DType.SMALLINT: Int16(),
+        exp.DType.TIMESTAMP_S: Datetime("s"),
+        exp.DType.TIMESTAMP_MS: Datetime("ms"),
+        exp.DType.TIMESTAMP: Datetime(),
+        exp.DType.TIMESTAMPNTZ: Datetime(),
+        exp.DType.TIMESTAMP_NS: Datetime("ns"),
+        exp.DType.TIMESTAMPTZ: DatetimeTZ(),
+        exp.DType.TIME: Time(),
+        exp.DType.TIME_NS: Time(),
+        exp.DType.TIMETZ: TimeTZ(),
+        exp.DType.TINYINT: Int8(),
+        exp.DType.UUID: UUID(),
+        exp.DType.UINT128: UInt128(),
+        exp.DType.UBIGINT: UInt64(),
+        exp.DType.UINT: UInt32(),
+        exp.DType.USMALLINT: UInt16(),
+        exp.DType.UTINYINT: UInt8(),
+        exp.DType.TEXT: String(),
+        exp.DType.VARIANT: Number(),
     }
 )

@@ -5,18 +5,6 @@ from duckdb import table as from_table, table_function as from_table_function
 from . import typing, utils
 from ._code_gen import meta
 from ._core import CoreHandler
-from ._datatypes import (
-    ArrayType,
-    DecimalType,
-    DType,
-    EnumType,
-    ListType,
-    MapType,
-    ScalarType,
-    SqlType,
-    StructType,
-    UnionType,
-)
 from ._expr import SqlExpr
 from ._funcs import (
     all,
@@ -49,24 +37,14 @@ from ._when import ChainedThen, ChainedWhen, Then, When, when
 from ._window import BoundsValues, NullsClause, SortClause, rolling_agg
 
 __all__ = [
-    "ArrayType",
     "BoundsValues",
     "ChainedThen",
     "ChainedWhen",
     "CoreHandler",
-    "DType",
-    "DecimalType",
-    "EnumType",
-    "ListType",
-    "MapType",
     "NullsClause",
-    "ScalarType",
     "SortClause",
     "SqlExpr",
-    "SqlType",
-    "StructType",
     "Then",
-    "UnionType",
     "When",
     "all",
     "all_horizontal",
