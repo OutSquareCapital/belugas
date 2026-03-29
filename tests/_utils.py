@@ -8,11 +8,13 @@ import polars as pl
 import pyochain as pc
 from polars.testing import assert_frame_equal
 from pyochain.traits import PyoIterable
+from rich.traceback import install
 
 import pql
 
 from ._data import sample_df
 
+_ = install(show_locals=True)
 type PlFn = Callable[..., pl.Expr]
 type PqlFn = Callable[..., pql.Expr]
 
