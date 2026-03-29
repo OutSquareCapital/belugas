@@ -28,6 +28,14 @@ def _extract_json_with_path(expr: type[exp.Expr]) -> partial[Expr]:
 _PATCHED_FROM_GLOBAL = {
     "HEX": _bind_dialect(parser.build_hex),  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
     "TO_HEX": _bind_dialect(parser.build_hex),  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]}
+    "LOG": _bind_dialect(parser.build_logarithm),  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
+    "CONCAT": _bind_dialect(
+        lambda args, dialect: exp.Concat(
+            expressions=args,
+            safe=not dialect.STRICT_STRING_CONCAT,
+            coalesce=dialect.CONCAT_COALESCE,
+        )
+    ),
 }
 _PATCHED_FROM_DUCKDB = {
     "JSON_EXTRACT_PATH": _extract_json_with_path(exp.JSONExtract),

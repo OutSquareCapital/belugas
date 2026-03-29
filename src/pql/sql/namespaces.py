@@ -19,7 +19,7 @@ from ._code_gen import (
     StringFns,
     StructFns,
 )
-from ._core import anon
+from ._core import func
 from ._expr import SqlExpr
 from ._funcs import coalesce, element, into_expr, lit
 from ._when import when
@@ -60,7 +60,7 @@ class SqlExprStringNameSpace(StringFns[SqlExpr]):
         Returns:
             SqlExpr
         """
-        return self._new(anon("strftime", self.inner(), format_arg))
+        return self._new(func("STRFTIME", self.inner(), format_arg))
 
     def strptime(self, format_arg: IntoExprColumn | list[str]) -> SqlExpr:
         """Converts the `string` text to timestamp according to the format string.
@@ -77,7 +77,7 @@ class SqlExprStringNameSpace(StringFns[SqlExpr]):
         Returns:
             SqlExpr
         """
-        return self._new(anon("strptime", self.inner(), format_arg))
+        return self._new(func("STRPTIME", self.inner(), format_arg))
 
     def concat(self, *args: IntoExpr) -> SqlExpr:
         """Concatenates multiple strings or lists.
@@ -94,7 +94,7 @@ class SqlExprStringNameSpace(StringFns[SqlExpr]):
         Returns:
             SqlExpr
         """
-        return self._new(anon("concat", self.inner(), *args))
+        return self._new(func("CONCAT", self.inner(), *args))
 
     def to_titlecase(self) -> SqlExpr:
         """Convert to title case."""
@@ -234,7 +234,7 @@ class SqlExprDateTimeNameSpace(DateTimeFns[SqlExpr]):
         Returns:
             T
         """
-        return self._new(anon("date_trunc", precision, self.inner()))
+        return self._new(func("DATE_TRUNC", precision, self.inner()))
 
     def month_start(self) -> SqlExpr:
         """Get the first day of the month."""
@@ -313,7 +313,7 @@ class SqlExprListNameSpace(ListFns[SqlExpr]):
         """
         from ._funcs import fn_once
 
-        return self._new(anon("list_filter", self.inner(), fn_once(lambda_arg)))
+        return self._new(func("LIST_FILTER", self.inner(), fn_once(lambda_arg)))
 
     def join(self, separator: IntoExprColumn, *, ignore_nulls: bool = True) -> SqlExpr:
         """Join string values in each list with a separator."""
@@ -373,7 +373,7 @@ class SqlExprArrayNameSpace(ArrayFns[SqlExpr]):
         """
         from ._funcs import fn_once
 
-        return self._new(anon("array_filter", self.inner(), fn_once(lambda_arg)))
+        return self._new(func("ARRAY_FILTER", self.inner(), fn_once(lambda_arg)))
 
     def join(self, separator: IntoExprColumn, *, ignore_nulls: bool = True) -> SqlExpr:
         """Join string values in each array with a separator."""
