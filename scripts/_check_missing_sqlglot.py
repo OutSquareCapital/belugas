@@ -66,7 +66,7 @@ def check_missing_sqlglot() -> None:
             ),
         )
         .sort(function_name)
-        .filter(pl.col("absent_aliases").list.len().gt(0))
+        .filter(pl.col("present_aliases").list.len().gt(0))
         .explode("present_aliases")
         .collect()
         .show(None)
