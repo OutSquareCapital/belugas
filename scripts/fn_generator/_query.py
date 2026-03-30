@@ -148,7 +148,6 @@ def _alias_map(lf: pl.LazyFrame, dk: DuckCols) -> pl.LazyFrame:
     return (
         lf.select(
             dk.function_name,
-            dk.alias_of,
             pl.coalesce(dk.alias_of, dk.function_name).alias("alias_root"),
         )
         .pipe(
@@ -162,7 +161,6 @@ def _alias_map(lf: pl.LazyFrame, dk: DuckCols) -> pl.LazyFrame:
         )
         .select(
             dk.function_name,
-            pl.col("alias_root"),
             pl.col("alias_group")
             .list.set_difference(pl.concat_list(dk.function_name))
             .alias("aliases"),
