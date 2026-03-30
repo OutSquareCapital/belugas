@@ -2301,31 +2301,6 @@ class Fns(DuckHandler):
         """
         return self._new(anon("product", self.inner()))
 
-    def quantile(
-        self, pos: IntoExprColumn | SeqLiteral[float] | float | None = None
-    ) -> Self:
-        """Returns the exact quantile number between 0 and 1 .
-
-        If pos is a LIST of FLOATs, then the result is a LIST of the corresponding exact quantiles.
-
-        **SQL name**: *quantile*
-
-        See Also:
-            quantile_disc
-
-        Args:
-            pos (IntoExprColumn | SeqLiteral[float] | float | None): `DOUBLE | DOUBLE[]` expression
-
-        Examples:
-            ```sql
-            quantile_disc(x, 0.5)
-            ```
-
-        Returns:
-            Self
-        """
-        return self._new(func("QUANTILE", self.inner(), pos))
-
     def quantile_cont(self, pos: IntoExprColumn | SeqLiteral[float] | float) -> Self:
         """Returns the interpolated quantile number between 0 and 1 .
 
@@ -2354,9 +2329,6 @@ class Fns(DuckHandler):
         If pos is a LIST of FLOATs, then the result is a LIST of the corresponding exact quantiles.
 
         **SQL name**: *quantile_disc*
-
-        See Also:
-            quantile
 
         Args:
             pos (IntoExprColumn | SeqLiteral[float] | float | None): `DOUBLE | DOUBLE[]` expression
