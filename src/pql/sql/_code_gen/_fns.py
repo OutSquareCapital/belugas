@@ -7324,7 +7324,7 @@ class DateTimeFns[T: Fns](NameSpaceHandler[T]):
         """
         return self._new(anon("make_timestamp_ns", self.inner()))
 
-    def make_timestamptz(
+    def make_timestamptz(  # noqa: PLR0917
         self,
         col1: IntoExprColumn | int | None = None,
         col2: IntoExprColumn | int | None = None,
@@ -9482,7 +9482,7 @@ class GeoSpatialFns[T: Fns](NameSpaceHandler[T]):
     __slots__: ClassVar[Iterable[str]] = ()
     """Mixin providing auto-generated DuckDB geospatial functions as methods."""
 
-    def affine(
+    def affine(  # noqa: PLR0917
         self,
         a: IntoExprColumn | float,
         b: IntoExprColumn | float,
