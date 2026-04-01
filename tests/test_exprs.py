@@ -6,7 +6,7 @@ import polars as pl
 import pytest
 
 import pql
-from pql import _typing as t
+from pql import _typing as t  # noqa: PLC2701
 
 from ._utils import assert_eq, assert_eq_pl, on_simple_fn
 
