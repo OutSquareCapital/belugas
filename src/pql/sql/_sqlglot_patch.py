@@ -49,29 +49,29 @@ _PATCHED_FROM_DUCKDB: FuncRegistery = {
     "REGEXP_EXTRACT_ALL": _regexp_extract(exp.RegexpExtractAll),
 }
 _MISSING_FROM_GLOT: FuncRegistery = {
-    "ARBITRARY": exp.First.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "ARRAY_APPLY": exp.Transform.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "ARRAY_HAS_ANY": exp.ArrayOverlaps.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "ARRAY_INDEXOF": exp.ArrayPosition.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "ARRAY_REDUCE": exp.Reduce.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "ARRAY_TRANSFORM": exp.Transform.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "BASE64": exp.ToBase64.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "BIN": exp.ToBinary.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "FROM_HEX": exp.Unhex.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "LIST_APPLY": exp.Transform.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
+    "ARBITRARY": exp.First.from_arg_list,
+    "ARRAY_APPLY": exp.Transform.from_arg_list,
+    "ARRAY_HAS_ANY": exp.ArrayOverlaps.from_arg_list,
+    "ARRAY_INDEXOF": exp.ArrayPosition.from_arg_list,
+    "ARRAY_REDUCE": exp.Reduce.from_arg_list,
+    "ARRAY_TRANSFORM": exp.Transform.from_arg_list,
+    "BASE64": exp.ToBase64.from_arg_list,
+    "BIN": exp.ToBinary.from_arg_list,
+    "FROM_HEX": exp.Unhex.from_arg_list,
+    "LIST_APPLY": exp.Transform.from_arg_list,
     "LIST_CAT": _bind_dialect(parser.build_array_concat),  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
-    "LIST_DISTINCT": exp.ArrayDistinct.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "LIST_INDEXOF": exp.ArrayPosition.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
+    "LIST_DISTINCT": exp.ArrayDistinct.from_arg_list,
+    "LIST_INDEXOF": exp.ArrayPosition.from_arg_list,
     "LIST_INTERSECT": lambda args: exp.ArrayIntersect(expressions=args),  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]
     "LIST_PACK": lambda args: exp.Array(expressions=args),  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]
-    "LIST_POSITION": exp.ArrayPosition.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "LIST_REDUCE": exp.Reduce.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "LIST_SLICE": exp.ArraySlice.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "MEAN": exp.Avg.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "ORD": exp.Unicode.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "POSITION": exp.StrPosition.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "REGEXP_SPLIT_TO_ARRAY": exp.RegexpSplit.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
-    "SUFFIX": exp.EndsWith.from_arg_list,  # pyright: ignore[reportUnknownMemberType]
+    "LIST_POSITION": exp.ArrayPosition.from_arg_list,
+    "LIST_REDUCE": exp.Reduce.from_arg_list,
+    "LIST_SLICE": exp.ArraySlice.from_arg_list,
+    "MEAN": exp.Avg.from_arg_list,
+    "ORD": exp.Unicode.from_arg_list,
+    "POSITION": exp.StrPosition.from_arg_list,
+    "REGEXP_SPLIT_TO_ARRAY": exp.RegexpSplit.from_arg_list,
+    "SUFFIX": exp.EndsWith.from_arg_list,
 }
 DUCKDB_FUNCTIONS: FuncRegistery = {
     **DuckDBParser.FUNCTIONS,  # pyright: ignore[reportUnknownMemberType]$

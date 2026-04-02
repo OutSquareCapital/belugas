@@ -6,7 +6,6 @@ from abc import ABC
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from enum import Enum as PyEnum
-from functools import partial
 from typing import TYPE_CHECKING, Any, Concatenate, Self, TypeIs, final, overload
 
 import pyochain as pc
@@ -16,9 +15,6 @@ if TYPE_CHECKING:
     from duckdb.sqltypes import DuckDBPyType
 
     from .sql.typing import EpochTimeUnit, IntoDict
-
-
-build = partial(exp.DataType.build, dialect="duckdb")  # pyright: ignore[reportUnknownMemberType]
 
 
 @dataclass(slots=True)
@@ -53,7 +49,7 @@ class DataType(ABC):
         Returns:
             DataType: The corresponding PQL DataType.
         """
-        return cls.from_sql(build(str(dtype)))
+        return cls.from_sql(exp.DataType.build(str(dtype), dialect="duckdb"))
 
     @classmethod
     def from_sql(cls, dtype: exp.DataType) -> DataType:
@@ -227,31 +223,31 @@ class ComplexDataType(DataType):
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Time(TemporalType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.TIME))
+    raw: exp.DataType = field(init=False, default=exp.DType.TIME.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class TimeTZ(TemporalType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.TIMETZ))
+    raw: exp.DataType = field(init=False, default=exp.DType.TIMETZ.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Duration(TemporalType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.INTERVAL))
+    raw: exp.DataType = field(init=False, default=exp.DType.INTERVAL.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Date(TemporalType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.DATE))
+    raw: exp.DataType = field(init=False, default=exp.DType.DATE.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class DatetimeTZ(TemporalType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.TIMESTAMPTZ))
+    raw: exp.DataType = field(init=False, default=exp.DType.TIMESTAMPTZ.into_expr())
 
 
 @final
@@ -270,31 +266,31 @@ class Datetime(TemporalType):
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Boolean(DataType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.BOOLEAN))
+    raw: exp.DataType = field(init=False, default=exp.DType.BOOLEAN.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Number(NumericType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.BIGNUM))
+    raw: exp.DataType = field(init=False, default=exp.DType.BIGNUM.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class UUID(NumericType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.UUID))
+    raw: exp.DataType = field(init=False, default=exp.DType.UUID.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Float32(FloatType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.FLOAT))
+    raw: exp.DataType = field(init=False, default=exp.DType.FLOAT.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Float64(FloatType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.DOUBLE))
+    raw: exp.DataType = field(init=False, default=exp.DType.DOUBLE.into_expr())
 
 
 @final
@@ -304,8 +300,8 @@ class Decimal(NumericType, ComplexDataType):
         self.raw = exp.DataType(
             this=exp.DType.DECIMAL,
             expressions=[
-                exp.DataTypeParam(this=exp.Literal.number(precision)),  # pyright: ignore[reportUnknownMemberType]
-                exp.DataTypeParam(this=exp.Literal.number(scale)),  # pyright: ignore[reportUnknownMemberType]
+                exp.DataTypeParam(this=exp.Literal.number(precision)),
+                exp.DataTypeParam(this=exp.Literal.number(scale)),
             ],
         )
 
@@ -321,91 +317,91 @@ class Decimal(NumericType, ComplexDataType):
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Int8(SignedIntegerType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.TINYINT))
+    raw: exp.DataType = field(init=False, default=exp.DType.TINYINT.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Int16(SignedIntegerType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.SMALLINT))
+    raw: exp.DataType = field(init=False, default=exp.DType.SMALLINT.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Int32(SignedIntegerType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.INT))
+    raw: exp.DataType = field(init=False, default=exp.DType.INT.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Int64(SignedIntegerType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.BIGINT))
+    raw: exp.DataType = field(init=False, default=exp.DType.BIGINT.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Int128(SignedIntegerType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.INT128))
+    raw: exp.DataType = field(init=False, default=exp.DType.INT128.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class UInt8(UnsignedIntegerType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.UTINYINT))
+    raw: exp.DataType = field(init=False, default=exp.DType.UTINYINT.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class UInt16(UnsignedIntegerType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.USMALLINT))
+    raw: exp.DataType = field(init=False, default=exp.DType.USMALLINT.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class UInt32(UnsignedIntegerType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.UINT))
+    raw: exp.DataType = field(init=False, default=exp.DType.UINT.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class UInt64(UnsignedIntegerType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.UBIGINT))
+    raw: exp.DataType = field(init=False, default=exp.DType.UBIGINT.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class UInt128(UnsignedIntegerType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.UINT128))
+    raw: exp.DataType = field(init=False, default=exp.DType.UINT128.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Binary(DataType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.BLOB))
+    raw: exp.DataType = field(init=False, default=exp.DType.BLOB.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Geometry(DataType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.GEOMETRY))
+    raw: exp.DataType = field(init=False, default=exp.DType.GEOMETRY.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class String(StringType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.VARCHAR))
+    raw: exp.DataType = field(init=False, default=exp.DType.VARCHAR.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class Json(StringType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.JSON))
+    raw: exp.DataType = field(init=False, default=exp.DType.JSON.into_expr())
 
 
 @final
 @dataclass(slots=True, unsafe_hash=True)
 class BitString(StringType):
-    raw: exp.DataType = field(init=False, default=build(exp.DType.BIT))
+    raw: exp.DataType = field(init=False, default=exp.DType.BIT.into_expr())
 
 
 @final
@@ -420,7 +416,7 @@ class Enum(StringType, ComplexDataType):
 
         self.raw = exp.DataType(
             this=exp.DType.ENUM,
-            expressions=values.map(exp.Literal.string).collect(list),  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+            expressions=values.map(exp.Literal.string).collect(list),
         )
 
     @property
@@ -512,7 +508,7 @@ class Array(NestedType, ComplexDataType):
         self.raw = exp.DataType(
             this=exp.DType.ARRAY,
             expressions=[inner.raw],
-            values=[exp.Literal.number(size)],  # pyright: ignore[reportUnknownMemberType]
+            values=[exp.Literal.number(size)],
             nested=True,
         )
 
@@ -551,10 +547,10 @@ class List(NestedType, ComplexDataType):
 
 
 PRECISION_MAP: pc.Dict[EpochTimeUnit, exp.DataType] = pc.Dict.from_ref({
-    "s": build(exp.DType.TIMESTAMP_S),
-    "ms": build(exp.DType.TIMESTAMP_MS),
-    "us": build(exp.DType.TIMESTAMP),
-    "ns": build(exp.DType.TIMESTAMP_NS),
+    "s": exp.DType.TIMESTAMP_S.into_expr(),
+    "ms": exp.DType.TIMESTAMP_MS.into_expr(),
+    "us": exp.DType.TIMESTAMP.into_expr(),
+    "ns": exp.DType.TIMESTAMP_NS.into_expr(),
 })
 
 

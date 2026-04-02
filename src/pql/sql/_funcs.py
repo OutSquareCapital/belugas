@@ -188,6 +188,7 @@ def any_horizontal(exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> SqlExpr:
 
 
 def mean_horizontal(exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> SqlExpr:
+    dtype = exp.DType.BIGINT.into_expr()
     return (
         try_chain(exprs, more_exprs)
         .map(lambda value: into_expr(value, as_col=True))
@@ -201,11 +202,7 @@ def mean_horizontal(exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> SqlExpr:
                 .truediv(
                     vals
                     .iter()
-                    .map(
-                        lambda value: value.is_not_null().cast(
-                            exp.DataType.build(exp.DType.BIGINT)  # pyright: ignore[reportUnknownMemberType]
-                        )
-                    )
+                    .map(lambda value: value.is_not_null().cast(dtype))
                     .reduce(SqlExpr.add)
                 )
             )

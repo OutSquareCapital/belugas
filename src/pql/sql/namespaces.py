@@ -278,7 +278,7 @@ class SqlExprDateTimeNameSpace(DateTimeFns[SqlExpr]):
         Returns:
             SqlExpr: A new expression that evaluates to the parsed datetime.
         """
-        dtype = exp.DataType.build(exp.DType.TIMESTAMP)  # pyright: ignore[reportUnknownMemberType]
+        dtype = exp.DType.TIMESTAMP.into_expr()
         match format:
             case None:
                 return self.inner().cast(dtype)
@@ -294,7 +294,7 @@ class SqlExprDateTimeNameSpace(DateTimeFns[SqlExpr]):
         Returns:
             SqlExpr: A new expression that evaluates to the parsed time.
         """
-        dtype = exp.DataType.build(exp.DType.TIME)  # pyright: ignore[reportUnknownMemberType]
+        dtype = exp.DType.TIME.into_expr()
         match format:
             case None:
                 return self.inner().cast(dtype)
