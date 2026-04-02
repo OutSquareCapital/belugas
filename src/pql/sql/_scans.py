@@ -9,6 +9,8 @@ import duckdb
 import pyochain as pc
 from sqlglot import exp
 
+from ._conversions import glot_into_duckdb
+from ._core import DuckHandler
 from ._funcs import unnest
 from .typing import FrameLike, NPArrayLike, PythonLiteral
 
@@ -42,7 +44,6 @@ def into_relation(  # noqa: PLR0911
     data: IntoRel, orient: Orientation = "col"
 ) -> duckdb.DuckDBPyRelation:
     from .._frame import LazyFrame
-    from ._core import DuckHandler
 
     match data:
         case duckdb.DuckDBPyRelation():
@@ -50,7 +51,7 @@ def into_relation(  # noqa: PLR0911
         case LazyFrame():
             return data.inner()
         case exp.Expr():
-            return duckdb.values(DuckHandler(data).into_duckdb())
+            return duckdb.values(glot_into_duckdb(data))
         case DuckHandler():
             return duckdb.values(data.into_duckdb())
         case Mapping():
@@ -100,7 +101,6 @@ def from_dicts(data: Sequence[Mapping[str, PythonLiteral]]) -> duckdb.DuckDBPyRe
 def from_records(
     data: SeqIntoVals, orient: Orientation = "col"
 ) -> duckdb.DuckDBPyRelation:
-    from ._core import DuckHandler
 
     match data[0]:
         case Mapping():
