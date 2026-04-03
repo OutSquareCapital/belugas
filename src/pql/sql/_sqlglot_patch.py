@@ -1,29 +1,32 @@
 from collections.abc import Callable
-from functools import partial
 
 from sqlglot import Dialect, exp, parser
 from sqlglot.dialects.dialect import (
     build_regexp_extract,  # pyright: ignore[reportUnknownVariableType]
 )
 from sqlglot.dialects.duckdb import DuckDB
-from sqlglot.expressions.core import Expr
 from sqlglot.parsers.duckdb import DuckDBParser
 
 type FuncRegistery = dict[str, Callable[..., exp.Expr]]
+type BindedFn = Callable[[list[exp.Expr]], exp.Expr]
 
 
 def _bind_dialect(
     builder: Callable[[list[exp.Expr], Dialect], exp.Expr],
-) -> partial[Expr]:
+) -> BindedFn:
     dialect = DuckDB()
-    return partial(builder, dialect=dialect)  # pyright: ignore[reportCallIssue]
+
+    def f(args: list[exp.Expr]) -> exp.Expr:
+        return builder(args, dialect)
+
+    return f
 
 
-def _regexp_extract(expr: type[exp.Expr]) -> partial[Expr]:
+def _regexp_extract(expr: type[exp.Expr]) -> BindedFn:
     return _bind_dialect(build_regexp_extract(expr))  # pyright: ignore[reportUnknownArgumentType]
 
 
-def _extract_json_with_path(expr: type[exp.Expr]) -> partial[Expr]:
+def _extract_json_with_path(expr: type[exp.Expr]) -> BindedFn:
     return _bind_dialect(parser.build_extract_json_with_path(expr))  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
 
 
