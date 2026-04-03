@@ -80,6 +80,14 @@ class Schema(PyoMutableMapping[str, DataType]):
         self._dtypes.insert(pos, dtype)
         self._data[name] = dtype
 
+    def copy(self) -> Self:
+        """Shallow copy of the schema.
+
+        Returns:
+            Self: A new Schema with the same data.
+        """
+        return self.__class__(self)
+
     @classmethod
     def from_frame(cls, frame: DuckDBPyRelation) -> Self:
         dtypes = pc.Iter(frame.dtypes).map(DataType.from_duckdb)
