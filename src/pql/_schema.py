@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from duckdb import DuckDBPyRelation
 
 
-@dataclass(slots=True, init=False)
+@dataclass(slots=True, init=False, repr=False)
 class Schema(pc.Dict[str, DataType]):
     @classmethod
     def from_frame(cls, frame: DuckDBPyRelation) -> Self:
