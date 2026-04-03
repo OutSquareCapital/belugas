@@ -46,18 +46,27 @@ class FnsCat(PyoIterable[Fns]):
 
 def _assert_schema(lf: pql.LazyFrame) -> pql.LazyFrame:
     other = pql.Schema.from_frame(lf.inner())
-    left_keys = lf.schema.keys().into(list)
-    right_keys = other.keys().into(list)
-    assert left_keys == right_keys, f"{left_keys} != {right_keys}"
+    incorrect_key = (
+        lf.schema
+        .iter()
+        .zip(other)
+        .map_star(lambda left, right: (f"{left, right}", operator.eq(left, right)))
+        .find(lambda x: not x[1])
+    )
     incorrect_dtype = (
         lf.schema
         .values()
         .iter()
         .zip(other.values())
-        .map_star(lambda left, right: left.is_(right))
-        .find(operator.not_)
+        .map_star(lambda left, right: (f"{left, right}", left.is_(right)))
+        .find(lambda x: not x[1])
     )
-    assert incorrect_dtype.is_none(), f"Incorrect dtype: {incorrect_dtype.unwrap()}"
+    assert incorrect_key.is_none(), (
+        f"Incorrect key:\n {incorrect_key.unwrap()[0]} with schema:\n {lf.schema!r}\n\n and:\n {other!r}"
+    )
+    assert incorrect_dtype.is_none(), (
+        f"Incorrect dtype:\n {incorrect_dtype.unwrap()[0]} with schema:\n {lf.schema!r}\n\n and:\n {other!r}"
+    )
     return lf
 
 
