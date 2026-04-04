@@ -81,9 +81,6 @@ class Marker(StrEnum):
                 return lf
 
 
-type ResolverFn = Callable[[Schema], PyoCollection[str]]
-
-
 class ExprKind(IntEnum):
     ROW = auto()
     SCALAR = auto()
@@ -144,7 +141,7 @@ class SingleMeta(ExprMeta):
 
 @dataclass(slots=True)
 class MultiMeta(ExprMeta):
-    resolver: ResolverFn = field(kw_only=True)
+    resolver: Resolver = field(kw_only=True)
     preserve_native: bool = field(default=False, kw_only=True)
 
     @override
@@ -416,16 +413,22 @@ class ExprPlan:
         return keys.iter().chain(plan).into(aggregator)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, repr=False)
 class Resolver:
-    """Namespace class for resolver functions used in multi expressions."""
+    _fn: Callable[[Schema], PyoCollection[str]]
 
-    fn: ResolverFn
+    @override
+    def __repr__(self) -> str:
+        fn = self._fn.__name__.replace("_", " ").title()
+        return f"{self.__class__.__name__}({fn})"
+
+    def __call__(self, schema: Schema) -> PyoCollection[str]:
+        return self._fn(schema)
 
     def into_selector(self) -> Selector:
         from .selectors import Selector
 
-        return Selector(sql.all(), MultiMeta(resolver=self.fn))
+        return Selector(sql.all(), MultiMeta(resolver=self))
 
     @classmethod
     def all_columns(cls) -> Self:
@@ -445,9 +448,10 @@ class Resolver:
 
     @classmethod
     def exclude(cls, excluded: pc.Set[str]) -> Self:
-        return cls(
-            lambda schema: schema.iter().filter(lambda n: n not in excluded).collect()
-        )
+        def _exclude(schema: Schema) -> PyoCollection[str]:
+            return schema.iter().filter(lambda n: n not in excluded).collect()
+
+        return cls(_exclude)
 
     @classmethod
     def agg_expr(cls, cols: pc.Option[pc.Seq[str]]) -> Self:
@@ -455,13 +459,17 @@ class Resolver:
 
     @classmethod
     def fixed(cls, names: pc.Seq[str]) -> Self:
-        return cls(lambda _schema: names)
+        def _fixed(_: Schema) -> PyoCollection[str]:
+            return names
+
+        return cls(_fixed)
 
     @classmethod
-    def ordered_name(cls, names: pc.Seq[str]) -> Self:
-        return cls(
-            lambda schema: names.iter().filter(lambda name: name in schema).collect()
-        )
+    def ordered_name(cls, names: Iterable[str]) -> Self:
+        def _ordered(schema: Schema) -> PyoCollection[str]:
+            return pc.Iter(names).filter(lambda name: name in schema).collect()
+
+        return cls(_ordered)
 
     @classmethod
     def dtype(cls, *on: type[DataType]) -> Self:
@@ -479,36 +487,35 @@ class Resolver:
 
     @classmethod
     def name(cls, predicate: Callable[[str], bool]) -> Self:
-        return cls(lambda schema: schema.iter().filter(predicate).collect())
+        def _name(schema: Schema) -> pc.Seq[str]:
+            return schema.iter().filter(predicate).collect()
 
-    @classmethod
-    def difference(cls, left: ResolverFn, right_fn: ResolverFn) -> Self:
-        def _fn(schema: Schema) -> PyoCollection[str]:
+        return cls(_name)
+
+    def difference(self, right_fn: Self) -> Self:
+        def _difference(schema: Schema) -> PyoCollection[str]:
             right = right_fn(schema)
-            return left(schema).iter().filter(lambda n: n not in right).collect()
+            return self(schema).iter().filter(lambda n: n not in right).collect()
 
-        return cls(_fn)
+        return self.__class__(_difference)
 
-    @classmethod
-    def complement(cls, resolver: ResolverFn) -> Self:
-        def _fn(schema: Schema) -> pc.Seq[str]:
-            excluded = resolver(schema)
+    def complement(self) -> Self:
+        def _complement(schema: Schema) -> pc.Seq[str]:
+            excluded = self(schema)
             return schema.iter().filter(lambda n: n not in excluded).collect()
 
-        return cls(_fn)
+        return self.__class__(_complement)
 
-    @classmethod
-    def intersection(cls, left: ResolverFn, right: ResolverFn) -> Self:
-        def _fn(schema: Schema) -> pc.Seq[str]:
+    def intersection(self, right: Self) -> Self:
+        def _intersection(schema: Schema) -> pc.Seq[str]:
             right_set = right(schema)
-            return left(schema).iter().filter(lambda n: n in right_set).collect()
+            return self(schema).iter().filter(lambda n: n in right_set).collect()
 
-        return cls(_fn)
+        return self.__class__(_intersection)
 
-    @classmethod
-    def union(cls, left: ResolverFn, right: ResolverFn) -> Self:
-        def _fn(schema: Schema) -> pc.Seq[str]:
-            selected = left(schema).iter().chain(right(schema)).collect(pc.Set)
+    def union(self, right: Self) -> Self:
+        def _union(schema: Schema) -> pc.Seq[str]:
+            selected = self(schema).iter().chain(right(schema)).collect(pc.Set)
             return schema.iter().filter(lambda n: n in selected).collect()
 
-        return cls(_fn)
+        return self.__class__(_union)

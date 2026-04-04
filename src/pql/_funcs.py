@@ -57,7 +57,7 @@ def _agg_expr(
 
     names = try_iter(cols).chain(more_cols).collect().then_some()
     meta = MultiMeta(
-        kind=ExprKind.SCALAR, resolver=Resolver.agg_expr(names).fn, preserve_native=True
+        kind=ExprKind.SCALAR, resolver=Resolver.agg_expr(names), preserve_native=True
     )
     inner_expr = (
         names
@@ -106,9 +106,7 @@ def all(exclude: TryIter[IntoExprColumn] = None) -> Expr:
     Returns:
         Expr: A new expression that evaluates to all columns.
     """
-    meta = MultiMeta(
-        resolver=Resolver.all_fn(pc.Option(exclude)).fn, preserve_native=True
-    )
+    meta = MultiMeta(resolver=Resolver.all_fn(pc.Option(exclude)), preserve_native=True)
     return Expr(sql.all(exclude), meta)
 
 

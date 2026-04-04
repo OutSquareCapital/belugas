@@ -9,7 +9,7 @@ import pyochain as pc
 
 from . import _datatypes as dt  # pyright: ignore[reportPrivateUsage]
 from ._expr import Expr
-from ._meta import MultiMeta, Resolver, ResolverFn
+from ._meta import MultiMeta, Resolver
 
 if TYPE_CHECKING:
     from .sql.typing import IntoExpr
@@ -23,7 +23,7 @@ class Selector(Expr):
     __slots__ = ()
 
     @property
-    def _resolver(self) -> ResolverFn:
+    def _resolver(self) -> Resolver:
         return self.meta.resolver
 
     @overload
@@ -33,7 +33,7 @@ class Selector(Expr):
     def union(self, other: IntoExpr) -> Self | Expr:
         match other:
             case Selector():
-                return Resolver.union(self._resolver, other._resolver).into_selector()
+                return self._resolver.union(other._resolver).into_selector()
             case _:
                 return Expr.__or__(self, other)
 
@@ -52,9 +52,7 @@ class Selector(Expr):
     def intersection(self, other: IntoExpr) -> Self | Expr:
         match other:
             case Selector():
-                return Resolver.intersection(
-                    self._resolver, other._resolver
-                ).into_selector()
+                return self._resolver.intersection(other._resolver).into_selector()
             case _:
                 return Expr.__and__(self, other)
 
@@ -73,9 +71,7 @@ class Selector(Expr):
     def difference(self, other: IntoExpr) -> Self | Expr:
         match other:
             case Selector():
-                return Resolver.difference(
-                    self._resolver, other._resolver
-                ).into_selector()
+                return self._resolver.difference(other._resolver).into_selector()
             case _:
                 return Expr.__sub__(self, other)
 
@@ -88,7 +84,7 @@ class Selector(Expr):
         return self.difference(other)
 
     def complement(self) -> Selector:
-        return Resolver.complement(self._resolver).into_selector()
+        return self._resolver.complement().into_selector()
 
     @override
     def __invert__(self) -> Selector:
@@ -285,7 +281,7 @@ def by_name(*names: str) -> Selector:
     Returns:
         Selector: A selector for columns with the given names.
     """
-    return Resolver.ordered_name(pc.Seq(names)).into_selector()
+    return Resolver.ordered_name(names).into_selector()
 
 
 def starts_with(*prefix: str) -> Selector:
