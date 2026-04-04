@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Self, final, overload, override
 
 import pyochain as pc
 
-from . import _datatypes as dt, sql  # pyright: ignore[reportPrivateUsage]
+from . import _datatypes as dt  # pyright: ignore[reportPrivateUsage]
 from ._expr import Expr
 from ._meta import MultiMeta, Resolver, ResolverFn
 
@@ -26,10 +26,6 @@ class Selector(Expr):
     def _resolver(self) -> ResolverFn:
         return self.meta.resolver
 
-    @classmethod
-    def __from_resolver__(cls, resolver: ResolverFn) -> Self:  # noqa: PLW3201
-        return cls(sql.all(), MultiMeta(resolver=resolver))
-
     @overload
     def union(self, other: Self) -> Self: ...
     @overload
@@ -37,9 +33,7 @@ class Selector(Expr):
     def union(self, other: IntoExpr) -> Self | Expr:
         match other:
             case Selector():
-                return self.__from_resolver__(
-                    Resolver.union(self._resolver, other._resolver)
-                )
+                return Resolver.union(self._resolver, other._resolver).into_selector()
             case _:
                 return Expr.__or__(self, other)
 
@@ -58,9 +52,9 @@ class Selector(Expr):
     def intersection(self, other: IntoExpr) -> Self | Expr:
         match other:
             case Selector():
-                return self.__from_resolver__(
-                    Resolver.intersection(self._resolver, other._resolver)
-                )
+                return Resolver.intersection(
+                    self._resolver, other._resolver
+                ).into_selector()
             case _:
                 return Expr.__and__(self, other)
 
@@ -79,9 +73,9 @@ class Selector(Expr):
     def difference(self, other: IntoExpr) -> Self | Expr:
         match other:
             case Selector():
-                return self.__from_resolver__(
-                    Resolver.difference(self._resolver, other._resolver)
-                )
+                return Resolver.difference(
+                    self._resolver, other._resolver
+                ).into_selector()
             case _:
                 return Expr.__sub__(self, other)
 
@@ -94,7 +88,7 @@ class Selector(Expr):
         return self.difference(other)
 
     def complement(self) -> Selector:
-        return self.__from_resolver__(Resolver.complement(self._resolver))
+        return Resolver.complement(self._resolver).into_selector()
 
     @override
     def __invert__(self) -> Selector:
@@ -110,7 +104,7 @@ def by_dtype(*dtypes: type[dt.DataType]) -> Selector:
     Returns:
         Selector: A selector for columns matching the specified dtypes.
     """
-    return Selector.__from_resolver__(Resolver.dtype(*dtypes))
+    return Resolver.dtype(*dtypes).into_selector()
 
 
 def numeric() -> Selector:
@@ -119,7 +113,7 @@ def numeric() -> Selector:
     Returns:
         Selector: A selector for all numeric columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.NumericType))
+    return Resolver.dtype(dt.NumericType).into_selector()
 
 
 def string() -> Selector:
@@ -128,7 +122,7 @@ def string() -> Selector:
     Returns:
         Selector: A selector for all string columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.StringType))
+    return Resolver.dtype(dt.StringType).into_selector()
 
 
 def boolean() -> Selector:
@@ -137,7 +131,7 @@ def boolean() -> Selector:
     Returns:
         Selector: A selector for all boolean columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.Boolean))
+    return Resolver.dtype(dt.Boolean).into_selector()
 
 
 def all() -> Selector:
@@ -146,7 +140,7 @@ def all() -> Selector:
     Returns:
         Selector: A selector for all columns.
     """
-    return Selector.__from_resolver__(Resolver.all_columns())
+    return Resolver.all_columns().into_selector()
 
 
 def float() -> Selector:
@@ -155,7 +149,7 @@ def float() -> Selector:
     Returns:
         Selector: A selector for all float columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.FloatType))
+    return Resolver.dtype(dt.FloatType).into_selector()
 
 
 def integer() -> Selector:
@@ -164,7 +158,7 @@ def integer() -> Selector:
     Returns:
         Selector: A selector for all integer columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.IntegerType))
+    return Resolver.dtype(dt.IntegerType).into_selector()
 
 
 def signed_integer() -> Selector:
@@ -173,7 +167,7 @@ def signed_integer() -> Selector:
     Returns:
         Selector: A selector for all signed integer columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.SignedIntegerType))
+    return Resolver.dtype(dt.SignedIntegerType).into_selector()
 
 
 def unsigned_integer() -> Selector:
@@ -182,7 +176,7 @@ def unsigned_integer() -> Selector:
     Returns:
         Selector: A selector for all unsigned integer columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.UnsignedIntegerType))
+    return Resolver.dtype(dt.UnsignedIntegerType).into_selector()
 
 
 def temporal() -> Selector:
@@ -191,7 +185,7 @@ def temporal() -> Selector:
     Returns:
         Selector: A selector for all temporal columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.TemporalType))
+    return Resolver.dtype(dt.TemporalType).into_selector()
 
 
 def date() -> Selector:
@@ -200,7 +194,7 @@ def date() -> Selector:
     Returns:
         Selector: A selector for all date columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.Date))
+    return Resolver.dtype(dt.Date).into_selector()
 
 
 def time() -> Selector:
@@ -209,7 +203,7 @@ def time() -> Selector:
     Returns:
         Selector: A selector for all time columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.Time))
+    return Resolver.dtype(dt.Time).into_selector()
 
 
 def duration() -> Selector:
@@ -218,7 +212,7 @@ def duration() -> Selector:
     Returns:
         Selector: A selector for all duration columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.Duration))
+    return Resolver.dtype(dt.Duration).into_selector()
 
 
 def binary() -> Selector:
@@ -227,7 +221,7 @@ def binary() -> Selector:
     Returns:
         Selector: A selector for all binary columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.Binary))
+    return Resolver.dtype(dt.Binary).into_selector()
 
 
 def enum() -> Selector:
@@ -236,7 +230,7 @@ def enum() -> Selector:
     Returns:
         Selector: A selector for all enum columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.Enum))
+    return Resolver.dtype(dt.Enum).into_selector()
 
 
 def decimal() -> Selector:
@@ -245,7 +239,7 @@ def decimal() -> Selector:
     Returns:
         Selector: A selector for all decimal columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.Decimal))
+    return Resolver.dtype(dt.Decimal).into_selector()
 
 
 def nested() -> Selector:
@@ -254,7 +248,7 @@ def nested() -> Selector:
     Returns:
         Selector: A selector for all nested columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.NestedType))
+    return Resolver.dtype(dt.NestedType).into_selector()
 
 
 def struct() -> Selector:
@@ -263,7 +257,7 @@ def struct() -> Selector:
     Returns:
         Selector: A selector for all struct columns.
     """
-    return Selector.__from_resolver__(Resolver.dtype(dt.Struct))
+    return Resolver.dtype(dt.Struct).into_selector()
 
 
 # ──── name-based selectors ────
@@ -279,9 +273,7 @@ def matches(pattern: str) -> Selector:
             Selector: A selector for columns with names matching the pattern.
     """
     compiled = re.compile(pattern)
-    return Selector.__from_resolver__(
-        Resolver.name(lambda name: compiled.search(name) is not None)
-    )
+    return Resolver.name(lambda name: compiled.search(name) is not None).into_selector()
 
 
 def by_name(*names: str) -> Selector:
@@ -293,7 +285,7 @@ def by_name(*names: str) -> Selector:
     Returns:
         Selector: A selector for columns with the given names.
     """
-    return Selector.__from_resolver__(Resolver.ordered_name(pc.Seq(names)))
+    return Resolver.ordered_name(pc.Seq(names)).into_selector()
 
 
 def starts_with(*prefix: str) -> Selector:
@@ -305,9 +297,7 @@ def starts_with(*prefix: str) -> Selector:
     Returns:
         Selector: A selector for columns with names starting with any of the given prefixes.
     """
-    return Selector.__from_resolver__(
-        Resolver.name(lambda name: name.startswith(prefix))
-    )
+    return Resolver.name(lambda name: name.startswith(prefix)).into_selector()
 
 
 def ends_with(*suffix: str) -> Selector:
@@ -319,7 +309,7 @@ def ends_with(*suffix: str) -> Selector:
     Returns:
         Selector: A selector for columns with names ending with any of the given suffixes.
     """
-    return Selector.__from_resolver__(Resolver.name(lambda name: name.endswith(suffix)))
+    return Resolver.name(lambda name: name.endswith(suffix)).into_selector()
 
 
 def contains(*substring: str) -> Selector:
@@ -332,9 +322,7 @@ def contains(*substring: str) -> Selector:
         Selector: A selector for columns with names containing any of the given substrings.
     """
     subs = pc.Seq(substring)
-    return Selector.__from_resolver__(
-        Resolver.name(lambda name: subs.any(lambda s: s in name))
-    )
+    return Resolver.name(lambda name: subs.any(lambda s: s in name)).into_selector()
 
 
 __all__ = [

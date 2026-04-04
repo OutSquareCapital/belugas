@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from pyochain.traits import PyoCollection, PyoIterable
 
     from ._datatypes import DataType
+    from .selectors import Selector
     from .sql.typing import IntoExpr, IntoExprColumn
 
 
@@ -415,86 +416,99 @@ class ExprPlan:
         return keys.iter().chain(plan).into(aggregator)
 
 
+@dataclass(slots=True)
 class Resolver:
     """Namespace class for resolver functions used in multi expressions."""
 
-    @staticmethod
-    def all_columns() -> ResolverFn:
-        return Schema.keys
+    fn: ResolverFn
 
-    @staticmethod
-    def all_fn(exclude: pc.Option[TryIter[IntoExprColumn]]) -> ResolverFn:
+    def into_selector(self) -> Selector:
+        from .selectors import Selector
+
+        return Selector(sql.all(), MultiMeta(resolver=self.fn))
+
+    @classmethod
+    def all_columns(cls) -> Self:
+        return cls(Schema.keys)
+
+    @classmethod
+    def all_fn(cls, exclude: pc.Option[TryIter[IntoExprColumn]]) -> Self:
         return exclude.map(
             lambda exc: (
                 try_iter(exc)
                 .map(lambda value: sql.into_expr(value, as_col=True))
                 .filter_map(SqlExpr.root_column_name)
                 .collect(pc.Set)
-                .into(Resolver.exclude)
+                .into(cls.exclude)
             )
-        ).unwrap_or(Resolver.all_columns())
+        ).unwrap_or(cls.all_columns())
 
-    @staticmethod
-    def exclude(excluded: pc.Set[str]) -> ResolverFn:
-        return lambda schema: (
-            schema.iter().filter(lambda n: n not in excluded).collect()
+    @classmethod
+    def exclude(cls, excluded: pc.Set[str]) -> Self:
+        return cls(
+            lambda schema: schema.iter().filter(lambda n: n not in excluded).collect()
         )
 
-    @staticmethod
-    def agg_expr(cols: pc.Option[pc.Seq[str]]) -> ResolverFn:
-        return cols.map(Resolver.fixed).unwrap_or(Resolver.all_columns())
+    @classmethod
+    def agg_expr(cls, cols: pc.Option[pc.Seq[str]]) -> Self:
+        return cols.map(cls.fixed).unwrap_or(cls.all_columns())
 
-    @staticmethod
-    def fixed(names: pc.Seq[str]) -> ResolverFn:
-        return lambda _schema: names
+    @classmethod
+    def fixed(cls, names: pc.Seq[str]) -> Self:
+        return cls(lambda _schema: names)
 
-    @staticmethod
-    def ordered_name(names: pc.Seq[str]) -> ResolverFn:
-        return lambda schema: names.iter().filter(lambda name: name in schema).collect()
-
-    @staticmethod
-    def dtype(*on: type[DataType]) -> ResolverFn:
-        return lambda schema: (
-            schema
-            .items()
-            .iter()
-            .filter_star(lambda _, dtype: isinstance(dtype, on))
-            .map_star(lambda name, _: name)
-            .collect()
+    @classmethod
+    def ordered_name(cls, names: pc.Seq[str]) -> Self:
+        return cls(
+            lambda schema: names.iter().filter(lambda name: name in schema).collect()
         )
 
-    @staticmethod
-    def name(predicate: Callable[[str], bool]) -> ResolverFn:
-        return lambda schema: schema.iter().filter(predicate).collect()
+    @classmethod
+    def dtype(cls, *on: type[DataType]) -> Self:
+        def _dtype(schema: Schema) -> pc.Seq[str]:
+            return (
+                schema
+                .items()
+                .iter()
+                .filter_star(lambda _, dtype: isinstance(dtype, on))
+                .map_star(lambda name, _: name)
+                .collect()
+            )
 
-    @staticmethod
-    def difference(left: ResolverFn, right_fn: ResolverFn) -> ResolverFn:
+        return cls(_dtype)
+
+    @classmethod
+    def name(cls, predicate: Callable[[str], bool]) -> Self:
+        return cls(lambda schema: schema.iter().filter(predicate).collect())
+
+    @classmethod
+    def difference(cls, left: ResolverFn, right_fn: ResolverFn) -> Self:
         def _fn(schema: Schema) -> PyoCollection[str]:
             right = right_fn(schema)
             return left(schema).iter().filter(lambda n: n not in right).collect()
 
-        return _fn
+        return cls(_fn)
 
-    @staticmethod
-    def complement(resolver: ResolverFn) -> ResolverFn:
+    @classmethod
+    def complement(cls, resolver: ResolverFn) -> Self:
         def _fn(schema: Schema) -> pc.Seq[str]:
             excluded = resolver(schema)
             return schema.iter().filter(lambda n: n not in excluded).collect()
 
-        return _fn
+        return cls(_fn)
 
-    @staticmethod
-    def intersection(left: ResolverFn, right: ResolverFn) -> ResolverFn:
+    @classmethod
+    def intersection(cls, left: ResolverFn, right: ResolverFn) -> Self:
         def _fn(schema: Schema) -> pc.Seq[str]:
             right_set = right(schema)
             return left(schema).iter().filter(lambda n: n in right_set).collect()
 
-        return _fn
+        return cls(_fn)
 
-    @staticmethod
-    def union(left: ResolverFn, right: ResolverFn) -> ResolverFn:
+    @classmethod
+    def union(cls, left: ResolverFn, right: ResolverFn) -> Self:
         def _fn(schema: Schema) -> pc.Seq[str]:
             selected = left(schema).iter().chain(right(schema)).collect(pc.Set)
             return schema.iter().filter(lambda n: n in selected).collect()
 
-        return _fn
+        return cls(_fn)
