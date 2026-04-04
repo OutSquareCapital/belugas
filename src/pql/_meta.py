@@ -11,7 +11,6 @@ import pyochain as pc
 from sqlglot import exp
 
 from . import sql
-from ._schema import Schema
 from .sql import SqlExpr
 from .sql.utils import TryIter, try_iter
 
@@ -20,9 +19,10 @@ if TYPE_CHECKING:
     from narwhals.typing import IntoFrameT
     from pyochain.traits import PyoCollection, PyoIterable
 
-    from ._datatypes import DataType
     from .selectors import Selector
     from .sql.typing import IntoExpr, IntoExprColumn
+
+type Cols = PyoCollection[str]
 
 
 class Marker(StrEnum):
@@ -97,12 +97,10 @@ class ExprMeta(ABC):
 
     @abstractmethod
     def into_resolved(
-        self, template: SqlExpr, schema: Schema, alias_override: pc.Option[str]
+        self, template: SqlExpr, cols: Cols, alias_override: pc.Option[str]
     ) -> pc.Iter[ResolvedExpr]: ...
 
-    def get_output_names(
-        self, base_names: PyoCollection[str], forced_name: pc.Option[str]
-    ) -> PyoCollection[str]:
+    def get_output_names(self, base_names: Cols, forced_name: pc.Option[str]) -> Cols:
         match forced_name:
             case pc.Some(name):
                 return pc.Seq((name,))
@@ -133,7 +131,7 @@ class SingleMeta(ExprMeta):
 
     @override
     def into_resolved(
-        self, template: SqlExpr, schema: Schema, alias_override: pc.Option[str]
+        self, template: SqlExpr, cols: Cols, alias_override: pc.Option[str]
     ) -> pc.Iter[ResolvedExpr]:
         output_names = self.get_output_names(pc.Seq((self.root_name,)), alias_override)
         return ResolvedExpr(template, output_names.first(), self.kind).into_iter()
@@ -146,12 +144,12 @@ class MultiMeta(ExprMeta):
 
     @override
     def into_resolved(
-        self, template: SqlExpr, schema: Schema, alias_override: pc.Option[str]
+        self, template: SqlExpr, cols: Cols, alias_override: pc.Option[str]
     ) -> pc.Iter[ResolvedExpr]:
         resolved_fn = partial(ResolvedExpr, kind=self.kind)
 
         def _get_builder() -> NamesBuilder:
-            base_names = self.resolver(schema)
+            base_names = self.resolver(cols)
             output_names = self.get_output_names(base_names, alias_override)
             return NamesBuilder(base_names, output_names, template, resolved_fn)
 
@@ -170,8 +168,8 @@ class MultiMeta(ExprMeta):
 
 
 class NamesBuilder(NamedTuple):
-    base: PyoCollection[str]
-    output: PyoCollection[str]
+    base: Cols
+    output: Cols
     template: SqlExpr
     fn: partial[ResolvedExpr]
 
@@ -234,12 +232,12 @@ class ResolvedExpr(NamedTuple):
 
 @dataclass(slots=True, init=False)
 class ExprPlan:
-    cols: pc.Vec[str]
+    cols: Cols
     projections: pc.Seq[ResolvedExpr]
 
     def __init__(
         self,
-        schema: Schema,
+        cols: Cols,
         exprs: TryIter[IntoExpr],
         more_exprs: Iterable[IntoExpr],
         named_exprs: dict[str, IntoExpr],
@@ -252,11 +250,11 @@ class ExprPlan:
 
             match val:
                 case Expr() as expr:
-                    return expr.meta.into_resolved(expr.inner(), schema, alias_override)
+                    return expr.meta.into_resolved(expr.inner(), cols, alias_override)
                 case _:
                     return ResolvedExpr.from_named(val, alias_override).into_iter()
 
-        self.cols = schema.keys()
+        self.cols = cols
         expr_map = (
             pc
             .Iter(named_exprs.items())
@@ -415,15 +413,15 @@ class ExprPlan:
 
 @dataclass(slots=True, repr=False)
 class Resolver:
-    _fn: Callable[[Schema], PyoCollection[str]]
+    _fn: Callable[[Cols], Cols]
 
     @override
     def __repr__(self) -> str:
         fn = self._fn.__name__.replace("_", " ").title()
         return f"{self.__class__.__name__}({fn})"
 
-    def __call__(self, schema: Schema) -> PyoCollection[str]:
-        return self._fn(schema)
+    def __call__(self, cols: Cols) -> Cols:
+        return self._fn(cols)
 
     def into_selector(self) -> Selector:
         from .selectors import Selector
@@ -432,7 +430,17 @@ class Resolver:
 
     @classmethod
     def all_columns(cls) -> Self:
-        return cls(Schema.keys)
+        def _all_columns(cols: Cols) -> Cols:
+            return cols
+
+        return cls(_all_columns)
+
+    @classmethod
+    def fixed(cls, names: Cols) -> Self:
+        def _fixed(_: Cols) -> Cols:
+            return names
+
+        return cls(_fixed)
 
     @classmethod
     def all_fn(cls, exclude: pc.Option[TryIter[IntoExprColumn]]) -> Self:
@@ -447,9 +455,9 @@ class Resolver:
         ).unwrap_or(cls.all_columns())
 
     @classmethod
-    def exclude(cls, excluded: pc.Set[str]) -> Self:
-        def _exclude(schema: Schema) -> PyoCollection[str]:
-            return schema.iter().filter(lambda n: n not in excluded).collect()
+    def exclude(cls, excluded: Cols) -> Self:
+        def _exclude(cols: Cols) -> Cols:
+            return cols.iter().filter(lambda n: n not in excluded).collect()
 
         return cls(_exclude)
 
@@ -458,64 +466,43 @@ class Resolver:
         return cols.map(cls.fixed).unwrap_or(cls.all_columns())
 
     @classmethod
-    def fixed(cls, names: pc.Seq[str]) -> Self:
-        def _fixed(_: Schema) -> PyoCollection[str]:
-            return names
-
-        return cls(_fixed)
-
-    @classmethod
     def ordered_name(cls, names: Iterable[str]) -> Self:
-        def _ordered(schema: Schema) -> PyoCollection[str]:
-            return pc.Iter(names).filter(lambda name: name in schema).collect()
+        def _ordered(cols: Cols) -> Cols:
+            return pc.Iter(names).filter(lambda name: name in cols).collect()
 
         return cls(_ordered)
 
     @classmethod
-    def dtype(cls, *on: type[DataType]) -> Self:
-        def _dtype(schema: Schema) -> pc.Seq[str]:
-            return (
-                schema
-                .items()
-                .iter()
-                .filter_star(lambda _, dtype: isinstance(dtype, on))
-                .map_star(lambda name, _: name)
-                .collect()
-            )
-
-        return cls(_dtype)
-
-    @classmethod
     def name(cls, predicate: Callable[[str], bool]) -> Self:
-        def _name(schema: Schema) -> pc.Seq[str]:
-            return schema.iter().filter(predicate).collect()
+        def _name(cols: Cols) -> Cols:
+            return cols.iter().filter(predicate).collect()
 
         return cls(_name)
 
     def difference(self, right_fn: Self) -> Self:
-        def _difference(schema: Schema) -> PyoCollection[str]:
-            right = right_fn(schema)
-            return self(schema).iter().filter(lambda n: n not in right).collect()
+        def _difference(cols: Cols) -> Cols:
+            right = right_fn(cols)
+            return self(cols).iter().filter(lambda n: n not in right).collect()
 
         return self.__class__(_difference)
 
     def complement(self) -> Self:
-        def _complement(schema: Schema) -> pc.Seq[str]:
-            excluded = self(schema)
-            return schema.iter().filter(lambda n: n not in excluded).collect()
+        def _complement(cols: Cols) -> Cols:
+            excluded = self(cols)
+            return cols.iter().filter(lambda n: n not in excluded).collect()
 
         return self.__class__(_complement)
 
     def intersection(self, right: Self) -> Self:
-        def _intersection(schema: Schema) -> pc.Seq[str]:
-            right_set = right(schema)
-            return self(schema).iter().filter(lambda n: n in right_set).collect()
+        def _intersection(cols: Cols) -> Cols:
+            right_set = right(cols)
+            return self(cols).iter().filter(lambda n: n in right_set).collect()
 
         return self.__class__(_intersection)
 
     def union(self, right: Self) -> Self:
-        def _union(schema: Schema) -> pc.Seq[str]:
-            selected = self(schema).iter().chain(right(schema)).collect(pc.Set)
-            return schema.iter().filter(lambda n: n in selected).collect()
+        def _union(cols: Cols) -> Cols:
+            selected = self(cols).iter().chain(right(cols)).collect(pc.Set)
+            return cols.iter().filter(lambda n: n in selected).collect()
 
         return self.__class__(_union)

@@ -12,7 +12,6 @@ import pyochain as pc
 from . import _datatypes as dt, sql  # pyright: ignore[reportPrivateUsage]
 from ._expr import Expr
 from ._meta import ExprPlan
-from ._schema import Schema
 from .sql import SqlExpr, namespaces as nm
 
 if TYPE_CHECKING:
@@ -643,7 +642,7 @@ class ExprStructNameSpace(ExprNameSpaceBase):
             Expr
         """
         return (
-            ExprPlan(Schema(()), exprs, more_exprs, named_exprs)
+            ExprPlan(pc.Seq[str].new(), exprs, more_exprs, named_exprs)
             .with_fields_context(self.inner().inner())
             .pipe(self._new)
         )

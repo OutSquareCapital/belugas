@@ -452,6 +452,7 @@ def test_group_by_all_named_exprs(sample_df: pl.DataFrame) -> None:
     )
 
 
+@pytest.mark.skip(reason="Temp deletion of selectors by dtype")
 def test_unique_exprs(sample_df: pl.DataFrame) -> None:
     dep = "department"
     assert_eq(

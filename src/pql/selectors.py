@@ -7,11 +7,11 @@ from typing import TYPE_CHECKING, Self, final, overload, override
 
 import pyochain as pc
 
-from . import _datatypes as dt  # pyright: ignore[reportPrivateUsage]
 from ._expr import Expr
 from ._meta import MultiMeta, Resolver
 
 if TYPE_CHECKING:
+    from . import _datatypes as dt  # pyright: ignore[reportPrivateUsage]
     from .sql.typing import IntoExpr
 
 
@@ -91,7 +91,7 @@ class Selector(Expr):
         return self.complement()
 
 
-def by_dtype(*dtypes: type[dt.DataType]) -> Selector:
+def by_dtype(*dtypes: type[dt.DataType]) -> Selector:  # pyright: ignore[reportUnusedParameter]
     """Select columns matching any of the given dtype classes.
 
     Args:
@@ -100,7 +100,7 @@ def by_dtype(*dtypes: type[dt.DataType]) -> Selector:
     Returns:
         Selector: A selector for columns matching the specified dtypes.
     """
-    return Resolver.dtype(*dtypes).into_selector()
+    raise NotImplementedError
 
 
 def numeric() -> Selector:
@@ -109,7 +109,7 @@ def numeric() -> Selector:
     Returns:
         Selector: A selector for all numeric columns.
     """
-    return Resolver.dtype(dt.NumericType).into_selector()
+    raise NotImplementedError
 
 
 def string() -> Selector:
@@ -118,7 +118,7 @@ def string() -> Selector:
     Returns:
         Selector: A selector for all string columns.
     """
-    return Resolver.dtype(dt.StringType).into_selector()
+    raise NotImplementedError
 
 
 def boolean() -> Selector:
@@ -127,7 +127,7 @@ def boolean() -> Selector:
     Returns:
         Selector: A selector for all boolean columns.
     """
-    return Resolver.dtype(dt.Boolean).into_selector()
+    raise NotImplementedError
 
 
 def all() -> Selector:
@@ -145,7 +145,7 @@ def float() -> Selector:
     Returns:
         Selector: A selector for all float columns.
     """
-    return Resolver.dtype(dt.FloatType).into_selector()
+    raise NotImplementedError
 
 
 def integer() -> Selector:
@@ -154,7 +154,7 @@ def integer() -> Selector:
     Returns:
         Selector: A selector for all integer columns.
     """
-    return Resolver.dtype(dt.IntegerType).into_selector()
+    raise NotImplementedError
 
 
 def signed_integer() -> Selector:
@@ -163,7 +163,7 @@ def signed_integer() -> Selector:
     Returns:
         Selector: A selector for all signed integer columns.
     """
-    return Resolver.dtype(dt.SignedIntegerType).into_selector()
+    raise NotImplementedError
 
 
 def unsigned_integer() -> Selector:
@@ -172,7 +172,7 @@ def unsigned_integer() -> Selector:
     Returns:
         Selector: A selector for all unsigned integer columns.
     """
-    return Resolver.dtype(dt.UnsignedIntegerType).into_selector()
+    raise NotImplementedError
 
 
 def temporal() -> Selector:
@@ -181,7 +181,7 @@ def temporal() -> Selector:
     Returns:
         Selector: A selector for all temporal columns.
     """
-    return Resolver.dtype(dt.TemporalType).into_selector()
+    raise NotImplementedError
 
 
 def date() -> Selector:
@@ -190,7 +190,7 @@ def date() -> Selector:
     Returns:
         Selector: A selector for all date columns.
     """
-    return Resolver.dtype(dt.Date).into_selector()
+    raise NotImplementedError
 
 
 def time() -> Selector:
@@ -199,7 +199,7 @@ def time() -> Selector:
     Returns:
         Selector: A selector for all time columns.
     """
-    return Resolver.dtype(dt.Time).into_selector()
+    raise NotImplementedError
 
 
 def duration() -> Selector:
@@ -208,7 +208,7 @@ def duration() -> Selector:
     Returns:
         Selector: A selector for all duration columns.
     """
-    return Resolver.dtype(dt.Duration).into_selector()
+    raise NotImplementedError
 
 
 def binary() -> Selector:
@@ -217,7 +217,7 @@ def binary() -> Selector:
     Returns:
         Selector: A selector for all binary columns.
     """
-    return Resolver.dtype(dt.Binary).into_selector()
+    raise NotImplementedError
 
 
 def enum() -> Selector:
@@ -226,7 +226,7 @@ def enum() -> Selector:
     Returns:
         Selector: A selector for all enum columns.
     """
-    return Resolver.dtype(dt.Enum).into_selector()
+    raise NotImplementedError
 
 
 def decimal() -> Selector:
@@ -235,7 +235,7 @@ def decimal() -> Selector:
     Returns:
         Selector: A selector for all decimal columns.
     """
-    return Resolver.dtype(dt.Decimal).into_selector()
+    raise NotImplementedError
 
 
 def nested() -> Selector:
@@ -244,7 +244,7 @@ def nested() -> Selector:
     Returns:
         Selector: A selector for all nested columns.
     """
-    return Resolver.dtype(dt.NestedType).into_selector()
+    raise NotImplementedError
 
 
 def struct() -> Selector:
@@ -253,7 +253,7 @@ def struct() -> Selector:
     Returns:
         Selector: A selector for all struct columns.
     """
-    return Resolver.dtype(dt.Struct).into_selector()
+    raise NotImplementedError
 
 
 # ──── name-based selectors ────

@@ -15,7 +15,10 @@ from ._utils import assert_eq_pl, assert_lf_eq_pl
 _SAMPLE_DF = sample_df().to_native().pl(lazy=True)
 _PQL_LF = pql.LazyFrame(_SAMPLE_DF)
 
+skipped = pytest.mark.skip(reason="Temp deletion of selectors by dtype")
 
+
+@skipped
 def test_numeric_with_columns() -> None:
     assert_lf_eq_pl(
         _PQL_LF.select("s").with_columns(cs.numeric()),
@@ -23,16 +26,19 @@ def test_numeric_with_columns() -> None:
     )
 
 
+@skipped
 def test_by_dtype_single() -> None:
     assert_eq_pl(cs.by_dtype(pql.Boolean), cs_pl.by_dtype(pl.Boolean))
 
 
+@skipped
 def test_by_dtype_multiple() -> None:
     assert_eq_pl(
         cs.by_dtype(pql.Float64, pql.Int64), cs_pl.by_dtype(pl.Float64, pl.Int64)
     )
 
 
+@skipped
 def test_union() -> None:
     assert_eq_pl(
         cs.numeric().union(cs.string()), cs_pl.numeric().__or__(cs_pl.string())
@@ -48,6 +54,7 @@ def test_union() -> None:
     )
 
 
+@skipped
 def test_intersection() -> None:
     assert_eq_pl(
         cs.numeric().intersection(cs.by_dtype(pql.Int64)),
@@ -65,6 +72,7 @@ def test_intersection() -> None:
     )
 
 
+@skipped
 def test_difference() -> None:
     assert_eq_pl(
         cs.numeric().difference(cs.by_dtype(pql.Float64)),
@@ -81,22 +89,26 @@ def test_difference() -> None:
     )
 
 
+@skipped
 def test_complement() -> None:
     assert_eq_pl(cs.boolean().complement(), cs_pl.boolean().__invert__())
     assert_eq_pl(cs.boolean().__invert__(), cs_pl.boolean().__invert__())
     assert_eq_pl(cs.numeric().complement(), cs_pl.numeric().__invert__())
 
 
+@skipped
 def test_selector_with_suffix() -> None:
     assert_eq_pl(
         cs.boolean().name.suffix("_flag"), cs_pl.boolean().name.suffix("_flag")
     )
 
 
+@skipped
 def test_selector_cast() -> None:
     assert_eq_pl(cs.boolean().cast(pql.Int32()), cs_pl.boolean().cast(pl.Int32))
 
 
+@skipped
 def test_selector_in_group_by_agg() -> None:
     """We need to filter null values to avoid errors on `sum`."""
     assert_lf_eq_pl(
@@ -114,27 +126,30 @@ def test_selector_in_group_by_agg() -> None:
     )
 
 
+'''Tests we have to comment out for now.
+
 _selectors_lfs = [
     _PQL_LF.select(pql.col("a"), total=cs.numeric()),
     _PQL_LF.group_by("a").agg(total=cs.numeric().sum()),
 ]
 
-
-@pytest.mark.parametrize("lf", _selectors_lfs)
+@pytest.mark.parametrize("lf", _selectors_lfs())
 def test_named_selector_collect(lf: pql.LazyFrame) -> None:
     assert_lf_eq_pl(lf, lf.collect().lazy())
     assert lf.schema.keys().into(list) == ["a", "total"]
 
 
-@pytest.mark.parametrize("lf", _selectors_lfs)
+@pytest.mark.parametrize("lf", _selectors_lfs())
 def test_named_selector_lazy(lf: pql.LazyFrame) -> None:
     """Seems like when go `DuckDBPyRelation -> pl.LazyFrame`, it crashes with `pl.exceptions.ComputeError`, but not with `DuckDBPyRelation -> pl.DataFrame`."""
     msg = "column appears more than once"
     with pytest.raises(pl.exceptions.ComputeError, match=msg):
         _ = lf.lazy().collect()
     assert lf.schema.keys().into(list) == ["a", "total"]
+'''
 
 
+@skipped
 def test_empty_selector() -> None:
     assert_lf_eq_pl(
         _PQL_LF.select(pql.col("a")).select(cs.boolean()),
@@ -162,10 +177,12 @@ def test_empty_selector() -> None:
         "time",
     ],
 )
+@skipped
 def test_simple_selector(fn_name: str) -> None:
     assert_eq_pl(getattr(cs, fn_name)(), getattr(cs_pl, fn_name)())  # pyright: ignore[reportAny]
 
 
+@skipped
 def test_duration_selector() -> None:
     """Dedicated test: DuckDB INTERVAL can't roundtrip via Arrow to Polars."""
     col_names = ["dur"]
@@ -175,6 +192,7 @@ def test_duration_selector() -> None:
     assert pl_lf.select(cs_pl.duration()).collect_schema().names() == col_names
 
 
+@skipped
 def test_enum() -> None:
     cats = ["foo", "bar", "baz"]
     lf = pql.LazyFrame(_SAMPLE_DF)
@@ -232,6 +250,7 @@ def test_contains_multiple() -> None:
 # ──── compositions with new selectors ────
 
 
+@skipped
 def test_float_minus_by_name() -> None:
     assert_eq_pl(
         cs.float().__sub__(cs.by_name("nan_vals")),
@@ -239,6 +258,7 @@ def test_float_minus_by_name() -> None:
     )
 
 
+@skipped
 def test_temporal_union_string() -> None:
     assert_eq_pl(
         cs.temporal().__or__(cs.string()),
@@ -246,6 +266,7 @@ def test_temporal_union_string() -> None:
     )
 
 
+@skipped
 def test_all_minus_numeric() -> None:
     assert_eq_pl(
         cs.all().__sub__(cs.numeric()),
@@ -253,6 +274,7 @@ def test_all_minus_numeric() -> None:
     )
 
 
+@skipped
 def test_integer_intersection_by_name() -> None:
     assert_eq_pl(
         cs.integer().__and__(cs.by_name("x", "age")),
@@ -284,6 +306,7 @@ def test_matches_cast() -> None:
     )
 
 
+@skipped
 def test_contains_sum_in_agg() -> None:
     assert_lf_eq_pl(
         pql

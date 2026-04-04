@@ -9,7 +9,6 @@ import pyochain as pc
 from ._expr import Expr
 from ._funcs import col, len
 from ._meta import ExprPlan
-from ._schema import Schema
 from .sql import SqlExpr
 
 if TYPE_CHECKING:
@@ -29,11 +28,7 @@ class LazyGroupBy:
         self._keys = keys
         keys_names = keys.iter().filter_map(SqlExpr.root_column_name).collect(pc.Set)
         self._schema = (
-            frame.schema
-            .items()
-            .iter()
-            .filter_star(lambda name, _: name not in keys_names)
-            .collect(Schema)
+            frame.columns.iter().filter(lambda name: name not in keys_names).collect()
         )
         self._aggregator = partial(
             self._frame.inner().aggregate,

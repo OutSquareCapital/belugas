@@ -124,7 +124,7 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
             Self: A new LazyFrame with the selected columns.
         """
         return self.__class__(
-            self.schema.into(ExprPlan, exprs, more_exprs, named_exprs).select_context(
+            self.columns.into(ExprPlan, exprs, more_exprs, named_exprs).select_context(
                 self.inner()
             )
         )
@@ -143,7 +143,7 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
             Self: A new LazyFrame with the added or replaced columns.
         """
         return self.__class__(
-            self.schema.into(
+            self.columns.into(
                 ExprPlan, exprs, more_exprs, named_exprs
             ).with_columns_context(self.inner())
         )
@@ -240,7 +240,7 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
             Self: A new LazyFrame with the aggregated rows.
         """
         return self.__class__(
-            self.schema.into(
+            self.columns.into(
                 ExprPlan, exprs, more_exprs, named_exprs
             ).group_by_all_context(self.inner())
         )
@@ -433,7 +433,7 @@ class LazyFrame(sql.CoreHandler[DuckDBPyRelation]):
             Self: A new LazyFrame with the exploded columns.
         """
         to_explode_names = (
-            self.schema
+            self.columns
             .into(ExprPlan, columns, more_columns, {})
             .projections.iter()
             .map(lambda r: r.name)

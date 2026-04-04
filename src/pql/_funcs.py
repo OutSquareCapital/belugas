@@ -46,9 +46,7 @@ def len() -> Expr:
 
 
 def _agg_expr(
-    agg: Callable[[SqlExpr], SqlExpr],
-    cols: TryIter[str],
-    more_cols: Iterable[str],
+    agg: Callable[[SqlExpr], SqlExpr], cols: TryIter[str], more_cols: Iterable[str]
 ) -> Expr:
 
     def _columns_expr(inner_cols: pc.Seq[str]) -> SqlExpr:
