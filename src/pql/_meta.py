@@ -83,6 +83,15 @@ class ExprKind(IntEnum):
     WINDOW = auto()
     UNIQUE = auto()
 
+    def resolve_exploded(self, expr: SqlExpr) -> SqlExpr:
+        match self:
+            case self.SCALAR:
+                return expr
+            case self.UNIQUE:
+                return expr.implode().list.distinct()
+            case _:
+                return expr.implode()
+
 
 @dataclass(slots=True)
 class ExprMeta(ABC):
@@ -197,13 +206,7 @@ class ResolvedExpr(NamedTuple):
         return isinstance(self.expr.inner(), exp.Columns) or self.expr.inner().is_star
 
     def implode_or_scalar(self) -> SqlExpr:
-        match self.kind:
-            case ExprKind.SCALAR:
-                expr = self.expr
-            case ExprKind.UNIQUE:
-                expr = self.expr.implode().list.distinct()
-            case _:
-                expr = self.expr.implode()
+        expr = self.kind.resolve_exploded(self.expr)
         return expr if self.is_multi() else expr.alias(self.name)
 
     def as_aliased(self) -> SqlExpr:
@@ -389,15 +392,12 @@ class ExprPlan:
                         .map(_into_duck)
                     )
                 case exp.Explode(this=exp.Expr() as inner):
-                    match proj.kind:
-                        case ExprKind.SCALAR:
-                            expr = SqlExpr(inner)
-                        case ExprKind.UNIQUE:
-                            expr = SqlExpr(inner).implode().list.distinct()
-                        case _:
-                            expr = SqlExpr(inner).implode()
                     return pc.Iter.once(
-                        expr.list.flatten().alias(proj.name).into_duckdb()
+                        proj.kind
+                        .resolve_exploded(SqlExpr(inner))
+                        .list.flatten()
+                        .alias(proj.name)
+                        .into_duckdb()
                     )
                 case _:
                     return pc.Iter.once(proj.implode_or_scalar().into_duckdb())
