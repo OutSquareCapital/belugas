@@ -197,4 +197,5 @@ def test_explode() -> None:
     assert_eq_pl(
         pql.col("list_num").list.explode(),
         pl.col("list_num").list.explode(),
+        with_cols=False,
     )

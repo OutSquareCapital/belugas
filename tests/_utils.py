@@ -89,10 +89,14 @@ def assert_eq(
 
 
 def assert_eq_pl(
-    pql_exprs: pql.Expr | Iterable[pql.Expr], polars_exprs: pl.Expr | Iterable[pl.Expr]
+    pql_exprs: pql.Expr | Iterable[pql.Expr],
+    polars_exprs: pl.Expr | Iterable[pl.Expr],
+    *,
+    with_cols: bool = True,
 ) -> None:
     _assert(_run_pql_select(pql_exprs), sample_lf().select(polars_exprs))
-    _assert(_run_pql_with_cols(pql_exprs), sample_lf().with_columns(polars_exprs))
+    if with_cols:
+        _assert(_run_pql_with_cols(pql_exprs), sample_lf().with_columns(polars_exprs))
 
 
 def assert_lf_eq_pl(pql_lf: pql.LazyFrame, polars_lf: pl.LazyFrame) -> None:

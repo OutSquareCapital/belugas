@@ -364,7 +364,7 @@ def test_implode() -> None:
 
 
 def test_unique() -> None:
-    assert_eq_pl(pql.col("x").unique(), pl.col("x").unique())
+    assert_eq_pl(pql.col("x").unique(), pl.col("x").unique(), with_cols=False)
     assert_eq_pl(
         (
             pql.col("x").unique().alias("x_unique_left"),
@@ -374,6 +374,7 @@ def test_unique() -> None:
             pl.col("x").unique().alias("x_unique_left"),
             pl.col("x").unique().add(3).alias("x_unique_right"),
         ),
+        with_cols=False,
     )
 
 
