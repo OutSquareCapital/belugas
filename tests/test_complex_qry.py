@@ -6,7 +6,7 @@ import polars as pl
 
 import pql
 
-from ._utils import assert_lf_eq_pl
+from ._utils import assert_lf_eq
 
 _EMPLOYEES = pl.DataFrame({
     "id": [1, 2, 3, 4, 5, 6, 7, 8],
@@ -53,7 +53,7 @@ _ORDERS_PQL = pql.LazyFrame(_ORDERS)
 
 def test_groupby_filter_having() -> None:
     """Group by department, compute aggregates, filter groups by condition."""
-    assert_lf_eq_pl(
+    assert_lf_eq(
         _EMPLOYEES_PQL
         .group_by("department")
         .agg(
@@ -79,7 +79,7 @@ def test_groupby_filter_having() -> None:
 
 def test_join_then_aggregate() -> None:
     """Join employees with orders, then aggregate per employee."""
-    assert_lf_eq_pl(
+    assert_lf_eq(
         _EMPLOYEES_PQL
         .join(_ORDERS_PQL, left_on="id", right_on="employee_id", how="inner")
         .group_by("name", "department")
@@ -103,7 +103,7 @@ def test_join_then_aggregate() -> None:
 
 def test_top_n_per_group_nested_window() -> None:
     """Top-2 earners per department: rank within partition, filter on rank."""
-    assert_lf_eq_pl(
+    assert_lf_eq(
         _EMPLOYEES_PQL
         .with_columns(
             pql
@@ -137,7 +137,7 @@ def test_top_n_per_group_nested_window() -> None:
 
 def test_implode_list_ops_then_explode() -> None:
     """Implode salaries per dept, apply list ops, explode back."""
-    assert_lf_eq_pl(
+    assert_lf_eq(
         _EMPLOYEES_PQL
         .group_by("department")
         .agg(
@@ -173,7 +173,7 @@ def test_implode_list_ops_then_explode() -> None:
 
 def test_frame_explode_then_reaggregate() -> None:
     """Frame-level explode of an imploded list, then re-aggregate."""
-    assert_lf_eq_pl(
+    assert_lf_eq(
         _EMPLOYEES_PQL
         .group_by("department")
         .agg(pql.col("salary").implode().alias("salaries"))
@@ -199,7 +199,7 @@ def test_expr_list_explode_in_agg() -> None:
         "vals": [[1, 2], [2, 3], [4, 5]],
         "arr": [[10, 20], [20, 30], [40, 50]],
     })
-    assert_lf_eq_pl(
+    assert_lf_eq(
         pql
         .LazyFrame(data)
         .group_by("grp")
@@ -229,7 +229,7 @@ def test_expr_list_explode_in_agg() -> None:
 
 def test_window_diff_pct_change_over_partition() -> None:
     """shift/diff/pct_change within department partition ordered by years_exp."""
-    assert_lf_eq_pl(
+    assert_lf_eq(
         _EMPLOYEES_PQL
         .sort("department", "years_exp")
         .with_columns(
@@ -281,7 +281,7 @@ def test_window_diff_pct_change_over_partition() -> None:
 
 def test_join_window_then_list_agg() -> None:
     """Join, compute per-employee order rank within region, implode order amounts."""
-    assert_lf_eq_pl(
+    assert_lf_eq(
         _ORDERS_PQL
         .with_columns(
             pql
@@ -337,7 +337,7 @@ def test_join_window_then_list_agg() -> None:
 
 def test_multi_join_with_aggregation() -> None:
     """Inner join on two conditions, aggregate per region and category."""
-    assert_lf_eq_pl(
+    assert_lf_eq(
         _EMPLOYEES_PQL
         .filter(pql.col("is_active"))
         .join(_ORDERS_PQL, left_on="id", right_on="employee_id", how="inner")
