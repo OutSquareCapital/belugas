@@ -20,7 +20,7 @@ FNS_OUTPUT = CODE_GEN.joinpath("_fns.py")
 REL_OUTPUT = CODE_GEN.joinpath("_core.py")
 META_OUTPUT = CODE_GEN.joinpath("meta.py")
 
-DATA_PATH = Path("scripts", "fn_generator", "functions.parquet")
+DATA_PATH = Path("scripts", "data", "functions.parquet")
 STUB_PATH = Path(".venv", "Lib", "site-packages", "_duckdb-stubs", "__init__.pyi")
 TYPING_PATH = PQL.joinpath("_typing.py")
 

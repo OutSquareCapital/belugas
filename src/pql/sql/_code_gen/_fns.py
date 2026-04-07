@@ -1723,7 +1723,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._new(anon("kurtosis_pop", self.inner()))
+        return self._new(func("KURTOSIS_POP", self.inner()))
 
     def kurtosis_samp(self) -> Self:
         """Returns the excess kurtosis (Fisher's definition) of all input values, with a bias correction according to the sample size.

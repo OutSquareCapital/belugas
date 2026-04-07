@@ -30,6 +30,13 @@ def _extract_json_with_path(expr: type[exp.Expr]) -> BindedFn:
     return _bind_dialect(parser.build_extract_json_with_path(expr))  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
 
 
+def _named_agg(name: str) -> BindedFn:
+    def f(args: list[exp.Expr]) -> exp.Expr:
+        return exp.AnonymousAggFunc(this=name, expressions=args)
+
+    return f
+
+
 _build_hex = _bind_dialect(parser.build_hex)  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
 
 _PATCHED_FROM_GLOBAL: FuncRegistery = {
@@ -61,6 +68,7 @@ _MISSING_FROM_GLOT: FuncRegistery = {
     "BASE64": exp.ToBase64.from_arg_list,
     "BIN": exp.ToBinary.from_arg_list,
     "FROM_HEX": exp.Unhex.from_arg_list,
+    "KURTOSIS_POP": _named_agg("KURTOSIS_POP"),
     "LIST_APPLY": exp.Transform.from_arg_list,
     "LIST_CAT": _bind_dialect(parser.build_array_concat),  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
     "LIST_DISTINCT": exp.ArrayDistinct.from_arg_list,
