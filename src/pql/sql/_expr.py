@@ -632,10 +632,13 @@ class SqlExpr(Fns):  # noqa: PLW1641
         Returns:
             Self: A boolean expression indicating whether the value is the last occurrence.
         """
+        from .._meta import Marker
+
+        row_idx = Marker.TEMP.to_expr()
         return (
             self
             .row_number()
-            .over(pc.Some(self), pc.Some(self), descending=True, nulls_last=True)
+            .over(pc.Some(self), pc.Some(row_idx), descending=True)
             .eq(1)
         )
 
@@ -661,11 +664,18 @@ class SqlExpr(Fns):  # noqa: PLW1641
 
     def arg_sort(self, *, descending: bool = False, nulls_last: bool = False) -> Self:
         """Return indices that would sort the expression."""
-        return (
-            self
-            .row_number()
-            .over(order_by=pc.Some(self), descending=descending, nulls_last=nulls_last)
-            .sub(1)
+        from .._meta import Marker
+
+        row_idx = Marker.TEMP.to_expr()
+        return self._cls(
+            row_idx
+            .nth_value(row_idx.add(1))
+            .over(
+                order_by=pc.Some((self, row_idx)),
+                descending=(descending, False),
+                nulls_last=(nulls_last, False),
+            )
+            .inner()
         )
 
     def forward_fill(self) -> Self:
