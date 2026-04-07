@@ -61,6 +61,9 @@ class Expr(sql.CoreHandler[SqlExpr]):
     def _as_scalar(self, expr: SqlExpr) -> Self:
         return self._with_meta(expr, kind=ExprKind.SCALAR)
 
+    def _as_literal_name(self, expr: SqlExpr) -> Self:
+        return self._with_meta(expr, alias_name=pc.Some(lambda _: Marker.LIT))
+
     def _clear_alias_name(self) -> Expr:
         return self._cls(self.inner(), pc.Some(self.meta.clear_alias()))
 
@@ -155,37 +158,37 @@ class Expr(sql.CoreHandler[SqlExpr]):
         return self.add(other)
 
     def __radd__(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().radd(other))
+        return self._as_literal_name(self.inner().radd(other))
 
     def __sub__(self, other: IntoExpr) -> Self:
         return self.sub(other)
 
     def __rsub__(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().rsub(other))
+        return self._as_literal_name(self.inner().rsub(other))
 
     def __mul__(self, other: IntoExpr) -> Self:
         return self.mul(other)
 
     def __rmul__(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().rmul(other))
+        return self._as_literal_name(self.inner().rmul(other))
 
     def __truediv__(self, other: IntoExpr) -> Self:
         return self.truediv(other)
 
     def __rtruediv__(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().rtruediv(other))
+        return self._as_literal_name(self.inner().rtruediv(other))
 
     def __floordiv__(self, other: IntoExpr) -> Self:
         return self.floordiv(other)
 
     def __rfloordiv__(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().rfloordiv(other))
+        return self._as_literal_name(self.inner().rfloordiv(other))
 
     def __mod__(self, other: IntoExpr) -> Self:
         return self.mod(other)
 
     def __rmod__(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().rmod(other))
+        return self._as_literal_name(self.inner().rmod(other))
 
     def __pow__(self, other: IntoExpr) -> Self:
         return self.pow(other)
@@ -220,7 +223,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         return self.and_(other)
 
     def __rand__(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().rand(other))
+        return self._as_literal_name(self.inner().rand(other))
 
     def __or__(self, other: IntoExpr) -> Self:
         return self.or_(other)
@@ -229,7 +232,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         return self.xor(other)
 
     def __ror__(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().ror(other))
+        return self._as_literal_name(self.inner().ror(other))
 
     def __invert__(self) -> Self:
         return self.not_()
