@@ -116,5 +116,14 @@ def anon(name: str, *args: IntoExpr) -> exp.Expr:
     return exp.Anonymous(this=name, expressions=args_into_glot(args))
 
 
+def anon_agg(name: str, *args: IntoExpr) -> exp.Expr:
+    """Create a SQL anonymous aggregate function expression.
+
+    Returns:
+        exp.Expr: A new aggregate expression representing the anonymous function.
+    """
+    return exp.AnonymousAggFunc(this=name, expressions=args_into_glot(args))
+
+
 def func(name: str, *args: IntoExpr) -> exp.Expr:
     return DUCKDB_FUNCTIONS[name](args_into_glot(args))

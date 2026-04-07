@@ -14,7 +14,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING, ClassVar, Self
 
-from .._core import DuckHandler, NameSpaceHandler, anon, func
+from .._core import DuckHandler, NameSpaceHandler, anon, anon_agg, func
 
 if TYPE_CHECKING:
     from ..typing import IntoExpr, IntoExprColumn, SeqLiteral
@@ -277,7 +277,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("arg_max_null", self.inner(), val))
+        return self._cls(anon_agg("arg_max_null", self.inner(), val))
 
     def arg_max_nulls_last(
         self, val: IntoExpr, n: IntoExprColumn | int | None = None
@@ -300,7 +300,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("arg_max_nulls_last", self.inner(), val, n))
+        return self._cls(anon_agg("arg_max_nulls_last", self.inner(), val, n))
 
     def arg_min(self, val: IntoExpr, col2: IntoExprColumn | int | None = None) -> Self:
         """Finds the row with the minimum val.
@@ -344,7 +344,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("arg_min_null", self.inner(), val))
+        return self._cls(anon_agg("arg_min_null", self.inner(), val))
 
     def arg_min_nulls_last(
         self, val: IntoExpr, n: IntoExprColumn | int | None = None
@@ -367,7 +367,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("arg_min_nulls_last", self.inner(), val, n))
+        return self._cls(anon_agg("arg_min_nulls_last", self.inner(), val, n))
 
     def argmax(self, val: IntoExpr, col2: IntoExprColumn | int | None = None) -> Self:
         """Finds the row with the maximum val.
@@ -667,7 +667,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("bitstring_agg", self.inner(), col1, col2))
+        return self._cls(anon_agg("bitstring_agg", self.inner(), col1, col2))
 
     def can_cast_implicitly(self, target_type: IntoExpr) -> Self:
         """Whether or not we can implicitly cast from the source type to the other type.
@@ -1155,7 +1155,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("entropy", self.inner()))
+        return self._cls(anon_agg("entropy", self.inner()))
 
     def equi_width_bins(
         self,
@@ -1261,7 +1261,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("favg", self.inner()))
+        return self._cls(anon_agg("favg", self.inner()))
 
     def fdiv(self, y: IntoExpr) -> Self:
         """SQL fdiv function.
@@ -1284,7 +1284,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("fill", self.inner()))
+        return self._cls(anon_agg("fill", self.inner()))
 
     def finalize(self) -> Self:
         """SQL finalize function.
@@ -1422,7 +1422,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("fsum", self.inner()))
+        return self._cls(anon_agg("fsum", self.inner()))
 
     def gamma(self) -> Self:
         """Interpolation of (x-1) factorial (so decimal inputs are allowed).
@@ -1622,7 +1622,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("histogram", self.inner(), col1))
+        return self._cls(anon_agg("histogram", self.inner(), col1))
 
     def histogram_exact(self, bins: IntoExpr) -> Self:
         """Returns a LIST of STRUCTs with the fields bucket and count matching the buckets exactly.
@@ -1640,7 +1640,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("histogram_exact", self.inner(), bins))
+        return self._cls(anon_agg("histogram_exact", self.inner(), bins))
 
     def implode(self) -> Self:
         """Returns a LIST containing all the values of a column.
@@ -1754,7 +1754,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("kahan_sum", self.inner()))
+        return self._cls(anon_agg("kahan_sum", self.inner()))
 
     def kurtosis_pop(self) -> Self:
         """Returns the excess kurtosis (Fisher's definition) of all input values, without bias correction.
@@ -1764,7 +1764,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(func("KURTOSIS_POP", self.inner()))
+        return self._cls(anon_agg("kurtosis_pop", self.inner()))
 
     def kurtosis_samp(self) -> Self:
         """Returns the excess kurtosis (Fisher's definition) of all input values, with a bias correction according to the sample size.
@@ -1943,7 +1943,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("listagg", self.inner(), arg))
+        return self._cls(anon_agg("listagg", self.inner(), arg))
 
     def ln(self) -> Self:
         """Computes the natural logarithm of x.
@@ -2007,7 +2007,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("mad", self.inner()))
+        return self._cls(anon_agg("mad", self.inner()))
 
     def make_type(self, *args: IntoExpr) -> Self:
         """Construct a type from its name and optional parameters.
@@ -2409,7 +2409,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(func("PRODUCT", self.inner()))
+        return self._cls(anon_agg("product", self.inner()))
 
     def quantile_cont(self, pos: IntoExprColumn | SeqLiteral[float] | float) -> Self:
         """Returns the interpolated quantile number between 0 and 1 .
@@ -2698,7 +2698,7 @@ class Fns(DuckHandler):
             Self
         """
         return self._cls(
-            anon("reservoir_quantile", self.inner(), quantile, sample_size)
+            anon_agg("reservoir_quantile", self.inner(), quantile, sample_size)
         )
 
     def round_even(self, n: IntoExpr) -> Self:
@@ -2784,7 +2784,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("sem", self.inner()))
+        return self._cls(anon_agg("sem", self.inner()))
 
     def set_bit(
         self, index: IntoExprColumn | int, new_value: IntoExprColumn | int
@@ -3106,7 +3106,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("sum_no_overflow", self.inner()))
+        return self._cls(anon_agg("sum_no_overflow", self.inner()))
 
     def sumkahan(self) -> Self:
         """Calculates the sum using a more accurate floating point summation (Kahan Sum).
@@ -3124,7 +3124,7 @@ class Fns(DuckHandler):
         Returns:
             Self
         """
-        return self._cls(anon("sumkahan", self.inner()))
+        return self._cls(anon_agg("sumkahan", self.inner()))
 
     def switch(
         self, map_arg: IntoExprColumn | None = None, value: IntoExprColumn | None = None
@@ -5272,7 +5272,7 @@ class StringFns[T: Fns](NameSpaceHandler[T]):
         Returns:
             T
         """
-        return self._cls(anon("string_agg", self.inner(), arg))
+        return self._cls(anon_agg("string_agg", self.inner(), arg))
 
     def ascii(self) -> T:
         """Returns an integer that represents the Unicode code point of the first character of the `string`.
@@ -9934,7 +9934,7 @@ class GeoSpatialFns[T: Fns](NameSpaceHandler[T]):
         Returns:
             T
         """
-        return self._cls(anon("ST_AsMVT", self.inner(), col1, col2, col3, col4))
+        return self._cls(anon_agg("ST_AsMVT", self.inner(), col1, col2, col3, col4))
 
     def asmvtgeom(
         self,
@@ -10385,7 +10385,7 @@ class GeoSpatialFns[T: Fns](NameSpaceHandler[T]):
         Returns:
             T
         """
-        return self._cls(anon("ST_CoverageInvalidEdges_Agg", self.inner(), col1))
+        return self._cls(anon_agg("ST_CoverageInvalidEdges_Agg", self.inner(), col1))
 
     def coveragesimplify(
         self,
@@ -10423,7 +10423,7 @@ class GeoSpatialFns[T: Fns](NameSpaceHandler[T]):
         Returns:
             T
         """
-        return self._cls(anon("ST_CoverageSimplify_Agg", self.inner(), col1, col2))
+        return self._cls(anon_agg("ST_CoverageSimplify_Agg", self.inner(), col1, col2))
 
     def coverageunion(self) -> T:
         """Union all geometries in a polygonal coverage into a single geometry.
@@ -10445,7 +10445,7 @@ class GeoSpatialFns[T: Fns](NameSpaceHandler[T]):
         Returns:
             T
         """
-        return self._cls(anon("ST_CoverageUnion_Agg", self.inner()))
+        return self._cls(anon_agg("ST_CoverageUnion_Agg", self.inner()))
 
     def coveredby(self, geom2: IntoExprColumn) -> T:
         """Returns true if geom1 is covered by geom2.
@@ -10752,7 +10752,7 @@ class GeoSpatialFns[T: Fns](NameSpaceHandler[T]):
         Returns:
             T
         """
-        return self._cls(anon("ST_Envelope_Agg", self.inner()))
+        return self._cls(anon_agg("ST_Envelope_Agg", self.inner()))
 
     def equals(self, geom2: IntoExprColumn) -> T:
         """Returns true if the geometries are equal.
@@ -10817,7 +10817,7 @@ class GeoSpatialFns[T: Fns](NameSpaceHandler[T]):
         Returns:
             T
         """
-        return self._cls(anon("ST_Extent_Agg", self.inner()))
+        return self._cls(anon_agg("ST_Extent_Agg", self.inner()))
 
     def extent_approx(self) -> T:
         """Returns the approximate bounding box of a geometry, if available.
@@ -11179,7 +11179,7 @@ class GeoSpatialFns[T: Fns](NameSpaceHandler[T]):
         Returns:
             T
         """
-        return self._cls(anon("ST_Intersection_Agg", self.inner()))
+        return self._cls(anon_agg("ST_Intersection_Agg", self.inner()))
 
     def intersects(self, box2: IntoExprColumn) -> T:
         """Returns true if the geometries intersect.
@@ -11675,7 +11675,7 @@ class GeoSpatialFns[T: Fns](NameSpaceHandler[T]):
         Returns:
             T
         """
-        return self._cls(anon("ST_MemUnion_Agg", self.inner()))
+        return self._cls(anon_agg("ST_MemUnion_Agg", self.inner()))
 
     def minimumrotatedrectangle(self) -> T:
         """Returns the minimum rotated rectangle that bounds the input geometry, finding the surrounding box that has the lowest area by using a rotated rectangle, rather than taking the lowest and highest coordinate values as per ST_Envelope().
@@ -12478,7 +12478,7 @@ class GeoSpatialFns[T: Fns](NameSpaceHandler[T]):
         Returns:
             T
         """
-        return self._cls(anon("ST_Union_Agg", self.inner()))
+        return self._cls(anon_agg("ST_Union_Agg", self.inner()))
 
     def voronoidiagram(self) -> T:
         """Returns the Voronoi diagram of the supplied MultiPoint geometry.

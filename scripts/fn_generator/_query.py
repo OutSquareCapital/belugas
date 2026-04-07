@@ -61,6 +61,8 @@ def run_qry(lf: pl.LazyFrame) -> pl.LazyFrame:
             dk.function_name.replace_strict(
                 RENAME_RULES, default=dk.function_name, return_dtype=pl.String
             ).alias(py.raw_name.meta.output_name()),
+            _expr_builder(py.glot_name, dk.function_type),
+            _expr_name(py.glot_name, dk.function_name),
         )
         .with_columns(dk.categories.pipe(_namespace_specs, py.raw_name))
         .explode("namespace")
@@ -148,6 +150,22 @@ def _py_name(raw_name: pl.Expr, py: PyCols) -> pl.Expr:
         )
         .alias("py_name")
     )
+
+
+def _expr_builder(glot_name: pl.Expr, function_type: pl.Expr) -> pl.Expr:
+    return (
+        pl
+        .when(glot_name.is_not_null())
+        .then(pl.lit("func"))
+        .when(function_type.eq(FuncTypes.AGGREGATE))
+        .then(pl.lit("anon_agg"))
+        .otherwise(pl.lit("anon"))
+        .alias("expr_builder")
+    )
+
+
+def _expr_name(glot_name: pl.Expr, sql_name: pl.Expr) -> pl.Expr:
+    return pl.coalesce(glot_name, sql_name).alias("expr_name")
 
 
 def _alias_map(lf: pl.LazyFrame, dk: DuckCols) -> pl.LazyFrame:
