@@ -762,6 +762,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytz" },
     { name = "ruff" },
+    { name = "sdsort" },
     { name = "sqlparse" },
     { name = "typer" },
 ]
@@ -791,6 +792,7 @@ dev = [
     { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "pytz", specifier = ">=2025.2" },
     { name = "ruff", specifier = ">=0.14.14" },
+    { name = "sdsort", specifier = ">=0.4.2" },
     { name = "sqlparse", specifier = ">=0.5.5" },
     { name = "typer", specifier = ">=0.21.1" },
 ]
@@ -964,6 +966,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/88/3d/1364fcde8656962782aa9ea93c92d98682b1ecec2f184e625a965ad3b4a6/ruff-0.15.9-py3-none-win32.whl", hash = "sha256:bde6ff36eaf72b700f32b7196088970bf8fdb2b917b7accd8c371bfc0fd573ec", size = 10583382, upload-time = "2026-04-02T18:17:04.261Z" },
     { url = "https://files.pythonhosted.org/packages/4c/56/5c7084299bd2cacaa07ae63a91c6f4ba66edc08bf28f356b24f6b717c799/ruff-0.15.9-py3-none-win_amd64.whl", hash = "sha256:45a70921b80e1c10cf0b734ef09421f71b5aa11d27404edc89d7e8a69505e43d", size = 11744969, upload-time = "2026-04-02T18:16:59.611Z" },
     { url = "https://files.pythonhosted.org/packages/03/36/76704c4f312257d6dbaae3c959add2a622f63fcca9d864659ce6d8d97d3d/ruff-0.15.9-py3-none-win_arm64.whl", hash = "sha256:0694e601c028fd97dc5c6ee244675bc241aeefced7ef80cd9c6935a871078f53", size = 11005870, upload-time = "2026-04-02T18:17:15.773Z" },
+]
+
+[[package]]
+name = "sdsort"
+version = "0.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/74/ee/33a2cdadbc7ab81f92075fba2ba767b382136b2c8e1caf457f7ec5934fec/sdsort-0.4.2.tar.gz", hash = "sha256:9ac0437a0ac4f3ce3331e0d880b13bd10cd4175d7e063ecee899cba3e45fd497", size = 6630, upload-time = "2026-04-03T15:02:07.021Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6d/02/ba6de4c27ef02b366e87f426e89d6fd603c50d19790633341b167f05e963/sdsort-0.4.2-py3-none-any.whl", hash = "sha256:2f63c66be01018c73f13f46abd1685d7ecda954f2fa8630727d3159ad6625f3d", size = 7311, upload-time = "2026-04-03T15:02:05.542Z" },
 ]
 
 [[package]]
