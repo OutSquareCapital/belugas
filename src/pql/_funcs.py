@@ -6,7 +6,7 @@ from sqlglot import exp
 
 from . import sql
 from ._expr import Expr
-from ._meta import ExprKind, Marker, MultiMeta, Resolver, SingleMeta
+from ._meta import Marker, MultiMeta, Resolver, SingleMeta
 from .sql import SqlExpr
 from .sql._conversions import args_into_glot
 from .sql.typing import IntoExpr, IntoExprColumn, PythonLiteral
@@ -54,9 +54,7 @@ def _agg_expr(
         return SqlExpr(expr)
 
     names = try_iter(cols).chain(more_cols).collect().then_some()
-    meta = MultiMeta(
-        kind=ExprKind.SCALAR, resolver=Resolver.agg_expr(names), preserve_native=True
-    )
+    meta = MultiMeta(resolver=Resolver.agg_expr(names), preserve_native=True)
     inner_expr = (
         names
         .map(_columns_expr)

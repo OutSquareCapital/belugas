@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Collection, Iterable
 from dataclasses import dataclass, field, replace
-from enum import IntEnum, StrEnum, auto
+from enum import StrEnum, auto
 from functools import partial
 from typing import TYPE_CHECKING, NamedTuple, Self, override
 
@@ -77,34 +77,41 @@ class Marker(StrEnum):
                 return lf
 
 
-class ExprKind(IntEnum):
-    ROW = auto()
-    SCALAR = auto()
-    WINDOW = auto()
-    UNIQUE = auto()
-
-    def resolve_exploded(self, expr: SqlExpr) -> SqlExpr:
-        match self:
-            case self.SCALAR:
-                return expr
-            case self.UNIQUE:
-                return expr.implode().list.distinct()
+def _has_window_ancestor(node: exp.Expr) -> bool:
+    def _ancestor_is_window(ancestor: exp.Expr | None) -> bool:
+        match ancestor:
+            case exp.Window():
+                return True
+            case exp.Distinct() | exp.Filter() | exp.IgnoreNulls() | exp.WithinGroup():
+                return (
+                    pc.Option
+                    .if_some(ancestor.parent)
+                    .map(_ancestor_is_window)
+                    .unwrap_or(default=False)
+                )
             case _:
-                return expr.implode()
+                return False
 
-    def broadcasted_scalar(self, expr: SqlExpr) -> SqlExpr:
-        def _window_agg(node: exp.Expr) -> exp.Expr:
-            match (node, isinstance(node.parent, exp.Window)):
-                case (exp.AggFunc() | exp.List(), False):
-                    return SqlExpr(node).over().inner()
-                case _:
-                    return node
+    return _ancestor_is_window(node.parent)
 
-        match self:
-            case self.SCALAR:
-                return SqlExpr(expr.inner().transform(_window_agg))  # pyright: ignore[reportUnknownMemberType, reportAny]
+
+def _broadcast_reducers(expr: SqlExpr) -> SqlExpr:
+    def _window_agg(node: exp.Expr) -> exp.Expr:
+        match node:
+            case exp.AggFunc() | exp.List() if not _has_window_ancestor(node):
+                return SqlExpr(node).over().inner()
             case _:
-                return expr
+                return node
+
+    return SqlExpr(expr.inner().transform(_window_agg))  # pyright: ignore[reportUnknownMemberType, reportAny]
+
+
+def _resolve_exploded(expr: SqlExpr, *, is_distinct: bool) -> SqlExpr:
+    match is_distinct:
+        case True:
+            return expr.implode().list.distinct()
+        case False:
+            return expr.implode()
 
 
 @dataclass(slots=True)
@@ -112,7 +119,7 @@ class ExprMeta(ABC):
     """Metadata for expressions, used for tracking properties that affect query generation."""
 
     alias_name: pc.Option[Callable[[str], str]] = field(default_factory=lambda: pc.NONE)
-    kind: ExprKind = ExprKind.ROW
+    is_distinct: bool = False
 
     @abstractmethod
     def into_resolved(
@@ -153,7 +160,9 @@ class SingleMeta(ExprMeta):
         self, template: SqlExpr, cols: Cols, alias_override: pc.Option[str]
     ) -> pc.Iter[ResolvedExpr]:
         output_names = self.get_output_names(pc.Seq((self.root_name,)), alias_override)
-        return ResolvedExpr(template, output_names.first(), self.kind).into_iter()
+        return ResolvedExpr(
+            template, output_names.first(), self.is_distinct
+        ).into_iter()
 
 
 @dataclass(slots=True)
@@ -165,7 +174,7 @@ class MultiMeta(ExprMeta):
     def into_resolved(
         self, template: SqlExpr, cols: Cols, alias_override: pc.Option[str]
     ) -> pc.Iter[ResolvedExpr]:
-        resolved_fn = partial(ResolvedExpr, kind=self.kind)
+        resolved_fn = partial(ResolvedExpr, is_distinct=self.is_distinct)
 
         def _get_builder() -> NamesBuilder:
             base_names = self.resolver(cols)
@@ -208,25 +217,51 @@ class ResolvedExpr(NamedTuple):
 
     expr: SqlExpr
     name: str
-    kind: ExprKind
+    is_distinct: bool
 
     @classmethod
     def from_named(cls, val: IntoExpr, alias_override: pc.Option[str]) -> Self:
         resolved = SqlExpr.new(val, as_col=True)
         output_name = alias_override.unwrap_or(resolved.get_name())
-        return cls(resolved, output_name, kind=ExprKind.ROW)
+        return cls(resolved, output_name, is_distinct=False)
 
     def is_multi(self) -> bool:
         return isinstance(self.expr.inner(), exp.Columns) or self.expr.inner().is_star
 
-    def implode_or_scalar(self) -> SqlExpr:
-        expr = self.kind.resolve_exploded(self.expr)
-        return expr if self.is_multi() else expr.alias(self.name)
+    def is_pure_reducer(self) -> bool:
+        def _has_unwindowed_reducer() -> bool:
+            return pc.Iter(self.expr.inner().find_all(exp.AggFunc, exp.List)).any(
+                lambda node: not _has_window_ancestor(node)
+            )
 
-    def as_aliased(self, *, broadcast_scalar: bool) -> SqlExpr:
-        expr = (
-            self.kind.broadcasted_scalar(self.expr) if broadcast_scalar else self.expr
+        def _has_free_column() -> bool:
+            return pc.Iter(self.expr.inner().find_all(exp.Column)).any(
+                lambda col: pc.Option(
+                    col.find_ancestor(exp.AggFunc, exp.List, exp.Window)
+                ).is_none()
+            )
+
+        return (
+            not self.is_distinct
+            and _has_unwindowed_reducer()
+            and not _has_free_column()
         )
+
+    def implode_or_scalar(self) -> SqlExpr:
+        match (self.is_pure_reducer(), self.is_multi()):
+            case (True, True):
+                return self.expr
+            case (False, True):
+                return _resolve_exploded(self.expr, is_distinct=self.is_distinct)
+            case (True, False):
+                return self.expr.alias(self.name)
+            case (False, False):
+                return _resolve_exploded(self.expr, is_distinct=self.is_distinct).alias(
+                    self.name
+                )
+
+    def as_aliased(self, *, broadcast_agg: bool) -> SqlExpr:
+        expr = _broadcast_reducers(self.expr) if broadcast_agg else self.expr
         return expr if self.is_multi() else expr.alias(self.name)
 
     def into_iter(self) -> pc.Iter[Self]:
@@ -284,9 +319,9 @@ class ExprPlan:
             .collect()
         )
 
-    def aliased_sql(self, *, broadcast_scalar: bool) -> pc.Iter[Expression]:
+    def aliased_sql(self, *, broadcast_agg: bool) -> pc.Iter[Expression]:
         def _into_expr(resolved: ResolvedExpr) -> Expression:
-            return resolved.as_aliased(broadcast_scalar=broadcast_scalar).into_duckdb()
+            return resolved.as_aliased(broadcast_agg=broadcast_agg).into_duckdb()
 
         return self.projections.iter().map(_into_expr)
 
@@ -294,19 +329,19 @@ class ExprPlan:
         def _non_empty_slct(
             projs: pc.Seq[ResolvedExpr], lf: DuckDBPyRelation
         ) -> DuckDBPyRelation:
-            match projs.all(lambda r: r.kind == ExprKind.UNIQUE):
+            match projs.all(lambda r: r.is_distinct):
                 case True:
-                    return self.aliased_sql(broadcast_scalar=False).into(
+                    return self.aliased_sql(broadcast_agg=False).into(
                         lambda exprs: lf.select(*exprs).distinct()
                     )
                 case False:
-                    match projs.all(lambda r: r.kind == ExprKind.SCALAR):
+                    match projs.all(lambda r: r.is_pure_reducer()):
                         case True:
-                            return self.aliased_sql(broadcast_scalar=False).into(
+                            return self.aliased_sql(broadcast_agg=False).into(
                                 lf.aggregate
                             )
                         case False:
-                            return self.aliased_sql(broadcast_scalar=True).into(
+                            return self.aliased_sql(broadcast_agg=True).into(
                                 lambda exprs: lf.select(*exprs)
                             )
 
@@ -322,7 +357,7 @@ class ExprPlan:
                     case True:
                         return pc.NONE
                     case False:
-                        expr = proj.kind.broadcasted_scalar(proj.expr)
+                        expr = _broadcast_reducers(proj.expr)
                         return pc.Some((proj.name, expr))
 
             def _resolved(updates: pc.Dict[str, SqlExpr]) -> pc.Iter[SqlExpr]:
@@ -368,12 +403,12 @@ class ExprPlan:
         return (
             self.projections
             .iter()
-            .map(lambda proj: proj.as_aliased(broadcast_scalar=False))
+            .map(lambda proj: proj.as_aliased(broadcast_agg=False))
             .into(lambda args: expr.struct.insert(*args))
         )
 
     def group_by_all_context(self, lf: DuckDBPyRelation) -> DuckDBPyRelation:
-        return self.aliased_sql(broadcast_scalar=False).into(lf.aggregate, "ALL")
+        return self.aliased_sql(broadcast_agg=False).into(lf.aggregate, "ALL")
 
     def agg_context(
         self,
@@ -393,7 +428,7 @@ class ExprPlan:
 
             def _into_duck(name: str) -> Expression:
                 return (
-                    ResolvedExpr(sql.col(name), name, proj.kind)
+                    ResolvedExpr(sql.col(name), name, proj.is_distinct)
                     .implode_or_scalar()
                     .into_duckdb()
                 )
@@ -409,8 +444,7 @@ class ExprPlan:
                     )
                 case exp.Explode(this=exp.Expr() as inner):
                     return pc.Iter.once(
-                        proj.kind
-                        .resolve_exploded(SqlExpr(inner))
+                        _resolve_exploded(SqlExpr(inner), is_distinct=proj.is_distinct)
                         .list.flatten()
                         .alias(proj.name)
                         .into_duckdb()
