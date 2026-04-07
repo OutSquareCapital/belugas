@@ -139,7 +139,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         return self.__lt__(other)
 
     def __mod__(self, other: IntoExpr) -> Self:
-        return self._binop(exp.Mod, other)
+        return self.fmod(other)
 
     def mod(self, other: IntoExpr) -> Self:
         return self.__mod__(other)
@@ -194,7 +194,9 @@ class SqlExpr(Fns):  # noqa: PLW1641
         return self.__rfloordiv__(other)
 
     def __rmod__(self, other: IntoExpr) -> Self:
-        return self._rbinop(exp.Mod, other)
+        from ._funcs import into_expr
+
+        return self._new(into_expr(other).fmod(self.inner()).inner())
 
     def rmod(self, other: IntoExpr) -> Self:
         return self.__rmod__(other)
