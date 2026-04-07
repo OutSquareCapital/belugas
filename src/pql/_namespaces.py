@@ -70,7 +70,7 @@ class ExprStringNameSpace(ExprNameSpaceBase):
         Returns:
             Expr
         """
-        return self.inner()._clear_distinct(  # pyright: ignore[reportPrivateUsage]
+        return self.inner()._cls(  # pyright: ignore[reportPrivateUsage]
             self.inner().inner().str.join(delimiter, ignore_nulls=ignore_nulls)
         )
 

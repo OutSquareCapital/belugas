@@ -557,6 +557,9 @@ class SqlExpr(Fns):  # noqa: PLW1641
         """
         return self._cls(self.implode().list.distinct().list.length().inner())
 
+    def unique(self) -> Self:
+        return self._cls(exp.Distinct(expressions=[self.inner()]))
+
     def has_nulls(self) -> Self:
         """Return whether the expression contains nulls.
 
