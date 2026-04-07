@@ -35,7 +35,7 @@ class Selector(Expr):
             case Selector():
                 return self._resolver.union(other._resolver).into_selector()
             case _:
-                return Expr.__or__(self, other)
+                return super().__or__(other)
 
     @overload
     def __or__(self, other: Self) -> Self: ...
@@ -54,7 +54,7 @@ class Selector(Expr):
             case Selector():
                 return self._resolver.intersection(other._resolver).into_selector()
             case _:
-                return Expr.__and__(self, other)
+                return super().__and__(other)
 
     @overload
     def __and__(self, other: Self) -> Self: ...
@@ -73,7 +73,7 @@ class Selector(Expr):
             case Selector():
                 return self._resolver.difference(other._resolver).into_selector()
             case _:
-                return Expr.__sub__(self, other)
+                return super().__sub__(other)
 
     @overload
     def __sub__(self, other: Self) -> Self: ...
