@@ -117,7 +117,7 @@ def test_rmod() -> None:
 
 
 def test_rpow() -> None:
-    assert_eq((2 ** pql.col("x")), (2 ** pl.col("x")))
+    assert_eq((2.0 ** pql.col("x")), (2.0 ** pl.col("x")))
 
 
 def test_neg() -> None:

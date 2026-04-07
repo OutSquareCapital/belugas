@@ -196,7 +196,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         return self.pow(other)
 
     def __rpow__(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().rpow(other))
+        return self._as_literal_name(self.inner().rpow(other))
 
     def __neg__(self) -> Self:
         return self.neg()
