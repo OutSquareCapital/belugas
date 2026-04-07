@@ -154,7 +154,6 @@ _SIMPLE_FNS = {
     "sum",
     "mean",
     "median",
-    "mode",
     "product",
     "n_unique",
     "null_count",
@@ -198,6 +197,10 @@ def test_uint_only_simple() -> None:
     assert_eq(pql.col("uint").log10(), pl.col("uint").log10())
     assert_eq(pql.col("uint").log1p(), pl.col("uint").log1p())
     assert_eq(pql.col("uint").sqrt(), pl.col("uint").sqrt())
+
+
+def test_mode() -> None:
+    assert_eq(pql.col("x").mode(), pl.col("x").mode(), with_cols=False)
 
 
 def test_is_first_distinct() -> None:
