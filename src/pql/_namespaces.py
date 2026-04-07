@@ -70,7 +70,7 @@ class ExprStringNameSpace(ExprNameSpaceBase):
         Returns:
             Expr
         """
-        return self.inner()._cls(  # pyright: ignore[reportPrivateUsage]
+        return self._cls(
             self.inner().inner().str.join(delimiter, ignore_nulls=ignore_nulls)
         )
 
@@ -657,8 +657,7 @@ class ExprNameNameSpace(ExprNameSpaceBase):
     """
 
     def _with_alias_mapper(self, mapper: Callable[[str], str]) -> Expr:
-        meta = pc.Some(self.inner().meta.with_alias_mapper(mapper))
-        return self.inner()._cls(self.inner().inner(), meta)  # pyright: ignore[reportPrivateUsage]
+        return self.inner()._with_alias_mapper(mapper)  # pyright: ignore[reportPrivateUsage]
 
     def keep(self) -> Expr:
         return self.inner()._clear_alias_name()  # pyright: ignore[reportPrivateUsage]

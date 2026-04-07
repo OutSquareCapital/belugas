@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from decimal import Decimal
 from functools import partial
 from typing import TYPE_CHECKING, Self, override
@@ -36,31 +36,26 @@ if TYPE_CHECKING:
 _NONE = sql.lit(None)
 
 
-@dataclass(slots=True, init=False)
+@dataclass(slots=True)
 class Expr(sql.CoreHandler[SqlExpr]):
     _inner: SqlExpr
     meta: ExprMeta
 
-    def __init__(self, inner: SqlExpr, meta: ExprMeta) -> None:
-        self._inner = inner
-        self.meta = replace(meta)
-
     @override
-    def _cls(self, value: SqlExpr, meta: pc.Option[ExprMeta] = pc.NONE) -> Self:
-        return self.__class__(value, meta.unwrap_or(self.meta))
-
-    def _with_meta(
-        self,
-        value: SqlExpr,
-        **changes: bool | pc.Option[Callable[[str], str]],
-    ) -> Self:
-        return self._cls(value, pc.Some(replace(self.meta, **changes)))
+    def _cls(self, value: SqlExpr) -> Self:
+        return self.__class__(value, self.meta)
 
     def _as_literal_name(self, expr: SqlExpr) -> Self:
-        return self._with_meta(expr, alias_name=pc.Some(lambda _: Marker.LIT))
+        return self.__class__(expr, self.meta.set_alias_name(lambda _: Marker.LIT))
 
     def _clear_alias_name(self) -> Expr:
-        return self._cls(self.inner(), pc.Some(self.meta.clear_alias()))
+        return self.__class__(self.inner(), self.meta.clear_alias())
+
+    def _with_alias_mapper(self, mapper: Callable[[str], str]) -> Expr:
+        return self.__class__(self.inner(), self.meta.with_alias_mapper(mapper))
+
+    def _set_alias(self, alias: str) -> Self:
+        return self.__class__(self.inner(), self.meta.set_alias_name(lambda _: alias))
 
     def _rolling_agg(
         self,
@@ -313,7 +308,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression with the given alias.
         """
-        return self._with_meta(self.inner(), alias_name=pc.Some(lambda _: name))
+        return self._set_alias(name)
 
     def is_null(self) -> Self:
         """Check if the expression is NULL.
