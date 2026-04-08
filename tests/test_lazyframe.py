@@ -166,7 +166,7 @@ def test_select_unique_name_prefix(sample_df: pl.DataFrame) -> None:
     )
 
 
-@pytest.mark.parametrize("cols", ["age", "salary"])
+@pytest.mark.parametrize("col", ["age", "salary"])
 @pytest.mark.parametrize("descending", [True, False])
 def test_sort_single_col(sample_df: pl.DataFrame, col: str, descending: bool) -> None:
     assert_lf_eq(sample_df.lazy().sort(col), pql.LazyFrame(sample_df).sort(col))
@@ -502,12 +502,28 @@ def test_std_var(ddof: int) -> None:
     )
 
 
-@pytest.mark.parametrize("by", ["age", ["age", "salary"]])
+@pytest.mark.parametrize("by", [["age", "department"], ["age", "salary"]])
 @pytest.mark.parametrize(
-    "reverse", [True, False, [True, False], [False, True], [False, False], [True, True]]
+    "reverse", [[True, False], [False, True], [False, False], [True, True]]
 )
 @pytest.mark.parametrize("k", [1, 3, 5])
 def test_top_bottom_k(
+    sample_df: pl.DataFrame, k: int, by: list[str] | str, reverse: bool | list[bool]
+) -> None:
+    assert_lf_eq(
+        sample_df.lazy().top_k(k, by=by, reverse=reverse),
+        pql.LazyFrame(sample_df).top_k(k, by=by, reverse=reverse),
+    )
+    assert_lf_eq(
+        sample_df.lazy().bottom_k(k, by=by, reverse=reverse),
+        pql.LazyFrame(sample_df).bottom_k(k, by=by, reverse=reverse),
+    )
+
+
+@pytest.mark.parametrize("by", ["age", "salary"])
+@pytest.mark.parametrize("reverse", [True, False])
+@pytest.mark.parametrize("k", [1, 3, 5])
+def test_top_bottom_k_single(
     sample_df: pl.DataFrame, k: int, by: list[str] | str, reverse: bool | list[bool]
 ) -> None:
     assert_lf_eq(
