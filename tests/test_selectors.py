@@ -85,6 +85,57 @@ def test_selector_cast() -> None:
     assert_eq(cs.by_name("x").cast(pql.Boolean()), cs_pl.by_name("x").cast(pl.Boolean))
 
 
+@pytest.mark.parametrize(
+    ("pql_expr", "pl_expr"),
+    [
+        (cs.by_name("x").cast(pql.Boolean()), cs_pl.by_name("x").cast(pl.Boolean)),
+        (cs.by_name("x").sum(), cs_pl.by_name("x").sum()),
+        (cs.by_name("a").not_(), cs_pl.by_name("a").not_()),
+        (
+            cs.by_name("x").name.suffix("_flag"),
+            cs_pl.by_name("x").name.suffix("_flag"),
+        ),
+        (
+            cs.by_name("a").__or__(pql.lit(value=False)),
+            cs_pl.by_name("a").__or__(pl.lit(value=False)),
+        ),
+        (
+            cs.by_name("a").__and__(pql.lit(value=True)),
+            cs_pl.by_name("a").__and__(pl.lit(value=True)),
+        ),
+        (
+            cs.by_name("x").__sub__(pql.lit(1)),
+            cs_pl.by_name("x").__sub__(pl.lit(1)),
+        ),
+        (
+            cs.by_name("a", "b").__or__(pql.lit(value=False)).__invert__(),
+            cs_pl.by_name("a", "b").__or__(pl.lit(value=False)).__invert__(),
+        ),
+        (
+            cs.by_name("a", "b").not_().__invert__(),
+            cs_pl.by_name("a", "b").not_().__invert__(),
+        ),
+    ],
+    ids=(
+        "cast",
+        "sum",
+        "not",
+        "suffix",
+        "or",
+        "and",
+        "sub",
+        "or-then-invert",
+        "not-then-invert",
+    ),
+)
+def test_selector_into_expr(pql_expr: pql.Expr, pl_expr: pl.Expr) -> None:
+    assert isinstance(pl_expr, pl.Expr)
+    assert not cs_pl.is_selector(pl_expr)
+    assert isinstance(pql_expr, pql.Expr)
+    assert not isinstance(pql_expr, cs.Selector)
+    assert_eq(pql_expr, pl_expr)
+
+
 def test_selector_in_group_by_agg() -> None:
     """We need to filter null values to avoid errors on `sum`."""
     assert_lf_eq(
