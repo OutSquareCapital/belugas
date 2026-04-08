@@ -18,11 +18,10 @@ _PQL_LF = pql.LazyFrame(_SAMPLE_DF)
 skipped = pytest.mark.skip(reason="Temp deletion of selectors by dtype")
 
 
-@skipped
-def test_numeric_with_columns() -> None:
+def test_with_columns() -> None:
     assert_lf_eq(
-        _PQL_LF.select("s").with_columns(cs.numeric()),
-        _SAMPLE_DF.select("s").with_columns(cs_pl.numeric()),
+        _SAMPLE_DF.select("s").with_columns(cs_pl.contains("x")),
+        _PQL_LF.select("s").with_columns(cs.contains("x")),
     )
 
 
@@ -36,84 +35,69 @@ def test_by_dtype_multiple() -> None:
     assert_eq(cs.by_dtype(pql.Float64, pql.Int64), cs_pl.by_dtype(pl.Float64, pl.Int64))
 
 
-@skipped
 def test_union() -> None:
-    assert_eq(cs.numeric().union(cs.string()), cs_pl.numeric().__or__(cs_pl.string()))
+    assert_eq(
+        cs.contains("arr_").union(cs.contains("a")),
+        cs_pl.contains("arr_").__or__(cs_pl.contains("a")),
+    )
 
-    assert_eq(cs.numeric().__or__(cs.string()), cs_pl.numeric().__or__(cs_pl.string()))
-
-    assert_lf_eq(
-        _PQL_LF.select(cs.boolean().__or__(pql.lit(value=True))),
-        _SAMPLE_DF.select(cs_pl.boolean().__or__(pl.lit(value=True))),
+    assert_eq(
+        cs.starts_with("arr_").__or__(cs.contains("a")),
+        cs_pl.starts_with("arr_").__or__(cs_pl.contains("a")),
     )
 
 
-@skipped
 def test_intersection() -> None:
     assert_eq(
-        cs.numeric().intersection(cs.by_dtype(pql.Int64)),
-        cs_pl.numeric().__and__(cs_pl.by_dtype(pl.Int64)),
+        cs.contains("x").intersection(cs.contains("a")),
+        cs_pl.contains("x").__and__(cs_pl.contains("a")),
     )
 
     assert_eq(
-        cs.numeric().__and__(cs.by_dtype(pql.Int64)),
-        cs_pl.numeric().__and__(cs_pl.by_dtype(pl.Int64)),
-    )
-
-    assert_lf_eq(
-        _PQL_LF.select(cs.boolean().__and__(pql.lit(value=True))),
-        _SAMPLE_DF.select(cs_pl.boolean().__and__(pl.lit(value=True))),
+        cs.contains("x").__and__(cs.contains("a")),
+        cs_pl.contains("x").__and__(cs_pl.contains("a")),
     )
 
 
-@skipped
 def test_difference() -> None:
     assert_eq(
-        cs.numeric().difference(cs.by_dtype(pql.Float64)),
-        cs_pl.numeric().__sub__(cs_pl.by_dtype(pl.Float64)),
+        cs.contains("x").difference(cs.contains("a")),
+        cs_pl.contains("x").__sub__(cs_pl.contains("a")),
     )
     assert_eq(
-        cs.numeric().__sub__(cs.by_dtype(pql.Float64)),
-        cs_pl.numeric().__sub__(cs_pl.by_dtype(pl.Float64)),
-    )
-
-    assert_lf_eq(
-        _PQL_LF.select(cs.numeric().__sub__(pql.lit(1))),
-        _SAMPLE_DF.select(cs_pl.numeric().__sub__(pl.lit(1))),
+        cs.contains("x").__sub__(cs.contains("a")),
+        cs_pl.contains("x").__sub__(cs_pl.contains("a")),
     )
 
 
-@skipped
 def test_complement() -> None:
-    assert_eq(cs.boolean().complement(), cs_pl.boolean().__invert__())
-    assert_eq(cs.boolean().__invert__(), cs_pl.boolean().__invert__())
-    assert_eq(cs.numeric().complement(), cs_pl.numeric().__invert__())
+    assert_eq(cs.contains("x").complement(), cs_pl.contains("x").__invert__())
+    assert_eq(cs.contains("x").__invert__(), cs_pl.contains("x").__invert__())
 
 
-@skipped
 def test_selector_with_suffix() -> None:
-    assert_eq(cs.boolean().name.suffix("_flag"), cs_pl.boolean().name.suffix("_flag"))
+    assert_eq(
+        cs.by_name("x").name.suffix("_flag"), cs_pl.by_name("x").name.suffix("_flag")
+    )
 
 
-@skipped
 def test_selector_cast() -> None:
-    assert_eq(cs.boolean().cast(pql.Int32()), cs_pl.boolean().cast(pl.Int32))
+    assert_eq(cs.by_name("x").cast(pql.Boolean()), cs_pl.by_name("x").cast(pl.Boolean))
 
 
-@skipped
 def test_selector_in_group_by_agg() -> None:
     """We need to filter null values to avoid errors on `sum`."""
     assert_lf_eq(
+        _SAMPLE_DF
+        .filter(pl.col("a").is_not_null())
+        .group_by("a")
+        .agg(cs_pl.contains("_vals"))
+        .sort("a"),
         pql
         .LazyFrame(_SAMPLE_DF)
         .filter(pql.col("a").is_not_null())
         .group_by("a")
-        .agg(cs.numeric().sum())
-        .sort("a"),
-        _SAMPLE_DF
-        .filter(pl.col("a").is_not_null())
-        .group_by("a")
-        .agg(cs_pl.numeric().sum())
+        .agg(cs.contains("_vals"))
         .sort("a"),
     )
 
@@ -122,7 +106,7 @@ def test_selector_in_group_by_agg() -> None:
 
 _selectors_lfs = [
     _PQL_LF.select(pql.col("a"), total=cs.numeric()),
-    _PQL_LF.group_by("a").agg(total=cs.numeric().sum()),
+    _PQL_LF.group_by("a").agg(total=cs.numeric()),
 ]
 
 @pytest.mark.parametrize("lf", _selectors_lfs())
@@ -141,18 +125,16 @@ def test_named_selector_lazy(lf: pql.LazyFrame) -> None:
 '''
 
 
-@skipped
 def test_empty_selector() -> None:
     assert_lf_eq(
-        _PQL_LF.select(pql.col("a")).select(cs.boolean()),
-        _SAMPLE_DF.select(pl.col("a")).select(cs_pl.boolean()),
+        _SAMPLE_DF.select(pl.col("a")).select(cs_pl.contains("x")),
+        _PQL_LF.select(pql.col("a")).select(cs.contains("x")),
     )
 
 
 @pytest.mark.parametrize(
     "fn_name",
     [
-        "all",
         "float",
         "integer",
         "signed_integer",
@@ -170,8 +152,12 @@ def test_empty_selector() -> None:
     ],
 )
 @skipped
-def test_simple_selector(fn_name: str) -> None:
+def test_dtype_selector(fn_name: str) -> None:
     assert_eq(getattr(cs, fn_name)(), getattr(cs_pl, fn_name)())  # pyright: ignore[reportAny]
+
+
+def test_all_selector() -> None:
+    assert_eq(cs.all(), cs_pl.all())
 
 
 @skipped
@@ -189,13 +175,13 @@ def test_enum() -> None:
     cats = ["foo", "bar", "baz"]
     lf = pql.LazyFrame(_SAMPLE_DF)
     assert_lf_eq(
-        lf.with_columns(pql.col("enum").cast(pql.Enum(cats))).select(
-            cs.enum().cast(pql.String())
-        ),
         lf
         .lazy()
         .with_columns(pl.col("enum").cast(pl.Enum(cats)))
         .select(cs_pl.enum().cast(pl.String)),
+        lf.with_columns(pql.col("enum").cast(pql.Enum(cats))).select(
+            cs.enum().cast(pql.String())
+        ),
     )
 
 
@@ -242,11 +228,10 @@ def test_contains_multiple() -> None:
 # ──── compositions with new selectors ────
 
 
-@skipped
-def test_float_minus_by_name() -> None:
+def test_contains_vals_minus_by_name() -> None:
     assert_eq(
-        cs.float().__sub__(cs.by_name("nan_vals")),
-        cs_pl.float().__sub__(cs_pl.by_name("nan_vals")),
+        cs.contains("vals").__sub__(cs.by_name("nan_vals")),
+        cs_pl.contains("vals").__sub__(cs_pl.by_name("nan_vals")),
     )
 
 
@@ -258,19 +243,17 @@ def test_temporal_union_string() -> None:
     )
 
 
-@skipped
-def test_all_minus_numeric() -> None:
+def test_all_minus_by_name() -> None:
     assert_eq(
-        cs.all().__sub__(cs.numeric()),
-        cs_pl.all().__sub__(cs_pl.numeric()),
+        cs.all().__sub__(cs.by_name("x", "age")),
+        cs_pl.all().__sub__(cs_pl.by_name("x", "age")),
     )
 
 
-@skipped
 def test_integer_intersection_by_name() -> None:
     assert_eq(
-        cs.integer().__and__(cs.by_name("x", "age")),
-        cs_pl.integer().__and__(cs_pl.by_name("x", "age")),
+        cs.starts_with("s").__and__(cs.by_name("x", "age")),
+        cs_pl.starts_with("s").__and__(cs_pl.by_name("x", "age")),
     )
 
 
@@ -298,18 +281,31 @@ def test_matches_cast() -> None:
     )
 
 
-@skipped
-def test_contains_sum_in_agg() -> None:
+def test_complex_selector() -> None:
+    """Complex check test case.
+
+    Here we want all the cols that:
+
+        - contains "al"
+        - OR ends with "_vals"
+        - AND doesn't contain "str"
+    """
+    pql_slctor = cs.contains("al").intersection(
+        cs.ends_with("_vals").intersection(cs.contains("str").complement())
+    )
+    pl_slctor = cs_pl.contains("al").__and__(
+        cs_pl.ends_with("_vals").__and__(cs_pl.contains("str").__invert__())
+    )
     assert_lf_eq(
+        _SAMPLE_DF
+        .filter(pl.col("a").is_not_null())
+        .group_by("a")
+        .agg(pl_slctor)
+        .sort("a"),
         pql
         .LazyFrame(_SAMPLE_DF)
         .filter(pql.col("a").is_not_null())
         .group_by("a")
-        .agg(cs.contains("al").intersection(cs.numeric()).sum())
-        .sort("a"),
-        _SAMPLE_DF
-        .filter(pl.col("a").is_not_null())
-        .group_by("a")
-        .agg(cs_pl.contains("al").__and__(cs_pl.numeric()).sum())
+        .agg(pql_slctor)
         .sort("a"),
     )
