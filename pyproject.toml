@@ -31,7 +31,6 @@
         "sdsort>=0.4.2",
         "sqlparse>=0.5.5",
         "typer>=0.21.1",
-        "types-pygments>=2.20.0.20260408",
 ]
 [build-system]
     build-backend = "uv_build"
