@@ -48,16 +48,6 @@ class Expr(sql.CoreHandler[SqlExpr]):
     def _as_literal_name(self, expr: SqlExpr) -> Self:
         return self.__class__(expr.alias(Marker.LIT), self.meta.clear_alias())
 
-    def _clear_alias_name(self) -> Expr:
-        expr = self.inner().inner().unalias().pipe(SqlExpr)
-        return self.__class__(expr, self.meta.clear_alias())
-
-    def _with_alias_mapper(self, mapper: Callable[[str], str]) -> Expr:
-        return self.__class__(self.inner(), self.meta.with_alias_mapper(mapper))
-
-    def _set_alias(self, alias: str) -> Self:
-        return self.__class__(self.inner().alias(alias), self.meta.clear_alias())
-
     def _rolling_agg(
         self,
         agg: Callable[[SqlExpr], SqlExpr],
@@ -309,7 +299,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression with the given alias.
         """
-        return self._set_alias(name)
+        return self.__class__(self.inner().alias(name), self.meta.clear_alias())
 
     def is_null(self) -> Self:
         """Check if the expression is NULL.

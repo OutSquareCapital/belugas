@@ -657,10 +657,13 @@ class ExprNameNameSpace(ExprNameSpaceBase):
     """
 
     def _with_alias_mapper(self, mapper: Callable[[str], str]) -> Expr:
-        return self.inner()._with_alias_mapper(mapper)  # pyright: ignore[reportPrivateUsage]
+        meta = self.inner().meta.with_alias_mapper(mapper)
+        return self.inner().inner().pipe(Expr, meta)
 
     def keep(self) -> Expr:
-        return self.inner()._clear_alias_name()  # pyright: ignore[reportPrivateUsage]
+        expr = self.inner()
+        meta = expr.meta.clear_alias()
+        return expr.inner().inner().unalias().pipe(SqlExpr).pipe(Expr, meta)
 
     def map(self, function: Callable[[str], str]) -> Expr:
         return self._with_alias_mapper(function)

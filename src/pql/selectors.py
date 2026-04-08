@@ -128,6 +128,10 @@ class Selector(Expr):
     meta: MultiMeta  # pyright: ignore[reportIncompatibleVariableOverride]
     __slots__ = ()
 
+    @override
+    def _cls(self, value: SqlExpr) -> Expr:
+        return Expr(value, self.meta)
+
     @property
     def _resolver(self) -> Resolver:
         return self.meta.resolver
