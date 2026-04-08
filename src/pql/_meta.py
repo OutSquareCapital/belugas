@@ -93,8 +93,8 @@ def _has_window_ancestor(node: exp.Expr) -> bool:
     return _ancestor_is_window(node.parent)
 
 
-def _is_projection_distinct(node: exp.Distinct) -> bool:
-    return pc.Option(node.find_ancestor(exp.AggFunc, exp.List, exp.Window)).is_none()
+def _is_projection_distinct(node: exp.Expr) -> bool:
+    return node.find_ancestor(exp.AggFunc, exp.List, exp.Window) is None
 
 
 def _broadcast_reducers(expr: SqlExpr) -> SqlExpr:
@@ -217,7 +217,7 @@ class NamesBuilder(NamedTuple):
         return self.base.iter().map(res)
 
 
-def _find_all(expr: exp.Expr, *exprs: type[exp.Expr]) -> pc.Iter[exp.Expr]:
+def _find_all[T: exp.Expr](expr: exp.Expr, *exprs: type[T]) -> pc.Iter[T]:
     return pc.Iter(expr.find_all(*exprs))
 
 
@@ -237,8 +237,8 @@ class ResolvedExpr(NamedTuple):
         return isinstance(self.expr.inner(), exp.Columns) or self.expr.inner().is_star
 
     def has_projection_distinct(self) -> bool:
-        return pc.Iter(self.expr.inner().find_all(exp.Distinct)).any(
-            _is_projection_distinct
+        return (
+            self.expr.inner().pipe(_find_all, exp.Distinct).any(_is_projection_distinct)
         )
 
     def lowered_expr(self) -> SqlExpr:
@@ -254,13 +254,12 @@ class ResolvedExpr(NamedTuple):
         return SqlExpr(self.expr.inner().transform(_strip))  # pyright: ignore[reportUnknownMemberType, reportAny]
 
     def is_pure_reducer(self) -> bool:
-        search = partial(_find_all, self.lowered_expr().inner())
+        expr = self.lowered_expr().inner()
+        search = partial(_find_all, expr)
 
         return search(exp.AggFunc, exp.List).any(
             lambda node: not _has_window_ancestor(node)
-        ) and not search(exp.Column).any(
-            lambda col: col.find_ancestor(exp.AggFunc, exp.List, exp.Window) is None
-        )
+        ) and not search(exp.Column).any(_is_projection_distinct)
 
     def implode_or_scalar(self) -> SqlExpr:
         expr = self.lowered_expr()
@@ -298,9 +297,8 @@ class ResolvedExpr(NamedTuple):
                 .unwrap_or(default=False)
             )
 
-        return self.name != marker and self.expr.inner().pipe(
-            lambda e: pc.Iter(e.find_all(exp.Column))
-        ).any(_check_temp)
+        is_temp = self.expr.inner().pipe(_find_all, exp.Column).any(_check_temp)
+        return self.name != marker and is_temp
 
 
 @dataclass(slots=True, init=False)
