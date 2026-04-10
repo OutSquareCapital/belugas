@@ -5,7 +5,7 @@ from collections.abc import Callable, Collection, Iterable
 from dataclasses import dataclass, field, replace
 from enum import StrEnum, auto
 from functools import partial
-from typing import TYPE_CHECKING, NamedTuple, Self, override
+from typing import TYPE_CHECKING, Self, override
 
 import pyochain as pc
 from pyochain.traits import Pipeable
@@ -170,35 +170,23 @@ class MultiMeta(ExprMeta):
 
     @override
     def into_resolved(self, template: SqlExpr, cols: Cols) -> pc.Iter[ResolvedExpr]:
-        def _get_builder() -> NamesBuilder:
-            base_names = self.resolver(cols)
-            output_names = self.get_output_names(base_names, template)
-            return NamesBuilder(base_names, output_names, template)
+        base_names = self.resolver(cols)
+        output_names = self.get_output_names(base_names, template)
 
         match template.inner():
             case exp.Alias():
-                return _get_builder().aliased()
+                expr = template.inner().unalias().pipe(SqlExpr)
+                alias = output_names.first()
+                return base_names.iter().map(
+                    lambda name: ResolvedExpr(Marker.replace_col(expr, name), alias)
+                )
+
             case _:
-                return _get_builder().resolved()
 
+                def _to_resolved(name: str, output: str) -> ResolvedExpr:
+                    return ResolvedExpr(Marker.replace_col(template, name), output)
 
-class NamesBuilder(NamedTuple):
-    base: Cols
-    output: Cols
-    template: SqlExpr
-
-    def _to_resolved(self, name: str, output: str) -> ResolvedExpr:
-        return ResolvedExpr(Marker.replace_col(self.template, name), output)
-
-    def resolved(self) -> pc.Iter[ResolvedExpr]:
-        return self.base.iter().zip(self.output).map_star(self._to_resolved)
-
-    def aliased(self) -> pc.Iter[ResolvedExpr]:
-        template = SqlExpr(self.template.inner().unalias())
-        alias = self.output.first()
-        return self.base.iter().map(
-            lambda name: ResolvedExpr(Marker.replace_col(template, name), alias)
-        )
+                return base_names.iter().zip(output_names).map_star(_to_resolved)
 
 
 def _find_all[T: exp.Expr](expr: exp.Expr, *exprs: type[T]) -> pc.Iter[T]:
