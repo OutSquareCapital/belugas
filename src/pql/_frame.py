@@ -280,7 +280,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
         Returns:
             Self: A new LazyFrame with the sorted rows.
         """
-        lf = (
+        return (
             try_iter(by)
             .chain(more_by)
             .map(lambda v: SqlExpr.new(v, as_col=True))
@@ -294,11 +294,13 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
             .map_star(
                 lambda expr, desc, nls: expr.set_order(
                     desc=desc, nulls_last=nls
-                ).into_duckdb()
+                ).inner()
             )
-            .into(lambda x: self.inner().relation.sort(*x))
+            .into(
+                lambda order_exprs: exp.select("*").from_("src").order_by(*order_exprs)
+            )
+            .pipe(self._from_sql_expr, src=self.inner())
         )
-        return self.__class__(lf)
 
     def limit(self, n: int) -> Self:
         """Limit the number of rows.
@@ -309,7 +311,13 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
         Returns:
             Self: A new LazyFrame with the limited rows.
         """
-        return self.__class__(self.inner().relation.limit(n))
+        return (
+            exp
+            .select("*")
+            .from_("src")
+            .limit(n)
+            .pipe(self._from_sql_expr, src=self.inner())
+        )
 
     def head(self, n: int = 5) -> Self:
         """Get the first n rows.
@@ -350,10 +358,14 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
                     msg = f"negative slice lengths ({length}) are invalid for LazyFrame"
                     return pc.Err(ValueError(msg))
                 case (len_val, offset) if offset >= 0:
-                    rel = self.inner().relation.limit(
-                        len_val.unwrap_or(MAX_I64), offset=offset
+                    return pc.Ok(
+                        exp
+                        .select("*")
+                        .from_("src")
+                        .limit(len_val.unwrap_or(MAX_I64))
+                        .offset(offset)
+                        .pipe(self._from_sql_expr, src=self.inner())
                     )
-                    return pc.Ok(self.__class__(rel))
                 case (pc.Some(0), _):
                     return pc.Ok(self.limit(0))
                 case (pc.Some(length), offset):
@@ -410,8 +422,13 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
         Returns:
             Self: A new LazyFrame with the specified columns dropped.
         """
-        expr = try_iter(columns).chain(more_columns).into(sql.all).into_duckdb()
-        return self.__class__(self.inner().relation.select(expr))
+        star_exclude = try_iter(columns).chain(more_columns).into(sql.all).inner()
+        return (
+            exp
+            .select(star_exclude)
+            .from_("src")
+            .pipe(self._from_sql_expr, src=self.inner())
+        )
 
     def drop_nulls(self, subset: TryIter[str] = None) -> Self:
         """Drop rows that contain null values.
@@ -500,7 +517,9 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
         )
 
     def union(self, other: Self) -> Self:
-        return self.__class__(self.inner().relation.union(other.inner().relation))
+        lhs = exp.select("*").from_("lhs")
+        rhs = exp.select("*").from_("rhs")
+        return self._from_sql_expr(exp.union(lhs, rhs), lhs=self.inner(), rhs=other)
 
     def rename(self, mapping: Mapping[str, str]) -> Self:
         """Rename columns.
@@ -535,7 +554,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
     def unnest(
         self, columns: TryIter[IntoExprColumn], *more_columns: IntoExprColumn
     ) -> Self:
-        return self.__class__(
+        return (
             try_iter(columns)
             .chain(more_columns)
             .collect()
@@ -545,10 +564,11 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
                     .iter()
                     .map(sql.unnest)
                     .insert(sql.all(exclude=unnest_cols))
-                    .map(lambda expr: expr.into_duckdb())
+                    .map(lambda expr: expr.inner())
                 )
             )
-            .into(lambda exprs: self.inner().relation.select(*exprs))
+            .into(lambda exprs: exp.select(*exprs).from_("src"))
+            .pipe(self._from_sql_expr, src=self.inner())
         )
 
     def first(self) -> Self:
@@ -1186,15 +1206,14 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
             Self: A new LazyFrame with the row index added.
         """
         row_nb = (
-            sql
-            .row_number()
-            .over(order_by=pc.Some(order_by))
-            .sub(1)
-            .alias(name)
-            .into_duckdb()
+            sql.row_number().over(order_by=pc.Some(order_by)).sub(1).alias(name).inner()
         )
-        lf = self.inner().relation.select(row_nb, sql.all().into_duckdb())
-        return self.__class__(lf)
+        return (
+            exp
+            .select(row_nb, "*")
+            .from_("src")
+            .pipe(self._from_sql_expr, src=self.inner())
+        )
 
     def top_k(
         self, k: int, by: TryIter[IntoExpr], *, reverse: TrySeq[bool] = False
