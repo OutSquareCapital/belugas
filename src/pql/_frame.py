@@ -1272,7 +1272,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
 
     def sink_ndjson(self, path: str | Path) -> None:
         """Write to newline-delimited JSON file."""
-        self.inner().relation.pl(lazy=True).sink_ndjson(path)
+        self.lazy().sink_ndjson(path)
 
     def reverse(self) -> Self:
         """Reverse the order of rows.
