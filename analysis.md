@@ -64,17 +64,17 @@ Déjà le pattern cible. Ces méthodes deviennent le cas standard au lieu de l'e
 
 Mutation in-place de `ScanSource.columns` par chaque transformation. Identique à aujourd'hui sauf qu'on ne peut plus vérifier via `relation.columns`.
 
-| Opération | Impact |
-|-----------|--------|
-| `select()` | Remplace |
-| `with_columns()` | Étend/remplace |
-| `filter/sort/limit` | Passthrough |
-| `drop()` | Supprime |
-| `rename()` | Remap |
-| `join()` | Merge avec suffix |
-| `explode()` | Passthrough |
-| `pivot()` | Nouveau set (basé sur `on_columns` explicite) |
-| `union()` | Left side wins |
+| Opération           | Impact                                        |
+| ------------------- | --------------------------------------------- |
+| `select()`          | Remplace                                      |
+| `with_columns()`    | Étend/remplace                                |
+| `filter/sort/limit` | Passthrough                                   |
+| `drop()`            | Supprime                                      |
+| `rename()`          | Remap                                         |
+| `join()`            | Merge avec suffix                             |
+| `explode()`         | Passthrough                                   |
+| `pivot()`           | Nouveau set (basé sur `on_columns` explicite) |
+| `union()`           | Left side wins                                |
 
 ---
 
@@ -82,24 +82,24 @@ Mutation in-place de `ScanSource.columns` par chaque transformation. Identique �
 
 Chaque phase laisse la test suite verte.
 
-**Phase 1 — Foundation**
+### Phase 1 — Foundation
 
 1. Ajouter `_ast` à `LazyFrame`. `ScanSource` inchangé.
 2. Migrer les passthrough simples : `filter`, `sort`, `limit`.
 3. Terminaux matérialisent via `_materialize()`.
 
-**Phase 2 — ExprPlan**
+### Phase 2 — ExprPlan
 
 1. Context methods produisent de l'AST au lieu de `DuckDBPyRelation`.
 2. Migrer `select()`, `with_columns()`, `group_by_all()`.
 
-**Phase 3 — Opérations complexes**
+### Phase 3 — Opérations complexes
 
 1. Migrer `join()`, `join_cross()`, `join_asof()`.
 2. Migrer `explode()`, `unique()`, `pivot()`, `unpivot()`.
 3. Migrer `_iter_agg`, `_iter_slct`, `LazyGroupBy`.
 
-**Phase 4 — Cleanup**
+### Phase 4 — Cleanup
 
 1. `ScanSource` ne sert plus qu'au stockage de base et à la matérialisation.
 2. Supprimer les chemins de conversion `SqlExpr → duckdb.Expression` devenus inutiles.
