@@ -70,9 +70,20 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
     """LazyFrame providing Polars-like API over DuckDB relations."""
 
     _inner: ScanSource
+    _ast: exp.Select
 
     def __init__(self, data: IntoRel, orient: Orientation = "col") -> None:
-        self._inner = ScanSource.build(data, orient)
+        match data:
+            case LazyFrame():
+                self._inner = data.inner()
+                self._ast = data._ast
+            case _:
+                source = ScanSource.build(data, orient)
+                source_name = f"pql_scan_{id(source.relation)}"
+                self._inner = ScanSource(
+                    source.relation.set_alias(source_name), source.columns.into(pc.Vec)
+                )
+                self._ast = exp.from_(exp.to_table(source_name))
 
     def _from_sql_expr(self, expr: exp.Expr, **kwargs: IntoRel) -> Self:
         qry = sql.ScanSource.from_query(expr.sql(dialect="duckdb"), **kwargs).relation
