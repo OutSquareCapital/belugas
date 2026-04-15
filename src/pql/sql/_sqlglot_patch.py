@@ -1,5 +1,6 @@
 from collections.abc import Callable
 
+import pyochain as pc
 from sqlglot import Dialect, exp, parser
 from sqlglot.dialects.dialect import build_regexp_extract
 from sqlglot.dialects.duckdb import DuckDB
@@ -26,6 +27,32 @@ def _regexp_extract(expr: type[exp.Expr]) -> BindedFn:
 
 def _extract_json_with_path(expr: type[exp.Expr]) -> BindedFn:
     return _bind_dialect(parser.build_extract_json_with_path(expr))
+
+
+def _object_insert(source: exp.Expr, field: exp.Expr) -> exp.ObjectInsert:
+    match field:
+        case exp.PropertyEQ(this=exp.Expr() as key, expression=exp.Expr() as value):
+            return exp.ObjectInsert(this=source, key=key, value=value)
+        case exp.Alias(this=exp.Expr() as value) as alias:
+            return exp.ObjectInsert(
+                this=source, key=exp.to_identifier(alias.output_name), value=value
+            )
+        case _:
+            return exp.ObjectInsert(
+                this=source,
+                key=exp.to_identifier(field.output_name),
+                value=field.unalias(),
+            )
+
+
+def _struct_insert(args: list[exp.Expr]) -> exp.Expr:
+    match args:
+        case []:
+            return exp.Struct(expressions=[])
+        case [exp.Expr() as source, *fields]:
+            return pc.Iter(fields).fold(source, _object_insert)
+        case _:
+            return exp.Struct(expressions=args)
 
 
 _build_hex = _bind_dialect(parser.build_hex)
@@ -71,6 +98,7 @@ _MISSING_FROM_GLOT: FuncRegistery = {
     "ORD": exp.Unicode.from_arg_list,
     "POSITION": exp.StrPosition.from_arg_list,
     "REGEXP_SPLIT_TO_ARRAY": exp.RegexpSplit.from_arg_list,
+    "STRUCT_INSERT": _struct_insert,
     "SUFFIX": exp.EndsWith.from_arg_list,
 }
 DUCKDB_FUNCTIONS: FuncRegistery = {

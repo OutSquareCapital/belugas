@@ -4859,7 +4859,7 @@ class StructFns[T: Fns](NameSpaceHandler[T]):
         Returns:
             T
         """
-        return self._cls(anon("struct_insert", self.inner(), *args))
+        return self._cls(func("STRUCT_INSERT", self.inner(), *args))
 
     def keys(self) -> T:
         """Returns the field names of a STRUCT as a list.
