@@ -28,6 +28,11 @@ class Fns(NamedTuple):
         return self.pql_fn(*args, **kwargs), self.pl_fn(*args, **kwargs)
 
 
+class ExprPair(NamedTuple):
+    pql_expr: pql.Expr
+    pl_expr: pl.Expr
+
+
 @dataclass(slots=True, init=False)
 class FnsCat(PyoIterable[Fns]):
     fns: pc.Seq[Fns]
