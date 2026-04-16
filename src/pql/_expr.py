@@ -502,11 +502,8 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rolling max.
         """
-        return (
-            self
-            .inner()
-            .rolling_max(window_size, min_samples, center=center)
-            .pipe(self._cls)
+        return self._cls(
+            self.inner().rolling_max(window_size, min_samples, center=center)
         )
 
     def rolling_min(
@@ -521,11 +518,8 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rolling min.
         """
-        return (
-            self
-            .inner()
-            .rolling_min(window_size, min_samples, center=center)
-            .pipe(self._cls)
+        return self._cls(
+            self.inner().rolling_min(window_size, min_samples, center=center)
         )
 
     def rolling_mean(
@@ -540,11 +534,8 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rolling mean.
         """
-        return (
-            self
-            .inner()
-            .rolling_mean(window_size, min_samples, center=center)
-            .pipe(self._cls)
+        return self._cls(
+            self.inner().rolling_mean(window_size, min_samples, center=center)
         )
 
     def rolling_median(
@@ -559,11 +550,8 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rolling median.
         """
-        return (
-            self
-            .inner()
-            .rolling_median(window_size, min_samples, center=center)
-            .pipe(self._cls)
+        return self._cls(
+            self.inner().rolling_median(window_size, min_samples, center=center)
         )
 
     def rolling_sum(
@@ -578,11 +566,8 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rolling sum.
         """
-        return (
-            self
-            .inner()
-            .rolling_sum(window_size, min_samples, center=center)
-            .pipe(self._cls)
+        return self._cls(
+            self.inner().rolling_sum(window_size, min_samples, center=center)
         )
 
     def rolling_std(
@@ -598,11 +583,8 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rolling standard deviation.
         """
-        return (
-            self
-            .inner()
-            .rolling_std(window_size, min_samples, center=center, ddof=ddof)
-            .pipe(self._cls)
+        return self._cls(
+            self.inner().rolling_std(window_size, min_samples, center=center, ddof=ddof)
         )
 
     def rolling_var(
@@ -618,11 +600,8 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rolling variance.
         """
-        return (
-            self
-            .inner()
-            .rolling_var(window_size, min_samples, center=center, ddof=ddof)
-            .pipe(self._cls)
+        return self._cls(
+            self.inner().rolling_var(window_size, min_samples, center=center, ddof=ddof)
         )
 
     def std(self, ddof: int = 1) -> Self:
@@ -775,7 +754,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
             .chain(more_exprs)
             .map(lambda x: SqlExpr.new(x, as_col=True))
         )
-        return (
+        return self._cls(
             pc
             .Option(order_by)
             .map(
@@ -783,7 +762,6 @@ class Expr(sql.CoreHandler[SqlExpr]):
             )
             .map(lambda order_exprs: expr(partition_exprs, pc.Some(order_exprs)))
             .unwrap_or_else(lambda: expr(partition_exprs))
-            .pipe(self._cls)
         )
 
     def floor(self) -> Self:
@@ -1056,11 +1034,10 @@ class Expr(sql.CoreHandler[SqlExpr]):
         strategy: FillNullStrategy | None = None,
         limit: int | None = None,
     ) -> Self:
-        return (
-            self
-            .inner()
-            .fill_null(pc.Option(value), pc.Option(strategy), pc.Option(limit))
-            .pipe(self._cls)
+        return self._cls(
+            self.inner().fill_null(
+                pc.Option(value), pc.Option(strategy), pc.Option(limit)
+            )
         )
 
     def hash(self, seed: int = 0) -> Self:
