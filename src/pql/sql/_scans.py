@@ -42,7 +42,7 @@ def _to_expr(k: str, v: PythonLiteral) -> duckdb.Expression:
 
 
 def _unnest(k: str) -> duckdb.Expression:
-    return unnest(k).alias(k).into_duckdb()
+    return unnest(k).alias(k).inner().pipe(glot_into_duckdb)
 
 
 @dataclass(slots=True)
@@ -94,7 +94,7 @@ class ScanSource:
 
     @classmethod
     def from_pql(cls, data: DuckHandler) -> Self:
-        return cls.from_expr(data.into_duckdb())
+        return cls.from_expr(data.inner().pipe(glot_into_duckdb))
 
     @classmethod
     def from_relation(cls, relation: duckdb.DuckDBPyRelation) -> Self:
@@ -159,7 +159,7 @@ class ScanSource:
 
     @classmethod
     def from_seq_glot(cls, data: Sequence[exp.Expr]) -> Self:
-        exprs = pc.Iter(data).map(lambda c: DuckHandler(c).into_duckdb()).collect(tuple)
+        exprs = pc.Iter(data).map(glot_into_duckdb).collect(tuple)
         cols = pc.Iter(data).map(lambda c: c.name).collect(pc.Vec)
         return cls(duckdb.values(exprs), cols)
 

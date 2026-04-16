@@ -6,12 +6,10 @@ from typing import TYPE_CHECKING, Concatenate, Self, override
 
 from sqlglot import exp
 
-from ._conversions import args_into_glot, glot_into_duckdb
+from ._conversions import args_into_glot
 from ._sqlglot_patch import DUCKDB_FUNCTIONS
 
 if TYPE_CHECKING:
-    import duckdb
-
     from .typing import IntoExpr
 
 
@@ -79,14 +77,6 @@ class CoreHandler[T]:
 @dataclass(slots=True, repr=False)
 class DuckHandler(CoreHandler[exp.Expr]):
     """A wrapper for DuckDB expressions."""
-
-    def into_duckdb(self) -> duckdb.Expression:
-        """Convert the inner expression to a DuckDB expression.
-
-        Returns:
-            duckdb.Expression: The corresponding DuckDB expression.
-        """
-        return glot_into_duckdb(self.inner())
 
 
 @dataclass(slots=True)
