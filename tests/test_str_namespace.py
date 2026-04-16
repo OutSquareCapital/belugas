@@ -8,6 +8,9 @@ import pytest
 from polars.testing import assert_frame_equal
 
 import pql
+from pql._typing import TransferEncoding
+
+type TestArgs = tuple[pql.Expr | str, pl.Expr | str]
 
 
 def sample_df() -> nw.LazyFrame[duckdb.DuckDBPyRelation]:
@@ -108,6 +111,7 @@ def sample_df() -> nw.LazyFrame[duckdb.DuckDBPyRelation]:
                 "json": ['{"a": 1}', '{"a": 2}', '{"a": 3}', '{"a": 4}'],
                 "json_path": ["$.a", "$.a", "$.a", "$.a"],
                 "numbers": ["123.456", "456.789", "789.123", "1234.567"],
+                "signed_numbers": ["-1", "+7", "-12345", None],
             })
         )
     )
@@ -149,21 +153,28 @@ def test_len_chars() -> None:
 
 def test_contains_literal() -> None:
     assert_eq(
-        pql.col("text").str.contains(pql.lit("lo"), literal=True),
+        pql.col("text").str.contains("lo", literal=True),
         nw.col("text").str.contains("lo", literal=True),
+    )
+
+
+def test_contains_regex() -> None:
+    assert_eq(
+        pql.col("text").str.contains(r"\d+", literal=False),
+        nw.col("text").str.contains(r"\d+", literal=False),
     )
 
 
 def test_starts_with() -> None:
     assert_eq(
-        pql.col("text").str.starts_with(pql.lit("Hello")),
+        pql.col("text").str.starts_with("Hello"),
         nw.col("text").str.starts_with("Hello"),
     )
 
 
 def test_ends_with() -> None:
     assert_eq(
-        pql.col("text").str.ends_with(pql.lit("suffix")),
+        pql.col("text").str.ends_with("suffix"),
         nw.col("text").str.ends_with("suffix"),
     )
 
@@ -197,24 +208,19 @@ def test_replace() -> None:
 _SPACE = pql.lit(" ")
 
 
-def test_strip_chars() -> None:
-    assert_eq(pql.col("text").str.strip_chars(), nw.col("text").str.strip_chars())
+@pytest.mark.parametrize("characters", [" ", None])
+def test_strip_chars(characters: str | None) -> None:
     assert_eq(
-        pql.col("text").str.strip_chars(_SPACE),
-        nw.col("text").str.strip_chars(" "),
+        pql.col("text").str.strip_chars(characters),
+        nw.col("text").str.strip_chars(characters),
     )
 
 
-def test_strip_chars_start() -> None:
+@pytest.mark.parametrize("characters", [" ", None])
+def test_strip_chars_start(characters: str | None) -> None:
     assert_eq_pl(
-        (
-            pql.col("text").str.strip_chars_start().alias("lstripped"),
-            pql.col("text").str.strip_chars_start(_SPACE).alias("lstripped_space"),
-        ),
-        (
-            pl.col("text").str.strip_chars_start().alias("lstripped"),
-            pl.col("text").str.strip_chars_start(" ").alias("lstripped_space"),
-        ),
+        pql.col("text").str.strip_chars_start(characters),
+        pl.col("text").str.strip_chars_start(characters),
     )
 
 
@@ -228,26 +234,12 @@ def test_strip_chars_end() -> None:
     )
 
 
-def test_slice() -> None:
+@pytest.mark.parametrize("offset", [0, 2, 5])
+@pytest.mark.parametrize("length", [None, 1, 3, 5])
+def test_slice(offset: int, length: int) -> None:
     assert_eq(
-        (
-            pql.col("text").str.slice(0, 5).alias("sliced"),
-            pql.col("text").str.slice(0).alias("sliced_full"),
-        ),
-        (
-            nw.col("text").str.slice(0, 5).alias("sliced"),
-            nw.col("text").str.slice(0).alias("sliced_full"),
-        ),
-    )
-    assert_eq_pl(
-        (
-            pql.col("text_short").str.slice(2, 3).alias("sliced"),
-            pql.col("text_short").str.slice(5).alias("sliced_full"),
-        ),
-        (
-            pl.col("text_short").str.slice(2, 3).alias("sliced"),
-            pl.col("text_short").str.slice(5).alias("sliced_full"),
-        ),
+        pql.col("text_short").str.slice(offset=offset, length=length),
+        nw.col("text_short").str.slice(offset=offset, length=length),
     )
 
 
@@ -255,12 +247,10 @@ def test_len_bytes() -> None:
     assert_eq_pl(pql.col("text").str.len_bytes(), pl.col("text").str.len_bytes())
 
 
-def test_head_str() -> None:
-    assert_eq(pql.col("text").str.head(3), nw.col("text").str.head(3))
-
-
-def test_tail_str() -> None:
-    assert_eq(pql.col("text").str.tail(3), nw.col("text").str.tail(3))
+@pytest.mark.parametrize("n", [1, 2, 3])
+def test_head_tail(n: int) -> None:
+    assert_eq(pql.col("text").str.head(n), nw.col("text").str.head(n))
+    assert_eq(pql.col("text").str.tail(n), nw.col("text").str.tail(n))
 
 
 def test_reverse_str() -> None:
@@ -328,88 +318,46 @@ def test_escape_regex() -> None:
     assert_eq_pl(pql.col("text").str.escape_regex(), pl.col("text").str.escape_regex())
 
 
-def test_json_path_match() -> None:
+@pytest.mark.parametrize(
+    "json_path", [("$.a", "$.a"), (pql.col("json_path"), pl.col("json_path"))]
+)
+def test_json_path_match(json_path: TestArgs) -> None:
     assert_eq_pl(
-        (
-            pql.col("json").str.json_path_match(pql.lit("$.a")).alias("json_lit"),
-            pql.col("json").str.json_path_match("json_path").alias("json_col"),
-        ),
-        (
-            pl.col("json").str.json_path_match("$.a").alias("json_lit"),
-            pl.col("json").str.json_path_match(pl.col("json_path")).alias("json_col"),
-        ),
+        pql.col("json").str.json_path_match(json_path[0]),
+        pl.col("json").str.json_path_match(json_path[1]),
     )
 
 
-def test_join() -> None:
-    sep = pql.lit("-")
+@pytest.mark.parametrize("delimiter", ["|", "-", ","])
+@pytest.mark.parametrize("ignore_nulls", [True, False])
+def test_join(delimiter: str, ignore_nulls: bool) -> None:
     assert_eq_pl(
-        (
-            pql.col("text_short").str.join().alias("default"),
-            pql.col("text_short").str.join(pql.lit("|")).alias("custom"),
-            pql
-            .col("text_with_null")
-            .str.join(sep, ignore_nulls=True)
-            .alias("ignore_nulls_true"),
-            pql
-            .col("text_with_null")
-            .str.join(sep, ignore_nulls=False)
-            .alias("ignore_nulls_false"),
-        ),
-        (
-            pl.col("text_short").str.join().alias("default"),
-            pl.col("text_short").str.join("|").alias("custom"),
-            pl
-            .col("text_with_null")
-            .str.join("-", ignore_nulls=True)
-            .alias("ignore_nulls_true"),
-            pl
-            .col("text_with_null")
-            .str.join("-", ignore_nulls=False)
-            .alias("ignore_nulls_false"),
-        ),
+        pql.col("text_short").str.join(delimiter, ignore_nulls=ignore_nulls),
+        pl.col("text_short").str.join(delimiter, ignore_nulls=ignore_nulls),
     )
 
 
 def test_to_date() -> None:
     fmt = "%Y-%m-%d"
     assert_eq_pl(
-        (
-            pql.col("date_str").str.to_date().alias("default"),
-            pql.col("date_str").str.to_date(format=pql.lit(fmt)).alias("format"),
-        ),
-        (
-            pl.col("date_str").str.to_date().alias("default"),
-            pl.col("date_str").str.to_date(format=fmt).alias("format"),
-        ),
+        pql.col("date_str").str.to_date(format=pql.lit(fmt)).alias("format"),
+        pl.col("date_str").str.to_date(format=fmt).alias("format"),
     )
 
 
 def test_to_datetime() -> None:
     fmt = "%Y-%m-%d %H:%M:%S"
     assert_eq_pl(
-        (
-            pql.col("dt_str").str.to_datetime().alias("default"),
-            pql.col("dt_str").str.to_datetime(format=pql.lit(fmt)).alias("format"),
-        ),
-        (
-            pl.col("dt_str").str.to_datetime().alias("default"),
-            pl.col("dt_str").str.to_datetime(format=fmt).alias("format"),
-        ),
+        pql.col("dt_str").str.to_datetime(format=pql.lit(fmt)),
+        pl.col("dt_str").str.to_datetime(format=fmt),
     )
 
 
 def test_to_time() -> None:
     fmt = "%H:%M:%S"
     assert_eq_pl(
-        (
-            pql.col("time_str").str.to_time().alias("default"),
-            pql.col("time_str").str.to_time(format=pql.lit(fmt)).alias("format"),
-        ),
-        (
-            pl.col("time_str").str.to_time().alias("default"),
-            pl.col("time_str").str.to_time(format=fmt).alias("format"),
-        ),
+        pql.col("time_str").str.to_time(format=fmt),
+        pl.col("time_str").str.to_time(format=fmt),
     )
 
 
@@ -429,10 +377,11 @@ def test_normalize() -> None:
     )
 
 
-def test_to_decimal() -> None:
+@pytest.mark.parametrize("scale", [0, 2, 3])
+def test_to_decimal(scale: int) -> None:
     assert_eq_pl(
-        pql.col("numbers").str.to_decimal(3),
-        pl.col("numbers").str.to_decimal(scale=3),
+        pql.col("numbers").str.to_decimal(scale=scale),
+        pl.col("numbers").str.to_decimal(scale=scale),
     )
 
 
@@ -443,33 +392,33 @@ def test_count_matches() -> None:
     )
 
 
-def test_strip_prefix() -> None:
+@pytest.mark.parametrize(
+    "prefixes",
+    [
+        ("prefix_", "prefix_"),
+        (pql.col("prefix_col"), pl.col("prefix_col")),
+        ("foo", "foo"),
+    ],
+)
+def test_strip_prefix(prefixes: TestArgs) -> None:
     assert_eq_pl(
-        pql.col("prefixed").str.strip_prefix("prefix_"),
-        pl.col("prefixed").str.strip_prefix("prefix_"),
-    )
-    assert_eq_pl(
-        pql.col("prefixed").str.strip_prefix(pql.col("prefix_col")),
-        pl.col("prefixed").str.strip_prefix(pl.col("prefix_col")),
-    )
-    assert_eq_pl(
-        pql.col("prefix_exact").str.strip_prefix("foo"),
-        pl.col("prefix_exact").str.strip_prefix("foo"),
+        pql.col("prefixed").str.strip_prefix(prefixes[0]),
+        pl.col("prefixed").str.strip_prefix(prefixes[1]),
     )
 
 
-def test_strip_suffix() -> None:
+@pytest.mark.parametrize(
+    "suffixes",
+    [
+        ("_suffix", "_suffix"),
+        (pql.col("suffix_col"), pl.col("suffix_col")),
+        ("bar", "bar"),
+    ],
+)
+def test_strip_suffix(suffixes: TestArgs) -> None:
     assert_eq_pl(
-        pql.col("suffixed").str.strip_suffix("_suffix"),
-        pl.col("suffixed").str.strip_suffix("_suffix"),
-    )
-    assert_eq_pl(
-        pql.col("suffixed").str.strip_suffix(pql.col("suffix_col")),
-        pl.col("suffixed").str.strip_suffix(pl.col("suffix_col")),
-    )
-    assert_eq_pl(
-        pql.col("suffix_exact").str.strip_suffix("bar"),
-        pl.col("suffix_exact").str.strip_suffix("bar"),
+        pql.col("suffixed").str.strip_suffix(suffixes[0]),
+        pl.col("suffixed").str.strip_suffix(suffixes[1]),
     )
 
 
@@ -497,21 +446,6 @@ def test_replace_all() -> None:
     )
 
 
-def test_head() -> None:
-    assert_eq(pql.col("text").str.head(2), nw.col("text").str.head(2))
-
-
-def test_tail() -> None:
-    assert_eq(pql.col("text").str.tail(2), nw.col("text").str.tail(2))
-
-
-def test_contains_regex() -> None:
-    assert_eq(
-        pql.col("text").str.contains(pql.lit(r"\d+"), literal=False),
-        nw.col("text").str.contains(r"\d+", literal=False),
-    )
-
-
 def test_count_matches_literal() -> None:
     assert_eq_pl(
         (pql.col("text").str.count_matches("a", literal=True)),
@@ -526,32 +460,37 @@ def test_count_matches_regex() -> None:
     )
 
 
-def test_pad_start() -> None:
+@pytest.mark.parametrize("length", [5, 10])
+@pytest.mark.parametrize("fill_char", ["*", "-", " "])
+def test_pad_start(length: int, fill_char: str) -> None:
     assert_eq_pl(
-        pql.col("text_short").str.pad_start(5), pl.col("text_short").str.pad_start(5)
-    )
-    assert_eq_pl(
-        pql.col("text_short").str.pad_start(10, fill_char=pql.lit("*")),
-        pl.col("text_short").str.pad_start(10, fill_char="*"),
-    )
-
-
-def test_pad_end() -> None:
-    assert_eq_pl(
-        pql.col("text_short").str.pad_end(5), pl.col("text_short").str.pad_end(5)
-    )
-    assert_eq_pl(
-        pql.col("text_short").str.pad_end(10, fill_char=pql.lit("-")),
-        pl.col("text_short").str.pad_end(10, fill_char="-"),
+        pql.col("text_short").str.pad_start(length, fill_char=fill_char),
+        pl.col("text_short").str.pad_start(length, fill_char=fill_char),
     )
 
 
-def test_zfill() -> None:
-    assert_eq_pl(pql.col("numbers").str.zfill(10), pl.col("numbers").str.zfill(10))
-
-
-def test_encode() -> None:
+@pytest.mark.parametrize("length", [5, 10])
+@pytest.mark.parametrize("fill_char", ["*", "-", " "])
+def test_pad_end(length: int, fill_char: str) -> None:
     assert_eq_pl(
-        pql.col("text").str.encode("base64"), pl.col("text").str.encode("base64")
+        pql.col("text_short").str.pad_end(length, fill_char=fill_char),
+        pl.col("text_short").str.pad_end(length, fill_char=fill_char),
     )
-    assert_eq_pl(pql.col("text").str.encode("hex"), pl.col("text").str.encode("hex"))
+
+
+@pytest.mark.parametrize("length", [4, 5, 10])
+def test_zfill(length: int) -> None:
+    assert_eq_pl(
+        pql.col("numbers").str.zfill(length), pl.col("numbers").str.zfill(length)
+    )
+    assert_eq_pl(
+        pql.col("signed_numbers").str.zfill(length),
+        pl.col("signed_numbers").str.zfill(length),
+    )
+
+
+@pytest.mark.parametrize("encoding", ["base64", "hex"])
+def test_encode(encoding: TransferEncoding) -> None:
+    assert_eq_pl(
+        pql.col("text").str.encode(encoding), pl.col("text").str.encode(encoding)
+    )
