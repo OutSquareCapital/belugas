@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import partial
@@ -33,8 +32,6 @@ if TYPE_CHECKING:
         RoundMode,
     )
 
-_NONE = sql.lit(None)
-
 
 @dataclass(slots=True)
 class Expr(sql.CoreHandler[SqlExpr]):
@@ -47,27 +44,6 @@ class Expr(sql.CoreHandler[SqlExpr]):
 
     def _as_lit(self, expr: SqlExpr) -> Self:
         return self.__class__(expr.alias(Marker.LIT), self.meta.unalias())
-
-    def _rolling_agg(
-        self,
-        agg: Callable[[SqlExpr], SqlExpr],
-        window_size: int,
-        min_samples: int | None,
-        *,
-        center: bool,
-    ) -> Self:
-        spec = sql.BoundsValues.rolling(window_size, center=center)
-
-        def _clause(e: SqlExpr) -> SqlExpr:
-            return e.inner().pipe(sql.rolling_agg, Marker.TEMP, spec).pipe(SqlExpr)
-
-        return (
-            sql
-            .when(self.inner().count().pipe(_clause).ge(min_samples or window_size))
-            .then(self.inner().pipe(agg).pipe(_clause))
-            .otherwise(_NONE)
-            .pipe(self._cls)
-        )
 
     @property
     def str(self) -> ExprStringNameSpace:
@@ -331,16 +307,16 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to true if the original expression is in the given iterable
         """
-        return self._cls(self.inner().is_in(*try_iter(other)))
+        return self._cls(self.inner().is_in(other))
 
     def shift(self, n: int = 1) -> Self:
         return self._cls(self.inner().shift(n))
 
     def diff(self) -> Self:
-        return self.sub(self.shift())
+        return self._cls(self.inner().diff())
 
     def pct_change(self, n: int = 1) -> Self:
-        return self.truediv(self.shift(n)).sub(1)
+        return self._cls(self.inner().pct_change(n))
 
     def is_between(
         self,
@@ -522,7 +498,12 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rolling max.
         """
-        return self._rolling_agg(SqlExpr.max, window_size, min_samples, center=center)
+        return (
+            self
+            .inner()
+            .rolling_max(window_size, min_samples, center=center)
+            .pipe(self._cls)
+        )
 
     def rolling_min(
         self,
@@ -536,7 +517,12 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rolling min.
         """
-        return self._rolling_agg(SqlExpr.min, window_size, min_samples, center=center)
+        return (
+            self
+            .inner()
+            .rolling_min(window_size, min_samples, center=center)
+            .pipe(self._cls)
+        )
 
     def rolling_mean(
         self,
@@ -550,7 +536,12 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rolling mean.
         """
-        return self._rolling_agg(SqlExpr.mean, window_size, min_samples, center=center)
+        return (
+            self
+            .inner()
+            .rolling_mean(window_size, min_samples, center=center)
+            .pipe(self._cls)
+        )
 
     def rolling_median(
         self,
@@ -564,8 +555,11 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rolling median.
         """
-        return self._rolling_agg(
-            SqlExpr.median, window_size, min_samples, center=center
+        return (
+            self
+            .inner()
+            .rolling_median(window_size, min_samples, center=center)
+            .pipe(self._cls)
         )
 
     def rolling_sum(
@@ -580,7 +574,12 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rolling sum.
         """
-        return self._rolling_agg(SqlExpr.sum, window_size, min_samples, center=center)
+        return (
+            self
+            .inner()
+            .rolling_sum(window_size, min_samples, center=center)
+            .pipe(self._cls)
+        )
 
     def rolling_std(
         self,
@@ -595,8 +594,11 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rolling standard deviation.
         """
-        return self._rolling_agg(
-            lambda expr: expr.std(ddof), window_size, min_samples, center=center
+        return (
+            self
+            .inner()
+            .rolling_std(window_size, min_samples, center=center, ddof=ddof)
+            .pipe(self._cls)
         )
 
     def rolling_var(
@@ -612,8 +614,11 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rolling variance.
         """
-        return self._rolling_agg(
-            lambda expr: expr.var(ddof), window_size, min_samples, center=center
+        return (
+            self
+            .inner()
+            .rolling_var(window_size, min_samples, center=center, ddof=ddof)
+            .pipe(self._cls)
         )
 
     def std(self, ddof: int = 1) -> Self:
@@ -638,12 +643,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the kurtosis.
         """
-        base = self.inner().kurtosis(bias=bias)
-        match fisher:
-            case True:
-                return self._cls(base)
-            case False:
-                return self._cls(base.add(3))
+        return self._cls(self.inner().kurtosis(fisher=fisher, bias=bias))
 
     def skew(self, *, bias: bool = True) -> Self:
         """Compute the skewness.
@@ -699,7 +699,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the number of null values.
         """
-        return self.len().sub(self.count())
+        return self._cls(self.inner().null_count())
 
     def has_nulls(self) -> Self:
         """Return whether the expression contains nulls.

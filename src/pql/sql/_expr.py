@@ -9,12 +9,19 @@ import pyochain as pc
 from duckdb import Expression
 from sqlglot import exp, parse_one
 
-from pql.sql.typing import IntoExprColumn
-
 from ._code_gen import Fns
 from ._conversions import args_into_glot, pql_into_glot
 from ._core import DuckHandler, func
-from ._window import FrameBound, OverBuilder, get_order, get_partition, make_spec
+from ._window import (
+    BoundsValues,
+    FrameBound,
+    OverBuilder,
+    get_order,
+    get_partition,
+    make_spec,
+    rolling_agg,
+)
+from .utils import try_iter
 
 if TYPE_CHECKING:
     from decimal import Decimal
@@ -83,6 +90,136 @@ class SqlExpr(Fns):  # noqa: PLW1641
                 return cls(parse_one(str(value), dialect="duckdb"))
             case _:
                 return cls(exp.convert(value))
+
+    def _rolling_agg(
+        self,
+        agg: Callable[[SqlExpr], SqlExpr],
+        window_size: int,
+        min_samples: int | None,
+        *,
+        center: bool,
+    ) -> Self:
+        from .._meta import Marker
+        from ._when import when
+
+        spec = BoundsValues.rolling(window_size, center=center)
+
+        def _clause(e: SqlExpr) -> SqlExpr:
+            return e.inner().pipe(rolling_agg, Marker.TEMP, spec).pipe(SqlExpr)
+
+        return (
+            when(self.count().pipe(_clause).ge(min_samples or window_size))
+            .then(self.pipe(agg).pipe(_clause))
+            .otherwise(None)
+            .inner()
+            .pipe(self._cls)
+        )
+
+    def rolling_max(
+        self,
+        window_size: int,
+        min_samples: int | None = None,
+        *,
+        center: bool = False,
+    ) -> Self:
+        """Compute rolling max.
+
+        Returns:
+            Self: A new expression that evaluates to the rolling max.
+        """
+        return self._rolling_agg(SqlExpr.max, window_size, min_samples, center=center)
+
+    def rolling_min(
+        self,
+        window_size: int,
+        min_samples: int | None = None,
+        *,
+        center: bool = False,
+    ) -> Self:
+        """Compute rolling min.
+
+        Returns:
+            Self: A new expression that evaluates to the rolling min.
+        """
+        return self._rolling_agg(SqlExpr.min, window_size, min_samples, center=center)
+
+    def rolling_mean(
+        self,
+        window_size: int,
+        min_samples: int | None = None,
+        *,
+        center: bool = False,
+    ) -> Self:
+        """Compute rolling mean.
+
+        Returns:
+            Self: A new expression that evaluates to the rolling mean.
+        """
+        return self._rolling_agg(SqlExpr.mean, window_size, min_samples, center=center)
+
+    def rolling_median(
+        self,
+        window_size: int,
+        min_samples: int | None = None,
+        *,
+        center: bool = False,
+    ) -> Self:
+        """Compute rolling median.
+
+        Returns:
+            Self: A new expression that evaluates to the rolling median.
+        """
+        return self._rolling_agg(
+            SqlExpr.median, window_size, min_samples, center=center
+        )
+
+    def rolling_sum(
+        self,
+        window_size: int,
+        min_samples: int | None = None,
+        *,
+        center: bool = False,
+    ) -> Self:
+        """Compute rolling sum.
+
+        Returns:
+            Self: A new expression that evaluates to the rolling sum.
+        """
+        return self._rolling_agg(SqlExpr.sum, window_size, min_samples, center=center)
+
+    def rolling_std(
+        self,
+        window_size: int,
+        min_samples: int | None = None,
+        *,
+        center: bool = False,
+        ddof: int = 1,
+    ) -> Self:
+        """Compute rolling standard deviation.
+
+        Returns:
+            Self: A new expression that evaluates to the rolling standard deviation.
+        """
+        return self._rolling_agg(
+            lambda expr: expr.std(ddof), window_size, min_samples, center=center
+        )
+
+    def rolling_var(
+        self,
+        window_size: int,
+        min_samples: int | None = None,
+        *,
+        center: bool = False,
+        ddof: int = 1,
+    ) -> Self:
+        """Compute rolling variance.
+
+        Returns:
+            Self: A new expression that evaluates to the rolling variance.
+        """
+        return self._rolling_agg(
+            lambda expr: expr.var(ddof), window_size, min_samples, center=center
+        )
 
     def _build_op[T: exp.Binary](
         self, op: type[T], left: exp.Expr, right: exp.Expr
@@ -284,11 +421,12 @@ class SqlExpr(Fns):  # noqa: PLW1641
     def desc(self) -> Self:
         return self._cls(exp.Ordered(this=self.inner(), desc=True))
 
-    def is_in(self, *args: IntoExpr) -> Self:
-        return self._cls(exp.In(this=self.inner(), expressions=args_into_glot(args)))
+    def is_in(self, args: TryIter[IntoExpr], *more_args: IntoExpr) -> Self:
+        exprs = args_into_glot(try_iter(args).chain(more_args))
+        return self._cls(exp.In(this=self.inner(), expressions=exprs))
 
-    def is_not_in(self, *args: IntoExpr) -> Self:
-        return self._cls(exp.Not(this=self.is_in(*args).inner()))
+    def is_not_in(self, args: TryIter[IntoExpr], *more_args: IntoExpr) -> Self:
+        return self._cls(exp.Not(this=self.is_in(args, *more_args).inner()))
 
     def is_not_null(self) -> Self:
         return self._cls(exp.Not(this=self.is_null().inner()))
@@ -477,12 +615,20 @@ class SqlExpr(Fns):  # noqa: PLW1641
             case _:
                 return self.stddev_samp()
 
-    def kurtosis(self, *, bias: bool = True) -> Self:
+    def kurtosis_fisher(self, *, bias: bool = True) -> Self:
         match bias:
             case True:
                 return self.kurtosis_pop()
             case False:
                 return self.kurtosis_samp()
+
+    def kurtosis(self, *, fisher: bool = True, bias: bool = True) -> Self:
+        base = self.kurtosis_fisher(bias=bias)
+        match fisher:
+            case True:
+                return base
+            case False:
+                return base.add(3)
 
     def skew(self, *, bias: bool) -> Self:
         adjusted = self.skewness()
@@ -540,6 +686,20 @@ class SqlExpr(Fns):  # noqa: PLW1641
                 return self.greatest(lower)
             case (lower, upper):
                 return self.greatest(lower).least(upper)
+
+    def null_count(self) -> Self:
+        """Count null values.
+
+        Returns:
+            Self: A new expression that evaluates to the number of null values.
+        """
+        return self.is_null().count().sub(self.count())
+
+    def diff(self) -> Self:
+        return self.sub(self.shift())
+
+    def pct_change(self, n: int = 1) -> Self:
+        return self.truediv(self.shift(n)).sub(1)
 
     def n_unique(self) -> Self:
         """Count distinct values.
