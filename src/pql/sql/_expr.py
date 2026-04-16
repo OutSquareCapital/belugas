@@ -6,8 +6,7 @@ from functools import cache, partial
 from typing import TYPE_CHECKING, ClassVar, Self, override
 
 import pyochain as pc
-from duckdb import Expression
-from sqlglot import exp, parse_one
+from sqlglot import exp
 
 from ._code_gen import Fns
 from ._conversions import args_into_glot, pql_into_glot
@@ -87,8 +86,6 @@ class SqlExpr(Fns):  # noqa: PLW1641
                 return cls(exp.column(value))
             case exp.Expr():
                 return cls(value)
-            case Expression():
-                return cls(parse_one(str(value), dialect="duckdb"))
             case _:
                 return cls(exp.convert(value))
 
