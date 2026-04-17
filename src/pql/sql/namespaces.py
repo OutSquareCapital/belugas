@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, final
 
 from sqlglot import exp
 
+from . import datatypes as dt
 from ._code_gen import (
     ArrayFns,
     DateTimeFns,
@@ -269,10 +270,58 @@ class SqlExprStringNameSpace(StringFns[SqlExpr]):
             case False:
                 return self.inner().re.replace(pattern, value, Lit.G_PARAM)
 
+    def normalize(self) -> SqlExpr:
+        """Normalize strings using NFC normalization.
+
+        Returns:
+            SqlExpr
+        """
+        return self.nfc_normalize()
+
+    def to_decimal(self, *, scale: int) -> SqlExpr:
+        """Parse string values as decimal with the requested scale.
+
+        Returns:
+            SqlExpr
+        """
+        return self.inner().cast(dt.Decimal(scale=scale))
+
+    def to_datetime(self, format: IntoExprColumn | None = None) -> SqlExpr:  # noqa: A002
+        """Parse string values as datetime.
+
+        Returns:
+            SqlExpr
+        """
+        return self.inner().dt.to_datetime(format)
+
+    def to_time(self, format: IntoExprColumn | None = None) -> SqlExpr:  # noqa: A002
+        """Parse string values as time.
+
+        Returns:
+            SqlExpr
+        """
+        return self.inner().dt.to_time(format)
+
 
 @dataclass(slots=True)
 class SqlExprStructNameSpace(StructFns[SqlExpr]):
     """Struct function namespace for SQL expressions."""
+
+    def field(self, name: str) -> SqlExpr:
+        """Retrieve a struct field by name.
+
+        Returns:
+            SqlExpr
+        """
+        return self.inner().struct.extract(lit(name)).alias(name)
+
+    def json_encode(self) -> SqlExpr:
+        """Encode struct values as JSON strings.
+
+        Returns:
+            SqlExpr
+        """
+        return self.inner().to_json()
 
 
 @dataclass(slots=True)
@@ -362,6 +411,32 @@ class SqlExprDateTimeNameSpace(DateTimeFns[SqlExpr]):
                 return self.add(exp.to_interval(by))
             case _:
                 return self.add(exp.to_interval(str(by)))
+
+    def truncate(self, every: str) -> SqlExpr:
+        """Truncate datetime to the nearest multiple of a specified time unit.
+
+        Alias for `trunc`.
+
+        Args:
+            every (str): The time unit to truncate to (e.g. 'hour', 'day', 'minute', etc.).
+
+        Returns:
+            SqlExpr: A new expression that evaluates to the truncated datetime.
+        """
+        return self.trunc(lit(every))
+
+    def round(self, every: str) -> SqlExpr:
+        """Round datetime to the nearest multiple of a specified time unit.
+
+        Alias for `trunc`.
+
+        Args:
+            every (str): The time unit to round to (e.g. 'hour', 'day', 'minute', etc.).
+
+        Returns:
+            SqlExpr: A new expression that evaluates to the rounded datetime.
+        """
+        return self.trunc(lit(every))
 
 
 @dataclass(slots=True)

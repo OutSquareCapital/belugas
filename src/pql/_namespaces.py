@@ -233,7 +233,7 @@ class ExprStringNameSpace(ExprNameSpaceBase):
         Returns:
             Expr
         """
-        return self._cls(self.inner().inner().dt.to_datetime(format))
+        return self._cls(self.inner().inner().str.to_datetime(format))
 
     def to_time(self, format: IntoExprColumn | None = None) -> Expr:  # noqa: A002
         """Parse string values as time.
@@ -241,7 +241,7 @@ class ExprStringNameSpace(ExprNameSpaceBase):
         Returns:
             Expr
         """
-        return self._cls(self.inner().inner().dt.to_time(format))
+        return self._cls(self.inner().inner().str.to_time(format))
 
     def strptime(self, format: IntoExprColumn) -> Expr:  # noqa: A002
         """Parse string values into datetime using one or more formats.
@@ -269,7 +269,7 @@ class ExprStringNameSpace(ExprNameSpaceBase):
         Returns:
             Expr
         """
-        return self._cls(self.inner().inner().str.nfc_normalize())
+        return self._cls(self.inner().inner().str.normalize())
 
     def to_decimal(self, *, scale: int) -> Expr:
         """Parse string values as decimal with the requested scale.
@@ -277,7 +277,7 @@ class ExprStringNameSpace(ExprNameSpaceBase):
         Returns:
             Expr
         """
-        return self.inner().cast(dt.Decimal(scale=scale))
+        return self._cls(self.inner().inner().str.to_decimal(scale=scale))
 
     def count_matches(self, pattern: IntoExprColumn, *, literal: bool = False) -> Expr:
         """Count pattern matches.
@@ -594,7 +594,7 @@ class ExprStructNameSpace(ExprNameSpaceBase):
         Returns:
             Expr
         """
-        return self._cls(self.inner().inner().struct.extract(sql.lit(name))).alias(name)
+        return self._cls(self.inner().inner().struct.field(name))
 
     def json_encode(self) -> Expr:
         """Encode struct values as JSON strings.
@@ -602,7 +602,7 @@ class ExprStructNameSpace(ExprNameSpaceBase):
         Returns:
             Expr
         """
-        return self._cls(self.inner().inner().to_json())
+        return self._cls(self.inner().inner().struct.json_encode())
 
     def with_fields(
         self, exprs: TryIter[IntoExpr], *more_exprs: IntoExpr, **named_exprs: IntoExpr
@@ -761,10 +761,10 @@ class ExprDateTimeNameSpace(ExprNameSpaceBase):
         return self.epoch(time_unit)
 
     def truncate(self, every: str) -> Expr:
-        return self._cls(self.inner().inner().dt.trunc(sql.lit(every)))
+        return self._cls(self.inner().inner().dt.truncate(every))
 
     def round(self, every: str) -> Expr:
-        return self._cls(self.inner().inner().dt.trunc(sql.lit(every)))
+        return self._cls(self.inner().inner().dt.round(every))
 
     def offset_by(self, by: IntoExpr) -> Expr:
         return self._cls(self.inner().inner().dt.offset_by(by))
