@@ -43,7 +43,7 @@ def _expr_call(
     has_params: pl.Expr, py: PyCols, p_lists: ParamLists, dk: DuckCols
 ) -> pl.Expr:
     return format_kwords(
-        '{expr_builder}("{expr_name}", self.inner(){dk_args}{dk_varargs})',
+        '{expr_builder}("{expr_name}", self.inner{dk_args}{dk_varargs})',
         dk_args=_dk_args(has_params, p_lists),
         dk_varargs=_dk_varargs(dk),
         expr_builder=py.expr_builder,

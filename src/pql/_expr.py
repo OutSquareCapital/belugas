@@ -114,43 +114,43 @@ class Expr(sql.CoreHandler[SqlExpr]):
         return self.add(other)
 
     def __radd__(self, other: IntoExpr) -> Self:
-        return self._as_lit(self.inner().radd(other))
+        return self._as_lit(self.inner.radd(other))
 
     def __sub__(self, other: IntoExpr) -> Self:
         return self.sub(other)
 
     def __rsub__(self, other: IntoExpr) -> Self:
-        return self._as_lit(self.inner().rsub(other))
+        return self._as_lit(self.inner.rsub(other))
 
     def __mul__(self, other: IntoExpr) -> Self:
         return self.mul(other)
 
     def __rmul__(self, other: IntoExpr) -> Self:
-        return self._as_lit(self.inner().rmul(other))
+        return self._as_lit(self.inner.rmul(other))
 
     def __truediv__(self, other: IntoExpr) -> Self:
         return self.truediv(other)
 
     def __rtruediv__(self, other: IntoExpr) -> Self:
-        return self._as_lit(self.inner().rtruediv(other))
+        return self._as_lit(self.inner.rtruediv(other))
 
     def __floordiv__(self, other: IntoExpr) -> Self:
         return self.floordiv(other)
 
     def __rfloordiv__(self, other: IntoExpr) -> Self:
-        return self._as_lit(self.inner().rfloordiv(other))
+        return self._as_lit(self.inner.rfloordiv(other))
 
     def __mod__(self, other: IntoExprColumn | Decimal | float) -> Self:
         return self.mod(other)
 
     def __rmod__(self, other: IntoExpr) -> Self:
-        return self._as_lit(self.inner().rmod(other))
+        return self._as_lit(self.inner.rmod(other))
 
     def __pow__(self, other: IntoExprColumn | float) -> Self:
         return self.pow(other)
 
     def __rpow__(self, other: IntoExpr) -> Self:
-        return self._as_lit(self.inner().rpow(other))
+        return self._as_lit(self.inner.rpow(other))
 
     def __neg__(self) -> Self:
         return self.neg()
@@ -179,7 +179,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         return self.and_(other)
 
     def __rand__(self, other: IntoExpr) -> Self:
-        return self._as_lit(self.inner().rand(other))
+        return self._as_lit(self.inner.rand(other))
 
     def __or__(self, other: IntoExpr) -> Self:
         return self.or_(other)
@@ -190,14 +190,14 @@ class Expr(sql.CoreHandler[SqlExpr]):
         return self.xor(other)
 
     def __ror__(self, other: IntoExpr) -> Self:
-        return self._as_lit(self.inner().ror(other))
+        return self._as_lit(self.inner.ror(other))
 
     def __invert__(self) -> Self:
         return self.not_()
 
     @override
     def __hash__(self) -> int:
-        return hash(self.inner().inner().output_name)
+        return hash(self.inner.inner.output_name)
 
     def add(self, other: IntoExpr) -> Self:
         """Add another expression or value.
@@ -205,72 +205,72 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().add(other))
+        return self._cls(self.inner.add(other))
 
     def sub(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().sub(other))
+        return self._cls(self.inner.sub(other))
 
     def mul(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().mul(other))
+        return self._cls(self.inner.mul(other))
 
     def truediv(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().truediv(other))
+        return self._cls(self.inner.truediv(other))
 
     def floordiv(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().floordiv(other))
+        return self._cls(self.inner.floordiv(other))
 
     def mod(self, other: IntoExprColumn | Decimal | float) -> Self:
-        return self._cls(self.inner().mod(other))
+        return self._cls(self.inner.mod(other))
 
     def pow(self, other: IntoExprColumn | float) -> Self:
-        return self._cls(self.inner().pow(other))
+        return self._cls(self.inner.pow(other))
 
     def neg(self) -> Self:
-        return self._cls(self.inner().neg())
+        return self._cls(self.inner.neg())
 
     def abs(self) -> Self:
-        return self._cls(self.inner().abs())
+        return self._cls(self.inner.abs())
 
     def eq(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().eq(other))
+        return self._cls(self.inner.eq(other))
 
     def ne(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().ne(other))
+        return self._cls(self.inner.ne(other))
 
     def lt(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().lt(other))
+        return self._cls(self.inner.lt(other))
 
     def le(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().le(other))
+        return self._cls(self.inner.le(other))
 
     def gt(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().gt(other))
+        return self._cls(self.inner.gt(other))
 
     def ge(self, other: IntoExpr) -> Self:
-        return self._cls(self.inner().ge(other))
+        return self._cls(self.inner.ge(other))
 
     def and_(self, others: IntoExpr) -> Self:
-        return self._cls(self.inner().and_(others))
+        return self._cls(self.inner.and_(others))
 
     def or_(self, others: IntoExpr) -> Self:
-        return self._cls(self.inner().or_(others))
+        return self._cls(self.inner.or_(others))
 
     def not_(self) -> Self:
-        return self._cls(self.inner().not_())
+        return self._cls(self.inner.not_())
 
     def bitwise_and(self) -> Self:
-        return self._cls(self.inner().bitwise_and())
+        return self._cls(self.inner.bitwise_and())
 
     def bitwise_or(self) -> Self:
-        return self._cls(self.inner().bitwise_or())
+        return self._cls(self.inner.bitwise_or())
 
     def bitwise_xor(self) -> Self:
-        return self._cls(self.inner().bitwise_xor())
+        return self._cls(self.inner.bitwise_xor())
 
     def xor(
         self, other: IntoExprColumn | bytes | bytearray | memoryview[int] | int
     ) -> Self:
-        return self._cls(self.inner().xor(other))
+        return self._cls(self.inner.xor(other))
 
     def alias(self, name: str) -> Self:
         """Rename the expression.
@@ -278,7 +278,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression with the given alias.
         """
-        return self.__class__(self.inner().alias(name), self.meta.unalias())
+        return self.__class__(self.inner.alias(name), self.meta.unalias())
 
     def is_null(self) -> Self:
         """Check if the expression is NULL.
@@ -286,7 +286,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to true if the original expression is NULL, false otherwise.
         """
-        return self._cls(self.inner().is_null())
+        return self._cls(self.inner.is_null())
 
     def is_not_null(self) -> Self:
         """Check if the expression is not NULL.
@@ -294,7 +294,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to true if the original expression is not NULL, false otherwise.
         """
-        return self._cls(self.inner().is_not_null())
+        return self._cls(self.inner.is_not_null())
 
     def cast(self, dtype: IntoDataType) -> Self:
         """Cast to a different data type.
@@ -302,7 +302,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression cast to the given data type.
         """
-        return self._cls(self.inner().cast(dtype))
+        return self._cls(self.inner.cast(dtype))
 
     def is_in(self, other: TryIter[IntoExpr]) -> Self:
         """Check if value is in an iterable of values.
@@ -310,16 +310,16 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to true if the original expression is in the given iterable
         """
-        return self._cls(self.inner().is_in(other))
+        return self._cls(self.inner.is_in(other))
 
     def shift(self, n: int = 1) -> Self:
-        return self._cls(self.inner().shift(n))
+        return self._cls(self.inner.shift(n))
 
     def diff(self) -> Self:
-        return self._cls(self.inner().diff())
+        return self._cls(self.inner.diff())
 
     def pct_change(self, n: int = 1) -> Self:
-        return self._cls(self.inner().pct_change(n))
+        return self._cls(self.inner.pct_change(n))
 
     def is_between(
         self,
@@ -327,10 +327,10 @@ class Expr(sql.CoreHandler[SqlExpr]):
         upper_bound: IntoExpr,
         closed: ClosedInterval = "both",
     ) -> Self:
-        return self._cls(self.inner().is_between(lower_bound, upper_bound, closed))
+        return self._cls(self.inner.is_between(lower_bound, upper_bound, closed))
 
     def clip(self, lower_bound: IntoExpr = None, upper_bound: IntoExpr = None) -> Self:
-        return self._cls(self.inner().clip(lower_bound, upper_bound))
+        return self._cls(self.inner.clip(lower_bound, upper_bound))
 
     def count(self) -> Self:
         """Count the number of values.
@@ -338,7 +338,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the count of values.
         """
-        return self._cls(self.inner().count())
+        return self._cls(self.inner.count())
 
     def len(self) -> Self:
         """Get the number of rows in context (including nulls).
@@ -346,7 +346,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the number of rows in context (including nulls).
         """
-        return self._cls(self.inner().is_null().count())
+        return self._cls(self.inner.is_null().count())
 
     def sum(self) -> Self:
         """Compute the sum.
@@ -354,7 +354,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the sum of values.
         """
-        return self._cls(self.inner().sum())
+        return self._cls(self.inner.sum())
 
     def mean(self) -> Self:
         """Compute the mean.
@@ -362,7 +362,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the mean of values.
         """
-        return self._cls(self.inner().mean())
+        return self._cls(self.inner.mean())
 
     def median(self) -> Self:
         """Compute the median.
@@ -370,7 +370,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the median of values.
         """
-        return self._cls(self.inner().median())
+        return self._cls(self.inner.median())
 
     def min(self) -> Self:
         """Compute the minimum.
@@ -378,7 +378,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the minimum of values.
         """
-        return self._cls(self.inner().min())
+        return self._cls(self.inner.min())
 
     def max(self) -> Self:
         """Compute the maximum.
@@ -386,7 +386,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the maximum of values.
         """
-        return self._cls(self.inner().max())
+        return self._cls(self.inner.max())
 
     def first(self, *, ignore_nulls: bool = False) -> Self:
         """Get first value.
@@ -396,9 +396,9 @@ class Expr(sql.CoreHandler[SqlExpr]):
         """
         match ignore_nulls:
             case True:
-                return self._cls(self.inner().any_value())
+                return self._cls(self.inner.any_value())
             case False:
-                return self._cls(self.inner().first())
+                return self._cls(self.inner.first())
 
     def last(self) -> Self:
         """Get last value.
@@ -406,7 +406,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the last value.
         """
-        return self._cls(self.inner().last())
+        return self._cls(self.inner.last())
 
     def mode(self) -> Self:
         """Compute mode.
@@ -414,7 +414,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the mode of values.
         """
-        return self._cls(self.inner().mode())
+        return self._cls(self.inner.mode())
 
     def approx_n_unique(self) -> Self:
         """Approximate the number of unique values.
@@ -422,7 +422,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the approximate number of unique values.
         """
-        return self._cls(self.inner().approx_count_distinct())
+        return self._cls(self.inner.approx_count_distinct())
 
     def product(self) -> Self:
         """Compute the product.
@@ -430,7 +430,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the product of values.
         """
-        return self._cls(self.inner().product())
+        return self._cls(self.inner.product())
 
     def dot(self, other: IntoExpr) -> Self:
         """Compute the dot product with another expression.
@@ -438,7 +438,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the dot product with another expression.
         """
-        return self._cls(self.inner().dot(other))
+        return self._cls(self.inner.dot(other))
 
     def max_by(self, by: IntoExpr) -> Self:
         """Return the value corresponding to the maximum of another expression.
@@ -446,7 +446,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the value corresponding to the maximum of another expression.
         """
-        return self._cls(self.inner().max_by(SqlExpr.new(by, as_col=True)))
+        return self._cls(self.inner.max_by(SqlExpr.new(by, as_col=True)))
 
     def min_by(self, by: IntoExpr) -> Self:
         """Return the value corresponding to the minimum of another expression.
@@ -454,7 +454,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the value corresponding to the minimum of another expression.
         """
-        return self._cls(self.inner().min_by(SqlExpr.new(by, as_col=True)))
+        return self._cls(self.inner.min_by(SqlExpr.new(by, as_col=True)))
 
     def implode(self) -> Self:
         """Aggregate values into a list.
@@ -462,7 +462,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to a list of values.
         """
-        return self._cls(self.inner().implode())
+        return self._cls(self.inner.implode())
 
     def unique(self) -> Self:
         """Get unique values.
@@ -470,7 +470,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the unique values.
         """
-        return self._cls(self.inner().unique())
+        return self._cls(self.inner.unique())
 
     def is_close(
         self,
@@ -486,7 +486,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
             Self: A new expression that evaluates to whether two floating point values are close.
         """
         return self._cls(
-            self.inner().is_close(other, abs_tol, rel_tol, nans_equal=nans_equal)
+            self.inner.is_close(other, abs_tol, rel_tol, nans_equal=nans_equal)
         )
 
     def rolling_max(
@@ -502,7 +502,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
             Self: A new expression that evaluates to the rolling max.
         """
         return self._cls(
-            self.inner().rolling_max(window_size, min_samples, center=center)
+            self.inner.rolling_max(window_size, min_samples, center=center)
         )
 
     def rolling_min(
@@ -518,7 +518,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
             Self: A new expression that evaluates to the rolling min.
         """
         return self._cls(
-            self.inner().rolling_min(window_size, min_samples, center=center)
+            self.inner.rolling_min(window_size, min_samples, center=center)
         )
 
     def rolling_mean(
@@ -534,7 +534,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
             Self: A new expression that evaluates to the rolling mean.
         """
         return self._cls(
-            self.inner().rolling_mean(window_size, min_samples, center=center)
+            self.inner.rolling_mean(window_size, min_samples, center=center)
         )
 
     def rolling_median(
@@ -550,7 +550,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
             Self: A new expression that evaluates to the rolling median.
         """
         return self._cls(
-            self.inner().rolling_median(window_size, min_samples, center=center)
+            self.inner.rolling_median(window_size, min_samples, center=center)
         )
 
     def rolling_sum(
@@ -566,7 +566,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
             Self: A new expression that evaluates to the rolling sum.
         """
         return self._cls(
-            self.inner().rolling_sum(window_size, min_samples, center=center)
+            self.inner.rolling_sum(window_size, min_samples, center=center)
         )
 
     def rolling_std(
@@ -583,7 +583,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
             Self: A new expression that evaluates to the rolling standard deviation.
         """
         return self._cls(
-            self.inner().rolling_std(window_size, min_samples, center=center, ddof=ddof)
+            self.inner.rolling_std(window_size, min_samples, center=center, ddof=ddof)
         )
 
     def rolling_var(
@@ -600,7 +600,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
             Self: A new expression that evaluates to the rolling variance.
         """
         return self._cls(
-            self.inner().rolling_var(window_size, min_samples, center=center, ddof=ddof)
+            self.inner.rolling_var(window_size, min_samples, center=center, ddof=ddof)
         )
 
     def std(self, ddof: int = 1) -> Self:
@@ -609,7 +609,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the standard deviation.
         """
-        return self._cls(self.inner().std(ddof))
+        return self._cls(self.inner.std(ddof))
 
     def var(self, ddof: int = 1) -> Self:
         """Compute the variance.
@@ -617,7 +617,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the variance.
         """
-        return self._cls(self.inner().var(ddof))
+        return self._cls(self.inner.var(ddof))
 
     def kurtosis(self, *, fisher: bool = True, bias: bool = True) -> Self:
         """Compute the kurtosis.
@@ -625,7 +625,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the kurtosis.
         """
-        return self._cls(self.inner().kurtosis(fisher=fisher, bias=bias))
+        return self._cls(self.inner.kurtosis(fisher=fisher, bias=bias))
 
     def skew(self, *, bias: bool = True) -> Self:
         """Compute the skewness.
@@ -633,7 +633,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the skewness.
         """
-        return self._cls(self.inner().skew(bias=bias))
+        return self._cls(self.inner.skew(bias=bias))
 
     def entropy(self, base: float = math.e, *, normalize: bool = True) -> Self:
         """Compute the entropy.
@@ -641,7 +641,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the entropy.
         """
-        return self._cls(self.inner().entropy(base=base, normalize=normalize))
+        return self._cls(self.inner.entropy(base=base, normalize=normalize))
 
     def quantile(self, quantile: float, *, interpolation: bool = True) -> Self:
         """Compute the quantile.
@@ -649,7 +649,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the quantile.
         """
-        return self._cls(self.inner().quantile(quantile, interpolation=interpolation))
+        return self._cls(self.inner.quantile(quantile, interpolation=interpolation))
 
     def all(self) -> Self:
         """Return whether all values are true.
@@ -657,7 +657,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().all())
+        return self._cls(self.inner.all())
 
     def any(self) -> Self:
         """Return whether any value is true.
@@ -665,7 +665,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().any())
+        return self._cls(self.inner.any())
 
     def n_unique(self) -> Self:
         """Count distinct values.
@@ -673,7 +673,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the number of distinct values.
         """
-        return self._cls(self.inner().n_unique())
+        return self._cls(self.inner.n_unique())
 
     def null_count(self) -> Self:
         """Count null values.
@@ -681,7 +681,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the number of null values.
         """
-        return self._cls(self.inner().null_count())
+        return self._cls(self.inner.null_count())
 
     def has_nulls(self) -> Self:
         """Return whether the expression contains nulls.
@@ -689,7 +689,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to whether the expression contains nulls.
         """
-        return self._cls(self.inner().has_nulls())
+        return self._cls(self.inner.has_nulls())
 
     def rank(self, method: RankMethod = "average", *, descending: bool = False) -> Self:
         """Compute rank values.
@@ -697,7 +697,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self: A new expression that evaluates to the rank of values according to the specified method.
         """
-        return self._cls(self.inner().rank(method, descending=descending))
+        return self._cls(self.inner.rank(method, descending=descending))
 
     def cum_count(self, *, reverse: bool = False) -> Self:
         """Cumulative non-null count.
@@ -705,7 +705,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().cum_count(reverse=reverse))
+        return self._cls(self.inner.cum_count(reverse=reverse))
 
     def cum_sum(self, *, reverse: bool = False) -> Self:
         """Cumulative sum.
@@ -713,7 +713,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().cum_sum(reverse=reverse))
+        return self._cls(self.inner.cum_sum(reverse=reverse))
 
     def cum_prod(self, *, reverse: bool = False) -> Self:
         """Cumulative product.
@@ -721,7 +721,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().cum_prod(reverse=reverse))
+        return self._cls(self.inner.cum_prod(reverse=reverse))
 
     def cum_min(self, *, reverse: bool = False) -> Self:
         """Cumulative minimum.
@@ -729,7 +729,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().cum_min(reverse=reverse))
+        return self._cls(self.inner.cum_min(reverse=reverse))
 
     def cum_max(self, *, reverse: bool = False) -> Self:
         """Cumulative maximum.
@@ -737,7 +737,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().cum_max(reverse=reverse))
+        return self._cls(self.inner.cum_max(reverse=reverse))
 
     def over(
         self,
@@ -748,7 +748,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         nulls_last: bool = False,
     ) -> Self:
         return self._cls(
-            self.inner().over(
+            self.inner.over(
                 partition_by,
                 *more_exprs,
                 order_by=order_by,
@@ -763,7 +763,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().floor())
+        return self._cls(self.inner.floor())
 
     def ceil(self) -> Self:
         """Round up to the nearest integer.
@@ -771,7 +771,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().ceil())
+        return self._cls(self.inner.ceil())
 
     def round(self, decimals: int = 0, *, mode: RoundMode = "half_to_even") -> Self:
         """Round to given number of decimal places.
@@ -779,7 +779,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().round(decimals, mode=mode))
+        return self._cls(self.inner.round(decimals, mode=mode))
 
     def truncate(self, decimals: int = 0) -> Self:
         """Truncate numeric value to given number of decimal places.
@@ -787,7 +787,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().truncate(decimals))
+        return self._cls(self.inner.truncate(decimals))
 
     def sqrt(self) -> Self:
         """Compute the square root.
@@ -795,7 +795,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().sqrt())
+        return self._cls(self.inner.sqrt())
 
     def cbrt(self) -> Self:
         """Compute the cube root.
@@ -803,7 +803,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().cbrt())
+        return self._cls(self.inner.cbrt())
 
     def log(self, base: float = math.e) -> Self:
         """Compute the logarithm.
@@ -811,7 +811,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().log(base))
+        return self._cls(self.inner.log(base))
 
     def log10(self) -> Self:
         """Compute the base 10 logarithm.
@@ -819,7 +819,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().log10())
+        return self._cls(self.inner.log10())
 
     def log1p(self) -> Self:
         """Compute the natural logarithm of 1+x.
@@ -827,7 +827,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().log1p())
+        return self._cls(self.inner.log1p())
 
     def exp(self) -> Self:
         """Compute the exponential.
@@ -835,7 +835,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().exp())
+        return self._cls(self.inner.exp())
 
     def sin(self) -> Self:
         """Compute the sine.
@@ -843,7 +843,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().sin())
+        return self._cls(self.inner.sin())
 
     def cos(self) -> Self:
         """Compute the cosine.
@@ -851,7 +851,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().cos())
+        return self._cls(self.inner.cos())
 
     def tan(self) -> Self:
         """Compute the tangent.
@@ -859,7 +859,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().tan())
+        return self._cls(self.inner.tan())
 
     def arctan(self) -> Self:
         """Compute the arc tangent.
@@ -867,7 +867,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().atan())
+        return self._cls(self.inner.atan())
 
     def arccos(self) -> Self:
         """Compute the arc cosine.
@@ -875,7 +875,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().acos())
+        return self._cls(self.inner.acos())
 
     def arccosh(self) -> Self:
         """Compute the inverse hyperbolic cosine.
@@ -883,7 +883,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().acosh())
+        return self._cls(self.inner.acosh())
 
     def arcsin(self) -> Self:
         """Compute the arc sine.
@@ -891,7 +891,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().asin())
+        return self._cls(self.inner.asin())
 
     def arcsinh(self) -> Self:
         """Compute the inverse hyperbolic sine.
@@ -899,7 +899,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().asinh())
+        return self._cls(self.inner.asinh())
 
     def arctanh(self) -> Self:
         """Compute the inverse hyperbolic tangent.
@@ -907,7 +907,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().atanh())
+        return self._cls(self.inner.atanh())
 
     def cot(self) -> Self:
         """Compute the cotangent.
@@ -915,7 +915,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().cot())
+        return self._cls(self.inner.cot())
 
     def sinh(self) -> Self:
         """Compute the hyperbolic sine.
@@ -923,7 +923,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().sinh())
+        return self._cls(self.inner.sinh())
 
     def cosh(self) -> Self:
         """Compute the hyperbolic cosine.
@@ -931,7 +931,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().cosh())
+        return self._cls(self.inner.cosh())
 
     def tanh(self) -> Self:
         """Compute the hyperbolic tangent.
@@ -939,7 +939,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().tanh())
+        return self._cls(self.inner.tanh())
 
     def degrees(self) -> Self:
         """Convert radians to degrees.
@@ -947,7 +947,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().degrees())
+        return self._cls(self.inner.degrees())
 
     def radians(self) -> Self:
         """Convert degrees to radians.
@@ -955,7 +955,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().radians())
+        return self._cls(self.inner.radians())
 
     def sign(self) -> Self:
         """Get the sign of the value.
@@ -963,7 +963,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().sign())
+        return self._cls(self.inner.sign())
 
     def forward_fill(self) -> Self:
         """Fill null values with the last non-null value.
@@ -971,7 +971,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().forward_fill())
+        return self._cls(self.inner.forward_fill())
 
     def backward_fill(self, limit: int | None = None) -> Self:
         """Fill null values with the next non-null value.
@@ -979,7 +979,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().backward_fill(limit))
+        return self._cls(self.inner.backward_fill(limit))
 
     def is_nan(self) -> Self:
         """Check if value is NaN.
@@ -987,7 +987,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().is_nan())
+        return self._cls(self.inner.is_nan())
 
     def is_not_nan(self) -> Self:
         """Check if value is not NaN.
@@ -995,7 +995,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().is_not_nan())
+        return self._cls(self.inner.is_not_nan())
 
     def is_finite(self) -> Self:
         """Check if value is finite.
@@ -1003,7 +1003,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().is_finite())
+        return self._cls(self.inner.is_finite())
 
     def is_infinite(self) -> Self:
         """Check if value is infinite.
@@ -1011,7 +1011,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().is_infinite())
+        return self._cls(self.inner.is_infinite())
 
     def fill_nan(self, value: float | IntoExprColumn | None) -> Self:
         """Fill NaN values.
@@ -1019,7 +1019,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().fill_nan(value))
+        return self._cls(self.inner.fill_nan(value))
 
     def fill_null(
         self,
@@ -1028,7 +1028,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         limit: int | None = None,
     ) -> Self:
         return self._cls(
-            self.inner().fill_null(
+            self.inner.fill_null(
                 pc.Option(value), pc.Option(strategy), pc.Option(limit)
             )
         )
@@ -1039,7 +1039,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().hash(seed))
+        return self._cls(self.inner.hash(seed))
 
     def replace(self, old: IntoExpr, new: IntoExpr) -> Self:
         """Replace values.
@@ -1047,7 +1047,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().replace(old, new))
+        return self._cls(self.inner.replace(old, new))
 
     def repeat_by(self, by: IntoExprColumn | int) -> Self:
         """Repeat values by count, returning a list.
@@ -1055,7 +1055,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().repeat_by(by))
+        return self._cls(self.inner.repeat_by(by))
 
     def is_duplicated(self) -> Self:
         """Check if value is duplicated.
@@ -1063,7 +1063,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().is_duplicated())
+        return self._cls(self.inner.is_duplicated())
 
     def is_unique(self) -> Self:
         """Check if value is unique.
@@ -1071,7 +1071,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().is_unique())
+        return self._cls(self.inner.is_unique())
 
     def is_first_distinct(self) -> Self:
         """Check if value is first occurrence.
@@ -1079,7 +1079,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().is_first_distinct())
+        return self._cls(self.inner.is_first_distinct())
 
     def is_last_distinct(self) -> Self:
         """Check if value is last occurrence.
@@ -1087,7 +1087,7 @@ class Expr(sql.CoreHandler[SqlExpr]):
         Returns:
             Self
         """
-        return self._cls(self.inner().is_last_distinct())
+        return self._cls(self.inner.is_last_distinct())
 
     def arg_sort(self, *, descending: bool = False, nulls_last: bool = False) -> Self:
         """Get the indices that would sort this expression.
@@ -1096,5 +1096,5 @@ class Expr(sql.CoreHandler[SqlExpr]):
             Self
         """
         return self._cls(
-            self.inner().arg_sort(descending=descending, nulls_last=nulls_last)
+            self.inner.arg_sort(descending=descending, nulls_last=nulls_last)
         )

@@ -54,7 +54,7 @@ class Marker(StrEnum):
                 case _:
                     return node
 
-        return SqlExpr(template.inner().transform(_replacer))  # pyright: ignore[reportUnknownMemberType, reportAny]
+        return SqlExpr(template.inner.transform(_replacer))  # pyright: ignore[reportUnknownMemberType, reportAny]
 
     @classmethod
     def drop_marker(cls, result: IntoFrameT, cols: Collection[str]) -> IntoFrameT:
@@ -76,8 +76,7 @@ class Marker(StrEnum):
                     .window()
                     .sub(1)
                     .alias(cls.TEMP)
-                    .inner()
-                    .pipe(lambda row_nb: exp.select(row_nb, exp.Star()))
+                    .inner.pipe(lambda row_nb: exp.select(row_nb, exp.Star()))
                     .from_(source)
                     .subquery("src")
                 )
@@ -111,11 +110,11 @@ def _broadcast_reducers(expr: SqlExpr) -> SqlExpr:
     def _window_agg(node: exp.Expr) -> exp.Expr:
         match node:
             case exp.AggFunc() | exp.List() if not _has_window_ancestor(node):
-                return SqlExpr(node).window().inner()
+                return SqlExpr(node).window().inner
             case _:
                 return node
 
-    return SqlExpr(expr.inner().transform(_window_agg))  # pyright: ignore[reportUnknownMemberType, reportAny]
+    return SqlExpr(expr.inner.transform(_window_agg))  # pyright: ignore[reportUnknownMemberType, reportAny]
 
 
 def _resolve_exploded(expr: SqlExpr, *, is_distinct: bool) -> SqlExpr:
@@ -136,7 +135,7 @@ class ExprMeta(ABC):
     def into_resolved(self, template: SqlExpr, cols: Cols) -> pc.Iter[ResolvedExpr]: ...
 
     def get_output_names(self, base_names: Cols, template: SqlExpr) -> Cols:
-        match template.inner(), self.alias_name:
+        match template.inner, self.alias_name:
             case exp.Alias() as expr, pc.Some(alias_fn):
                 return pc.Iter.once(expr.output_name).map(alias_fn).collect()
             case exp.Alias() as expr, pc.NONE:
@@ -182,9 +181,9 @@ class MultiMeta(ExprMeta):
         def _resolved(expr: SqlExpr, col_name: str, name: str) -> ResolvedExpr:
             return ResolvedExpr(Marker.replace_col(expr, col_name), name)
 
-        match template.inner():
+        match template.inner:
             case exp.Alias():
-                expr = template.inner().unalias().pipe(SqlExpr)
+                expr = template.inner.unalias().pipe(SqlExpr)
                 alias = output_names.first()
                 return base_names.iter().map(lambda name: _resolved(expr, name, alias))
 
@@ -213,7 +212,7 @@ class ResolvedExpr(Pipeable):
 
     def __init__(self, expr: SqlExpr, name: str) -> None:
         self.name = name
-        inner = expr.inner()
+        inner = expr.inner
         self.has_projection_distinct = inner.pipe(_find_all, exp.Distinct).any(
             _is_projection_distinct
         )
@@ -266,7 +265,7 @@ class ResolvedExpr(Pipeable):
                 .unwrap_or(default=False)
             )
 
-        is_temp = self.expr.inner().pipe(_find_all, exp.Column).any(_check_temp)
+        is_temp = self.expr.inner.pipe(_find_all, exp.Column).any(_check_temp)
         return self.name != marker and is_temp
 
 
@@ -294,12 +293,12 @@ class ExprPlan:
         def _resolve(val: IntoExpr) -> pc.Iter[ResolvedExpr]:
             match val:
                 case Expr() as expr:
-                    return expr.meta.into_resolved(expr.inner(), cols)
+                    return expr.meta.into_resolved(expr.inner, cols)
                 case _:
                     return (
                         SqlExpr
                         .new(val, as_col=True)
-                        .pipe(lambda e: ResolvedExpr(e, e.inner().output_name))
+                        .pipe(lambda e: ResolvedExpr(e, e.inner.output_name))
                         .into(pc.Iter.once)
                     )
 
@@ -314,7 +313,7 @@ class ExprPlan:
 
     def aliased_sql(self, *, broadcast_agg: bool) -> pc.Iter[exp.Expr]:
         def _into_expr(resolved: ResolvedExpr) -> exp.Expr:
-            return resolved.as_aliased(broadcast_agg=broadcast_agg).inner()
+            return resolved.as_aliased(broadcast_agg=broadcast_agg).inner
 
         return self.projections.iter().map(_into_expr)
 
@@ -360,7 +359,7 @@ class ExprPlan:
                             updates
                             .items()
                             .iter()
-                            .map_star(lambda name, e: e.alias(name).inner())
+                            .map_star(lambda name, e: e.alias(name).inner)
                             .insert(exp.Star())
                         )
                     case True:
@@ -369,8 +368,8 @@ class ExprPlan:
                             .iter()
                             .map(
                                 lambda name: updates.get_item(name).map_or(
-                                    sql.col(name).inner(),
-                                    lambda c: c.alias(name).inner(),
+                                    sql.col(name).inner,
+                                    lambda c: c.alias(name).inner,
                                 )
                             )
                             .chain(
@@ -378,7 +377,7 @@ class ExprPlan:
                                 .items()
                                 .iter()
                                 .filter_star(lambda name, _expr: name not in self.cols)
-                                .map_star(lambda name, e: e.alias(name).inner())
+                                .map_star(lambda name, e: e.alias(name).inner)
                             )
                         )
 
@@ -423,11 +422,9 @@ class ExprPlan:
                 )
 
             def _into_glot(name: str) -> exp.Expr:
-                return (
-                    sql.col(name).pipe(ResolvedExpr, name).implode_or_scalar().inner()
-                )
+                return sql.col(name).pipe(ResolvedExpr, name).implode_or_scalar().inner
 
-            match proj.expr.inner():
+            match proj.expr.inner:
                 case exp.Star() as star:
                     excluded = _excluded(star)
                     return (
@@ -444,10 +441,10 @@ class ExprPlan:
                         )
                         .list.flatten()
                         .alias(proj.name)
-                        .inner()
+                        .inner
                     )
                 case _:
-                    return pc.Iter.once(proj.implode_or_scalar().inner())
+                    return pc.Iter.once(proj.implode_or_scalar().inner)
 
         plan = self.projections.iter().flat_map(_lower_projection)
 

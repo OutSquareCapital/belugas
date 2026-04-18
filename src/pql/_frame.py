@@ -74,7 +74,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
     def __init__(self, data: IntoRel, orient: Orientation = "col") -> None:
         match data:
             case LazyFrame():
-                self._inner = data.inner()
+                self._inner = data.inner
                 self._ast = data._ast
             case _:
                 source = ScanSource.build(data, orient)
@@ -97,10 +97,10 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
         return (
             self.columns
             .iter()
-            .map(lambda c: sql.col(c).pipe(func).alias(c).inner())
+            .map(lambda c: sql.col(c).pipe(func).alias(c).inner)
             .into(lambda agg_exprs: exp.select(*agg_exprs))
             .from_("src")
-            .pipe(self._from_sql_expr, src=self.inner())
+            .pipe(self._from_sql_expr, src=self.inner)
         )
 
     @overload
@@ -108,9 +108,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
     @overload
     def _into_pl(self, *, lazy: Literal[False]) -> pl.DataFrame: ...
     def _into_pl(self, *, lazy: bool) -> pl.LazyFrame | pl.DataFrame:
-        return (
-            self.inner().relation.pl(lazy=lazy).pipe(Marker.drop_marker, self.columns)
-        )
+        return self.inner.relation.pl(lazy=lazy).pipe(Marker.drop_marker, self.columns)
 
     def lazy(self) -> pl.LazyFrame:
         """Get a Polars LazyFrame.
@@ -147,7 +145,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
             .select_ctx()
             .map_or(
                 self.__class__(ScanSource.from_none().relation),
-                lambda ast: self._from_sql_expr(ast, src=self.inner()),
+                lambda ast: self._from_sql_expr(ast, src=self.inner),
             )
         )
 
@@ -168,7 +166,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
             self.columns
             .into(ExprPlan, exprs, more_exprs, named_exprs)
             .with_columns_ctx()
-            .pipe(self._from_sql_expr, src=self.inner())
+            .pipe(self._from_sql_expr, src=self.inner)
         )
 
     def filter(
@@ -197,14 +195,14 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
             .map(lambda value: SqlExpr.new(value, as_col=True))
             .chain(pc.Iter(constraints.items()).map_star(_constraint))
             .reduce(SqlExpr.and_)
-            .inner()
+            .inner
         )
         return (
             exp
             .select(exp.Star())
             .from_("src")
             .where(condition)
-            .pipe(self._from_sql_expr, src=self.inner())
+            .pipe(self._from_sql_expr, src=self.inner)
         )
 
     def group_by(
@@ -260,7 +258,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
             self.columns
             .into(ExprPlan, exprs, more_exprs, named_exprs)
             .group_by_all_ctx()
-            .pipe(self._from_sql_expr, src=self.inner())
+            .pipe(self._from_sql_expr, src=self.inner)
         )
 
     def sort(
@@ -293,16 +291,14 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
                 )
             )
             .map_star(
-                lambda expr, desc, nls: expr.set_order(
-                    desc=desc, nulls_last=nls
-                ).inner()
+                lambda expr, desc, nls: expr.set_order(desc=desc, nulls_last=nls).inner
             )
             .into(
                 lambda order_exprs: (
                     exp.select(exp.Star()).from_("src").order_by(*order_exprs)
                 )
             )
-            .pipe(self._from_sql_expr, src=self.inner())
+            .pipe(self._from_sql_expr, src=self.inner)
         )
 
     def limit(self, n: int) -> Self:
@@ -319,7 +315,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
             .select(exp.Star())
             .from_("src")
             .limit(n)
-            .pipe(self._from_sql_expr, src=self.inner())
+            .pipe(self._from_sql_expr, src=self.inner)
         )
 
     def head(self, n: int = 5) -> Self:
@@ -367,7 +363,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
                         .from_("src")
                         .limit(len_val.unwrap_or(MAX_I64))
                         .offset(offset)
-                        .pipe(self._from_sql_expr, src=self.inner())
+                        .pipe(self._from_sql_expr, src=self.inner)
                     )
                 case (pc.Some(0), _):
                     return pc.Ok(self.limit(0))
@@ -425,12 +421,12 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
         Returns:
             Self: A new LazyFrame with the specified columns dropped.
         """
-        star_exclude = try_iter(columns).chain(more_columns).into(sql.all).inner()
+        star_exclude = try_iter(columns).chain(more_columns).into(sql.all).inner
         return (
             exp
             .select(star_exclude)
             .from_("src")
-            .pipe(self._from_sql_expr, src=self.inner())
+            .pipe(self._from_sql_expr, src=self.inner)
         )
 
     def drop_nulls(self, subset: TryIter[str] = None) -> Self:
@@ -522,7 +518,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
     def union(self, other: Self) -> Self:
         lhs = exp.select(exp.Star()).from_("lhs")
         rhs = exp.select(exp.Star()).from_("rhs")
-        return self._from_sql_expr(exp.union(lhs, rhs), lhs=self.inner(), rhs=other)
+        return self._from_sql_expr(exp.union(lhs, rhs), lhs=self.inner, rhs=other)
 
     def rename(self, mapping: Mapping[str, str]) -> Self:
         """Rename columns.
@@ -549,10 +545,10 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
         """
         from ._parser import ParsedQuery
 
-        return ParsedQuery(self.inner().relation.sql_query())
+        return ParsedQuery(self.inner.relation.sql_query())
 
     def explain(self, kind: ExplainType | ExplainTypeLiteral = "standard") -> str:
-        return self.inner().relation.explain(kind)
+        return self.inner.relation.explain(kind)
 
     def unnest(
         self, columns: TryIter[IntoExprColumn], *more_columns: IntoExprColumn
@@ -567,11 +563,11 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
                     .iter()
                     .map(sql.unnest)
                     .insert(sql.all(exclude=unnest_cols))
-                    .map(lambda expr: expr.inner())
+                    .map(lambda expr: expr.inner)
                 )
             )
             .into(lambda exprs: exp.select(*exprs).from_("src"))
-            .pipe(self._from_sql_expr, src=self.inner())
+            .pipe(self._from_sql_expr, src=self.inner)
         )
 
     def first(self) -> Self:
@@ -596,7 +592,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
 
     def describe(self) -> Self:
         """Return descriptive statistics."""
-        return self.__class__(self.inner().relation.describe())
+        return self.__class__(self.inner.relation.describe())
 
     def sum(self) -> Self:
         """Aggregate the sum of each column.
@@ -735,7 +731,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
         Returns:
             Self: A new LazyFrame that is a copy of the current one.
         """
-        return self.__class__(self.inner().copy())
+        return self.__class__(self.inner.copy())
 
     def gather_every(self, n: int, offset: int = 0) -> Self:
         """Take every nth row starting from offset.
@@ -758,12 +754,12 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
     @property
     def columns(self) -> pc.Vec[str]:
         """Get column names."""
-        return pc.Vec.from_ref(self.inner().relation.columns)
+        return pc.Vec.from_ref(self.inner.relation.columns)
 
     @property
     def dtypes(self) -> pc.Iter[DataType]:
         """Get column data types."""
-        return pc.Iter(self.inner().relation.dtypes).map(DataType.from_duckdb)
+        return pc.Iter(self.inner.relation.dtypes).map(DataType.from_duckdb)
 
     @property
     def width(self) -> int:
@@ -819,14 +815,14 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
                         left
                         .map(builder.lhs)
                         .chain(right.filter_map(builder.for_inner_left))
-                        .map(lambda c: c.inner())
+                        .map(lambda c: c.inner)
                     )
                 case "outer":
                     return (
                         left
                         .map(builder.lhs)
                         .chain(right.map(builder.for_outer))
-                        .map(lambda c: c.inner())
+                        .map(lambda c: c.inner)
                     )
                 case "right":
                     return (
@@ -834,7 +830,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
                         .filter(lambda name: name not in join_keys.left)
                         .map(builder.lhs)
                         .chain(right.map(builder.for_right))
-                        .map(lambda c: c.inner())
+                        .map(lambda c: c.inner)
                     )
                 case "semi" | "anti":
                     return pc.Iter.once("lhs.*")
@@ -846,14 +842,13 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
             .zip(join_keys.right)
             .map_star(builder.equals)
             .reduce(SqlExpr.and_)
-            .inner()
-            .pipe(
+            .inner.pipe(
                 lambda condition: (
                     _cols_how()
                     .into(lambda exprs: exp.select(*exprs))
                     .from_("lhs")
                     .join("rhs", on=condition, join_type=join_type)
-                    .pipe(self._from_sql_expr, lhs=self.inner(), rhs=other)
+                    .pipe(self._from_sql_expr, lhs=self.inner, rhs=other)
                 )
             )
         )
@@ -874,11 +869,11 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
             .iter()
             .map(builder.lhs)
             .chain(builder.right.iter().map(builder.for_outer))
-            .map(lambda c: c.inner())
+            .map(lambda c: c.inner)
             .into(lambda exprs: exp.select(*exprs))
             .from_("lhs")
             .join("rhs", join_type="cross")
-            .pipe(self._from_sql_expr, lhs=self.inner(), rhs=other)
+            .pipe(self._from_sql_expr, lhs=self.inner, rhs=other)
         )
 
     def join_asof(  # noqa: PLR0913
@@ -936,18 +931,18 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
             .map_star(builder.equals)
             .chain(builder.lhs(on_keys.left).pipe(_get_strategy).pipe(pc.Iter.once))
             .reduce(SqlExpr.and_)
-            .inner()
+            .inner
         )
         return (
             builder.left
             .iter()
             .map(builder.lhs)
             .chain(other.columns.iter().filter_map(builder.for_inner_left))
-            .map(lambda c: c.inner())
+            .map(lambda c: c.inner)
             .into(lambda exprs: exp.select(*exprs))
             .from_("lhs")
             .join("rhs", on=by_cond, join_type="asof left")
-            .pipe(self._from_sql_expr, lhs=self.inner(), rhs=other)
+            .pipe(self._from_sql_expr, lhs=self.inner, rhs=other)
         )
 
     def unique(
@@ -1099,7 +1094,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
                     lambda e: exp.Pivot(
                         this=e,
                         expressions=_on_exprs(),
-                        using=val_cols.iter().map(_aliased).map(lambda c: c.inner()),
+                        using=val_cols.iter().map(_aliased).map(lambda c: c.inner),
                         group=_group(),
                     )
                 )
@@ -1117,7 +1112,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
                 .collect()
                 .then(_select_ordered)
                 .unwrap_or_else(_pivot)
-                .pipe(self._from_sql_expr, rel=self.inner())
+                .pipe(self._from_sql_expr, rel=self.inner)
             )
 
         def _handle_multi(lf: Self) -> Self:
@@ -1195,7 +1190,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
             try_iter(order_by)
             .then(lambda cols: _select().order_by(*cols))
             .unwrap_or_else(_select)
-            .pipe(self._from_sql_expr, rel=self.inner())
+            .pipe(self._from_sql_expr, rel=self.inner)
         )
 
     def with_row_index(self, name: str, *, order_by: TryIter[str]) -> Self:
@@ -1214,10 +1209,9 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
             .window(order_by=pc.Some(order_by))
             .sub(1)
             .alias(name)
-            .inner()
-            .pipe(lambda row_nb: exp.select(row_nb, exp.Star()))
+            .inner.pipe(lambda row_nb: exp.select(row_nb, exp.Star()))
             .from_("src")
-            .pipe(self._from_sql_expr, src=self.inner())
+            .pipe(self._from_sql_expr, src=self.inner)
         )
 
     def top_k(
@@ -1267,13 +1261,13 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
         self, path: str | Path, *, compression: ParquetCompression = "zstd"
     ) -> None:
         """Write to Parquet file."""
-        self.inner().relation.write_parquet(str(path), compression=compression)
+        self.inner.relation.write_parquet(str(path), compression=compression)
 
     def sink_csv(
         self, path: str | Path, *, separator: str = ",", include_header: bool = True
     ) -> None:
         """Write to CSV file."""
-        self.inner().relation.write_csv(str(path), sep=separator, header=include_header)
+        self.inner.relation.write_csv(str(path), sep=separator, header=include_header)
 
     def sink_ndjson(self, path: str | Path) -> None:
         """Write to newline-delimited JSON file."""
@@ -1311,7 +1305,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
         )
 
     def fetch_all(self) -> pc.Vec[tuple[Any, ...]]:  # pyright: ignore[reportExplicitAny]
-        return pc.Vec.from_ref(self.inner().relation.fetchall())
+        return pc.Vec.from_ref(self.inner.relation.fetchall())
 
     def show(
         self,
@@ -1321,7 +1315,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
         null_value: str | None = None,
         render_mode: RenderModeLiteral | None = None,
     ) -> None:
-        return self.inner().relation.show(
+        return self.inner.relation.show(
             max_width=max_width,
             max_rows=max_rows,
             max_col_width=max_col_width,
@@ -1331,4 +1325,4 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
 
     @property
     def shape(self) -> tuple[int, int]:
-        return self.inner().relation.shape
+        return self.inner.relation.shape

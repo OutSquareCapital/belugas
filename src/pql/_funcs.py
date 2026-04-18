@@ -92,12 +92,7 @@ def coalesce(exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> Expr:
         Expr: A new expression that evaluates to the first non-null value among the given expressions.
     """
     expr_name = (
-        try_iter(exprs)
-        .next()
-        .map(SqlExpr.new, as_col=True)
-        .unwrap()
-        .inner()
-        .output_name
+        try_iter(exprs).next().map(SqlExpr.new, as_col=True).unwrap().inner.output_name
     )
     return Expr(sql.coalesce(exprs, *more_exprs), SingleMeta(root_name=expr_name))
 
@@ -120,7 +115,7 @@ def _horizontal_fn(
     meta = (
         try_iter(exprs)
         .next()
-        .map(lambda v: SqlExpr.new(v, as_col=True).inner().output_name)
+        .map(lambda v: SqlExpr.new(v, as_col=True).inner.output_name)
         .map(lambda n: SingleMeta(root_name=n))
         .unwrap()
     )

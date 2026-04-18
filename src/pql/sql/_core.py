@@ -24,11 +24,11 @@ class CoreHandler[T]:
 
     @override
     def __repr__(self) -> str:
-        return self.inner().__repr__()
+        return self.inner.__repr__()
 
     @override
     def __str__(self) -> str:
-        return self.inner().__str__()
+        return self.inner.__str__()
 
     def pipe[**P, R](
         self,
@@ -65,6 +65,7 @@ class CoreHandler[T]:
         """
         return self.__class__(value)
 
+    @property
     def inner(self) -> T:
         """Unwrap the underlying value.
 
@@ -88,6 +89,7 @@ class NameSpaceHandler[T: DuckHandler]:
     def _cls(self, expr: exp.Expr) -> T:
         return self._parent.__class__(expr)
 
+    @property
     def inner(self) -> T:
         """Unwrap the underlying expression.
 

@@ -81,8 +81,8 @@ SPECIAL_CASES = pc.Set({
     "divide",
     "alias",  # conflicts with duckdb alias method
     # Need arg swapping
-    "log",  # Need to swap argument order to take self.inner() as value and not as base
-    "date_trunc",  # Need to swap argument order to take self.inner() as timestamp and not as precision
+    "log",  # Need to swap argument order to take self.inner as value and not as base
+    "date_trunc",  # Need to swap argument order to take self.inner as timestamp and not as precision
     "datetrunc",  # alias of date_trunc, same issue
     # Need to transform the expr input in a lambda in all cases, better to handle it manually
     "array_filter",

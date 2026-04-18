@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 def _root_column_name(expr: SqlExpr) -> pc.Option[str]:
-    match expr.inner():
+    match expr.inner:
         case exp.Column() as column:
             return pc.Some(column.output_name)
         case _:
@@ -90,7 +90,7 @@ class LazyGroupBy:
         *more_aggs: IntoExpr,
         **named_aggs: IntoExpr,
     ) -> LazyFrame:
-        key_glots = self._keys.iter().map(lambda c: c.inner()).collect(list)
+        key_glots = self._keys.iter().map(lambda c: c.inner).collect(list)
 
         def _group_by_clause() -> Iterable[exp.Expr]:
             match self._strategy:
@@ -106,5 +106,5 @@ class LazyGroupBy:
             .into(ExprPlan, aggs, more_aggs, named_aggs)
             .agg_ctx(pc.Iter(key_glots))
             .group_by(*_group_by_clause())
-            .pipe(self._frame._from_sql_expr, src=self._frame.inner())  # pyright: ignore[reportPrivateUsage]
+            .pipe(self._frame._from_sql_expr, src=self._frame.inner)  # pyright: ignore[reportPrivateUsage]
         )

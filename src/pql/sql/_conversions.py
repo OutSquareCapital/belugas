@@ -44,9 +44,9 @@ def pql_into_glot(value: IntoExpr, *, as_col: bool = True) -> exp.Expr:
 
     match value:
         case DuckHandler():
-            return value.inner()
+            return value.inner
         case Expr():
-            return value.inner().inner()
+            return value.inner.inner
         case str() if as_col:
             return exp.column(value)
         case _:

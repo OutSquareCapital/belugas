@@ -93,14 +93,13 @@ class SqlExpr(Fns):  # noqa: PLW1641
         spec = BoundsValues.rolling(window_size, center=center)
 
         def _clause(e: SqlExpr) -> SqlExpr:
-            return e.inner().pipe(rolling_agg, Marker.TEMP, spec).pipe(SqlExpr)
+            return e.inner.pipe(rolling_agg, Marker.TEMP, spec).pipe(SqlExpr)
 
         return (
             when(self.count().pipe(_clause).ge(min_samples or window_size))
             .then(self.pipe(agg).pipe(_clause))
             .otherwise(None)
-            .inner()
-            .pipe(self._cls)
+            .inner.pipe(self._cls)
         )
 
     def rolling_max(
@@ -224,10 +223,10 @@ class SqlExpr(Fns):  # noqa: PLW1641
         return self._cls(expr)
 
     def _binop[T: exp.Binary](self, op: type[T], other: IntoExpr) -> Self:
-        return self._build_op(op, self.inner(), pql_into_glot(other))
+        return self._build_op(op, self.inner, pql_into_glot(other))
 
     def _rbinop[T: exp.Binary](self, op: type[T], other: IntoExpr) -> Self:
-        return self._build_op(op, pql_into_glot(other), self.inner())
+        return self._build_op(op, pql_into_glot(other), self.inner)
 
     def __add__(self, other: IntoExpr) -> Self:
         return self._binop(exp.Add, other)
@@ -258,7 +257,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         return self._build_op(exp.Div, left, right).floor()
 
     def __floordiv__(self, other: IntoExpr) -> Self:
-        return self._floordiv_op(self.inner(), pql_into_glot(other))
+        return self._floordiv_op(self.inner, pql_into_glot(other))
 
     def floordiv(self, other: IntoExpr) -> Self:
         return self.__floordiv__(other)
@@ -276,7 +275,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         return self.__gt__(other)
 
     def __invert__(self) -> Self:
-        return self._cls(exp.Not(this=self.inner()))
+        return self._cls(exp.Not(this=self.inner))
 
     def not_(self) -> Self:
         return self.__invert__()
@@ -310,7 +309,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         return self.__ne__(other)
 
     def __neg__(self) -> Self:
-        return self._cls(exp.Neg(this=self.inner()))
+        return self._cls(exp.Neg(this=self.inner))
 
     def neg(self) -> Self:
         return self.__neg__()
@@ -337,13 +336,13 @@ class SqlExpr(Fns):  # noqa: PLW1641
         return self.__rand__(other)
 
     def __rfloordiv__(self, other: IntoExpr) -> Self:
-        return self._floordiv_op(pql_into_glot(other), self.inner())
+        return self._floordiv_op(pql_into_glot(other), self.inner)
 
     def rfloordiv(self, other: IntoExpr) -> Self:
         return self.__rfloordiv__(other)
 
     def __rmod__(self, other: IntoExpr) -> Self:
-        return self.new(other).fmod(self.inner())
+        return self.new(other).fmod(self.inner)
 
     def rmod(self, other: IntoExpr) -> Self:
         return self.__rmod__(other)
@@ -386,16 +385,16 @@ class SqlExpr(Fns):  # noqa: PLW1641
 
     def alias(self, name: str) -> Self:
         return self._cls(
-            exp.Alias(this=self.inner().unalias(), alias=exp.to_identifier(name))
+            exp.Alias(this=self.inner.unalias(), alias=exp.to_identifier(name))
         )
 
     def asc(self) -> Self:
-        return self._cls(exp.Ordered(this=self.inner(), desc=False))
+        return self._cls(exp.Ordered(this=self.inner, desc=False))
 
     def between(self, lower: IntoExpr, upper: IntoExpr) -> Self:
         return self._cls(
             exp.Between(
-                this=self.inner(), low=pql_into_glot(lower), high=pql_into_glot(upper)
+                this=self.inner, low=pql_into_glot(lower), high=pql_into_glot(upper)
             )
         )
 
@@ -406,36 +405,36 @@ class SqlExpr(Fns):  # noqa: PLW1641
             case exp.DataType():
                 dtype_expr = dtype
 
-        return self._cls(exp.Cast(this=self.inner(), to=dtype_expr))
+        return self._cls(exp.Cast(this=self.inner, to=dtype_expr))
 
     def collate(self, collation: str) -> Self:
-        expr = exp.Collate(this=self.inner(), expression=exp.to_identifier(collation))
+        expr = exp.Collate(this=self.inner, expression=exp.to_identifier(collation))
         return self._cls(expr)
 
     def desc(self) -> Self:
-        return self._cls(exp.Ordered(this=self.inner(), desc=True))
+        return self._cls(exp.Ordered(this=self.inner, desc=True))
 
     def is_in(self, args: TryIter[IntoExpr], *more_args: IntoExpr) -> Self:
         exprs = args_into_glot(try_iter(args).chain(more_args))
-        return self._cls(exp.In(this=self.inner(), expressions=exprs))
+        return self._cls(exp.In(this=self.inner, expressions=exprs))
 
     def is_not_in(self, args: TryIter[IntoExpr], *more_args: IntoExpr) -> Self:
-        return self._cls(exp.Not(this=self.is_in(args, *more_args).inner()))
+        return self._cls(exp.Not(this=self.is_in(args, *more_args).inner))
 
     def is_not_null(self) -> Self:
-        return self._cls(exp.Not(this=self.is_null().inner()))
+        return self._cls(exp.Not(this=self.is_null().inner))
 
     def is_null(self) -> Self:
-        return self._cls(exp.Is(this=self.inner(), expression=exp.Null()))
+        return self._cls(exp.Is(this=self.inner, expression=exp.Null()))
 
     def nulls_first(self) -> Self:
-        return self._cls(exp.Ordered(this=self.inner(), nulls_first=True))
+        return self._cls(exp.Ordered(this=self.inner, nulls_first=True))
 
     def nulls_last(self) -> Self:
-        return self._cls(exp.Ordered(this=self.inner(), nulls_first=False))
+        return self._cls(exp.Ordered(this=self.inner, nulls_first=False))
 
     def show(self) -> None:
-        print(self.inner().sql(dialect="duckdb"))
+        print(self.inner.sql(dialect="duckdb"))
 
     def _reversed(self, *, reverse: bool = False) -> Self:
         match reverse:
@@ -546,14 +545,14 @@ class SqlExpr(Fns):  # noqa: PLW1641
                     msg = "can only specify `limit` when strategy is set to 'backward' or 'forward'"
                     return pc.Err(ValueError(msg))
                 case (pc.Some(val), pc.NONE, pc.NONE):
-                    return pc.Ok(coalesce((self.inner(), val)))
+                    return pc.Ok(coalesce((self.inner, val)))
                 case (_, pc.Some(strat), pc.NONE):
                     return pc.Ok(self.pipe(_fill_strategy()[strat]))
                 case _:
                     msg = "must specify either a fill `value` or `strategy`"
                     return pc.Err(ValueError(msg))
 
-        return _get_strat().map(lambda e: self._cls(e.inner())).unwrap()
+        return _get_strat().map(lambda e: self._cls(e.inner)).unwrap()
 
     def cum_count(self, *, reverse: bool = False) -> Self:
         """Cumulative non-null count.
@@ -701,10 +700,10 @@ class SqlExpr(Fns):  # noqa: PLW1641
         Returns:
             Self: A expression representing the count of distinct values.
         """
-        return self._cls(self.implode().list.distinct().list.length().inner())
+        return self._cls(self.implode().list.distinct().list.length().inner)
 
     def unique(self) -> Self:
-        return self._cls(exp.Distinct(expressions=[self.inner()]))
+        return self._cls(exp.Distinct(expressions=[self.inner]))
 
     def has_nulls(self) -> Self:
         """Return whether the expression contains nulls.
@@ -720,7 +719,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         Returns:
             Self: A list expression with repeated values.
         """
-        expr = self.new(by, as_col=True).list.range().list.eval(self).inner()
+        expr = self.new(by, as_col=True).list.range().list.eval(self).inner
         return self._cls(expr)
 
     def replace(self, old: IntoExpr, new: IntoExpr) -> Self:
@@ -731,7 +730,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         """
         from ._when import when
 
-        return self._cls(when(self.eq(old)).then(new).otherwise(self).inner())
+        return self._cls(when(self.eq(old)).then(new).otherwise(self).inner)
 
     def is_close(
         self,
@@ -760,7 +759,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
                     when(self.is_nan().and_(other_expr.is_nan()))
                     .then(value=True)
                     .otherwise(close)
-                    .inner()
+                    .inner
                 )
 
     def is_first_distinct(self) -> Self:
@@ -795,7 +794,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         """
         from ._funcs import all
 
-        return self._cls(all().count().window(pc.Some(self)).gt(1).inner())
+        return self._cls(all().count().window(pc.Some(self)).gt(1).inner)
 
     def is_unique(self) -> Self:
         """Check if value is unique.
@@ -805,7 +804,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         """
         from ._funcs import all
 
-        return self._cls(all().count().window(pc.Some(self)).eq(1).inner())
+        return self._cls(all().count().window(pc.Some(self)).eq(1).inner)
 
     def arg_sort(self, *, descending: bool = False, nulls_last: bool = False) -> Self:
         """Return indices that would sort the expression."""
@@ -820,7 +819,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
                 descending=(descending, False),
                 nulls_last=(nulls_last, False),
             )
-            .inner()
+            .inner
         )
 
     def forward_fill(self) -> Self:
@@ -853,7 +852,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         """
         from ._when import when
 
-        return self._cls(when(self.is_nan()).then(value).otherwise(self).inner())
+        return self._cls(when(self.is_nan()).then(value).otherwise(self).inner)
 
     def dot(self, other: IntoExpr) -> Self:
         """Compute the dot product with another expression.
@@ -893,7 +892,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         Returns:
             Self
         """
-        return self._cls(func("LOG", x, self.inner()))
+        return self._cls(func("LOG", x, self.inner))
 
     def greatest(self, *args: IntoExpr) -> Self:
         """Returns the largest value.
@@ -910,7 +909,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         Returns:
             Self
         """
-        expr = exp.Greatest(this=self.inner(), expressions=args_into_glot(args))
+        expr = exp.Greatest(this=self.inner, expressions=args_into_glot(args))
         return self._cls(expr)
 
     def least(self, *args: IntoExpr) -> Self:
@@ -928,7 +927,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         Returns:
             Self
         """
-        expr = exp.Least(this=self.inner(), expressions=args_into_glot(args))
+        expr = exp.Least(this=self.inner, expressions=args_into_glot(args))
         return self._cls(expr)
 
     def window(  # noqa: PLR0913, PLR0917
@@ -958,7 +957,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
             exclude=exclude,
         )
         return self.__class__(
-            OverBuilder(self.inner())
+            OverBuilder(self.inner)
             .handle_nulls(ignore_nulls=ignore_nulls)
             .handle_distinct(distinct=distinct)
             .handle_fn_order_by(
@@ -1081,7 +1080,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         def _peer_count() -> SqlExpr:
             from ._funcs import all
 
-            return all().count().window(pc.Some(self.inner()))
+            return all().count().window(pc.Some(self.inner))
 
         def _base_rank() -> Self:
             return (
@@ -1097,7 +1096,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
             )
 
         def _over(expr: Self) -> Self:
-            return expr.window(order_by=pc.Some(self.inner()), descending=descending)
+            return expr.window(order_by=pc.Some(self.inner), descending=descending)
 
         match method:
             case "average":
@@ -1154,7 +1153,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
             Self
         """
         return self._cls(
-            exp.BitwiseXor(this=self.inner(), expression=pql_into_glot(right))
+            exp.BitwiseXor(this=self.inner, expression=pql_into_glot(right))
         )
 
     def truncate(self, decimals: int = 0) -> Self:
@@ -1212,4 +1211,4 @@ class SqlExpr(Fns):  # noqa: PLW1641
         Returns:
             Self
         """
-        return self._cls(self.str.hash(seed).inner())
+        return self._cls(self.str.hash(seed).inner)

@@ -49,7 +49,7 @@ class Then(SqlExpr):
         )
 
     def otherwise(self, statement: IntoExpr) -> SqlExpr:
-        case = self.inner().copy()
+        case = self.inner.copy()
         case.set("default", pql_into_glot(statement))
         return SqlExpr(case)
 
@@ -60,7 +60,7 @@ class ChainedWhen:
     _predicate: IntoExpr
 
     def then(self, statement: IntoExpr) -> ChainedThen:
-        case = self._chained_when.inner().copy()
+        case = self._chained_when.inner.copy()
         case.append(
             "ifs",
             exp.If(this=pql_into_glot(self._predicate), true=pql_into_glot(statement)),
@@ -78,6 +78,6 @@ class ChainedThen(SqlExpr):
         )
 
     def otherwise(self, statement: IntoExpr) -> SqlExpr:
-        case = self.inner().copy()
+        case = self.inner.copy()
         case.set("default", pql_into_glot(statement))
         return SqlExpr(case)
