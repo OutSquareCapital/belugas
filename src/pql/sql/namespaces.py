@@ -295,6 +295,34 @@ class SqlExprStringNameSpace(StringFns[SqlExpr]):
         """
         return self.inner.dt.to_time(format)
 
+    def to_date(self, format: IntoExprColumn | None = None) -> SqlExpr:  # noqa: A002
+        """Parse string values as date.
+
+        Returns:
+            SqlExpr
+        """
+        match format:
+            case None:
+                return self.inner.cast(dt.Date())
+            case _:
+                return self.strptime(format).cast(dt.Date())
+
+    def pad_start(self, length: int, fill_char: IntoExprColumn = Lit.ESCAPE) -> SqlExpr:
+        """Pad string values on the left.
+
+        Returns:
+            SqlExpr: A new expression that evaluates to the left-padded string.
+        """
+        return self.lpad(length, fill_char)
+
+    def pad_end(self, length: int, fill_char: IntoExprColumn = Lit.ESCAPE) -> SqlExpr:
+        """Pad string values on the right.
+
+        Returns:
+            SqlExpr
+        """
+        return self.rpad(length, fill_char)
+
 
 @dataclass(slots=True)
 class SqlExprStructNameSpace(StructFns[SqlExpr]):

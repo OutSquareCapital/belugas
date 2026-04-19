@@ -10,7 +10,7 @@ import pyochain as pc
 from . import sql
 from ._expr import Expr
 from ._meta import Aliaser, ExprPlan
-from .sql import SqlExpr, datatypes as dt, namespaces as nm
+from .sql import SqlExpr, namespaces as nm
 
 if TYPE_CHECKING:
     from ._typing import TransferEncoding
@@ -225,11 +225,7 @@ class ExprStringNameSpace(ExprNameSpaceBase):
         Returns:
             Expr
         """
-        match format:
-            case None:
-                return self.inner.cast(dt.Date())
-            case _:
-                return self._cls(self._base.strptime(format)).cast(dt.Date())
+        return self._cls(self._base.to_date(format))
 
     def to_datetime(self, format: IntoExprColumn | None = None) -> Expr:  # noqa: A002
         """Parse string values as datetime.
@@ -333,10 +329,10 @@ class ExprStringNameSpace(ExprNameSpaceBase):
         return self._cls(self._base.reverse())
 
     def pad_start(self, length: int, fill_char: IntoExprColumn = nm.Lit.ESCAPE) -> Expr:
-        return self._cls(self._base.lpad(length, fill_char))
+        return self._cls(self._base.pad_start(length, fill_char))
 
     def pad_end(self, length: int, fill_char: IntoExprColumn = nm.Lit.ESCAPE) -> Expr:
-        return self._cls(self._base.rpad(length, fill_char))
+        return self._cls(self._base.pad_end(length, fill_char))
 
     def zfill(self, length: int) -> Expr:
         return self._cls(self._base.zfill(length))
