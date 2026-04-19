@@ -2,14 +2,12 @@ from collections.abc import Callable, Iterable
 from typing import final
 
 import pyochain as pc
-from sqlglot import exp
 
 from . import sql
 from ._expr import Expr
-from ._meta import Marker, MultiMeta, SingleMeta
+from ._meta import Marker, SingleMeta
 from .selectors import Resolver
 from .sql import SqlExpr
-from .sql._conversions import args_into_glot
 from .sql.typing import IntoExpr, IntoExprColumn, PythonLiteral
 from .sql.utils import TryIter, try_iter
 
@@ -43,46 +41,43 @@ def len() -> Expr:
     Returns:
         Expr: A new expression that evaluates to the number of rows.
     """
-    return lit(1).count().alias(Marker.LEN)
+    return Expr(sql.len(), SingleMeta(root_name=Marker.LEN))
 
 
 def _agg_expr(
-    agg: Callable[[SqlExpr], SqlExpr], cols: TryIter[str], more_cols: Iterable[str]
+    agg: Callable[[TryIter[str], *tuple[str, ...]], SqlExpr],
+    cols: TryIter[str],
+    more_cols: Iterable[str],
 ) -> Expr:
-
-    def _columns_expr(inner_cols: pc.Seq[str]) -> SqlExpr:
-        expr = exp.Columns(this=inner_cols.into(args_into_glot))
-        return SqlExpr(expr)
-
-    names = try_iter(cols).chain(more_cols).collect().then_some()
-    meta = MultiMeta(resolver=Resolver.agg_expr(names))
-    inner_expr = (
-        names
-        .map(_columns_expr)
-        .unwrap_or_else(lambda: SqlExpr(exp.Columns(this=exp.Star())))
-        .pipe(agg)
+    meta = (
+        try_iter(cols)
+        .chain(more_cols)
+        .collect()
+        .then(Resolver.fixed)
+        .unwrap_or_else(Resolver.all_columns)
+        .into_meta()
     )
-    return Expr(inner_expr, meta)
+    return Expr(agg(cols, *more_cols), meta)
 
 
 def sum(cols: TryIter[str], *more_cols: str) -> Expr:
-    return _agg_expr(SqlExpr.sum, cols, more_cols)
+    return _agg_expr(sql.sum, cols, more_cols)
 
 
 def mean(cols: TryIter[str], *more_cols: str) -> Expr:
-    return _agg_expr(SqlExpr.mean, cols, more_cols)
+    return _agg_expr(sql.mean, cols, more_cols)
 
 
 def median(cols: TryIter[str], *more_cols: str) -> Expr:
-    return _agg_expr(SqlExpr.median, cols, more_cols)
+    return _agg_expr(sql.median, cols, more_cols)
 
 
 def min(cols: TryIter[str], *more_cols: str) -> Expr:
-    return _agg_expr(SqlExpr.min, cols, more_cols)
+    return _agg_expr(sql.min, cols, more_cols)
 
 
 def max(cols: TryIter[str], *more_cols: str) -> Expr:
-    return _agg_expr(SqlExpr.max, cols, more_cols)
+    return _agg_expr(sql.max, cols, more_cols)
 
 
 def coalesce(exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> Expr:
@@ -103,14 +98,11 @@ def all(exclude: TryIter[IntoExprColumn] = None) -> Expr:
     Returns:
         Expr: A new expression that evaluates to all columns.
     """
-    meta = MultiMeta(resolver=Resolver.all_fn(pc.Option(exclude)))
-    return Expr(sql.all(exclude), meta)
+    return Expr(sql.all(exclude), Resolver.all_fn(pc.Option(exclude)).into_meta())
 
 
 def _horizontal_fn(
-    exprs: TryIter[IntoExpr],
-    more_exprs: Iterable[IntoExpr],
-    fn: Callable[..., SqlExpr],
+    exprs: TryIter[IntoExpr], more_exprs: Iterable[IntoExpr], fn: Callable[..., SqlExpr]
 ) -> Expr:
     meta = (
         try_iter(exprs)

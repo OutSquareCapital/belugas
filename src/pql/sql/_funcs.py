@@ -129,6 +129,17 @@ def lit(value: PythonLiteral) -> SqlExpr:
     return SqlExpr(exp.convert(value))
 
 
+def len() -> SqlExpr:
+    """Return the number of rows.
+
+    Returns:
+        SqlExpr
+    """
+    from .._meta import Marker
+
+    return lit(1).count().alias(Marker.LEN)
+
+
 def coalesce(exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> SqlExpr:
     """Create a COALESCE expression.
 
@@ -215,4 +226,37 @@ def mean_horizontal(exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> SqlExpr:
             )
         )
         .expect(_HORIZONTAL_ERR)
+    )
+
+
+def sum(cols: TryIter[str], *more_cols: str) -> SqlExpr:
+    return _agg_expr(SqlExpr.sum, cols, more_cols)
+
+
+def mean(cols: TryIter[str], *more_cols: str) -> SqlExpr:
+    return _agg_expr(SqlExpr.mean, cols, more_cols)
+
+
+def median(cols: TryIter[str], *more_cols: str) -> SqlExpr:
+    return _agg_expr(SqlExpr.median, cols, more_cols)
+
+
+def min(cols: TryIter[str], *more_cols: str) -> SqlExpr:
+    return _agg_expr(SqlExpr.min, cols, more_cols)
+
+
+def max(cols: TryIter[str], *more_cols: str) -> SqlExpr:
+    return _agg_expr(SqlExpr.max, cols, more_cols)
+
+
+def _agg_expr(
+    agg: Callable[[SqlExpr], SqlExpr], cols: TryIter[str], more_cols: Iterable[str]
+) -> SqlExpr:
+    return (
+        try_iter(cols)
+        .chain(more_cols)
+        .then(lambda inner_cols: exp.Columns(this=inner_cols.into(args_into_glot)))
+        .unwrap_or_else(lambda: exp.Columns(this=exp.Star()))
+        .pipe(SqlExpr)
+        .pipe(agg)
     )

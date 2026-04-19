@@ -38,8 +38,11 @@ class Resolver:
     def __call__(self, cols: Cols) -> Cols:
         return self._fn(cols)
 
+    def into_meta(self) -> MultiMeta:
+        return MultiMeta(resolver=self)
+
     def into_selector(self) -> Selector:
-        return Selector(sql.all(), MultiMeta(resolver=self))
+        return Selector(sql.all(), self.into_meta())
 
     @classmethod
     def all_columns(cls) -> Self:
@@ -72,10 +75,6 @@ class Resolver:
             return cols.iter().filter(lambda n: n not in excluded).collect()
 
         return cls(_exclude)
-
-    @classmethod
-    def agg_expr(cls, cols: pc.Option[pc.Seq[str]]) -> Self:
-        return cols.map(cls.fixed).unwrap_or_else(cls.all_columns)
 
     @classmethod
     def ordered_name(cls, names: Iterable[str]) -> Self:
