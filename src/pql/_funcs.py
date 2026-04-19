@@ -43,7 +43,7 @@ def len() -> Expr:
     Returns:
         Expr: A new expression that evaluates to the number of rows.
     """
-    return Expr(sql.lit(1), SingleMeta(root_name=Marker.LEN)).count()
+    return lit(1).count().alias(Marker.LEN)
 
 
 def _agg_expr(
