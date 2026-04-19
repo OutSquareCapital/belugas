@@ -198,7 +198,7 @@ class ExprStringNameSpace(ExprNameSpaceBase):
         Returns:
             Expr
         """
-        return self._cls(self.inner.inner.re.extract_all(pattern))
+        return self._cls(self._base.extract_all(pattern))
 
     def extract(self, pattern: IntoExprColumn, group_index: int = 1) -> Expr:
         """Extract a regex capture group.
@@ -206,7 +206,7 @@ class ExprStringNameSpace(ExprNameSpaceBase):
         Returns:
             Expr
         """
-        return self._cls(self.inner.inner.re.extract(pattern, group_index))
+        return self._cls(self._base.extract(pattern, group_index))
 
     def find(self, pattern: IntoExprColumn, *, literal: bool = False) -> Expr:
         """Return the first match offset as a zero-based index.
@@ -222,7 +222,7 @@ class ExprStringNameSpace(ExprNameSpaceBase):
         Returns:
             Expr
         """
-        return self._cls(self.inner.inner.json.extract_string(json_path))
+        return self._cls(self._base.json_path_match(json_path))
 
     def to_date(self, format: IntoExprColumn | None = None) -> Expr:  # noqa: A002
         """Parse string values as date.

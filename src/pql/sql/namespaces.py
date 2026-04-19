@@ -352,6 +352,30 @@ class SqlExprStringNameSpace(StringFns[SqlExpr]):
             case "hex":
                 return expr.to_hex().str.lower()
 
+    def extract_all(self, pattern: IntoExprColumn) -> SqlExpr:
+        """Extract all regex matches.
+
+        Returns:
+            SqlExpr
+        """
+        return self.inner.re.extract_all(pattern)
+
+    def extract(self, pattern: IntoExprColumn, group_index: int = 1) -> SqlExpr:
+        """Extract a regex capture group.
+
+        Returns:
+            SqlExpr
+        """
+        return self.inner.re.extract(pattern, group_index)
+
+    def json_path_match(self, json_path: IntoExprColumn) -> SqlExpr:
+        """Extract first JSONPath match from string JSON values.
+
+        Returns:
+            SqlExpr
+        """
+        return self.inner.json.extract_string(json_path)
+
 
 @dataclass(slots=True)
 class SqlExprStructNameSpace(StructFns[SqlExpr]):
