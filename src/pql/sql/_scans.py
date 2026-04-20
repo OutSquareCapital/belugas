@@ -9,7 +9,7 @@ import duckdb
 import pyochain as pc
 from sqlglot import exp
 
-from ._conversions import PQLConversionError, glot_into_duckdb
+from ._conversions import PQLConversionError, into_duckdb
 from ._core import DuckHandler
 from ._funcs import unnest
 from .typing import FrameLike, NPArrayLike, PythonLiteral
@@ -42,7 +42,7 @@ def _to_expr(k: str, v: PythonLiteral) -> duckdb.Expression:
 
 
 def _unnest(k: str) -> duckdb.Expression:
-    return unnest(k).alias(k).inner.pipe(glot_into_duckdb)
+    return unnest(k).alias(k).inner.pipe(into_duckdb)
 
 
 @dataclass(slots=True)
@@ -90,11 +90,11 @@ class ScanSource:
 
     @classmethod
     def from_glot(cls, data: exp.Expr) -> Self:
-        return cls.from_expr(glot_into_duckdb(data))
+        return cls.from_expr(into_duckdb(data))
 
     @classmethod
     def from_pql(cls, data: DuckHandler) -> Self:
-        return cls.from_expr(data.inner.pipe(glot_into_duckdb))
+        return cls.from_expr(data.inner.pipe(into_duckdb))
 
     @classmethod
     def from_relation(cls, relation: duckdb.DuckDBPyRelation) -> Self:
@@ -160,7 +160,7 @@ class ScanSource:
 
     @classmethod
     def from_seq_glot(cls, data: Sequence[exp.Expr]) -> Self:
-        exprs = pc.Iter(data).map(glot_into_duckdb).collect(tuple)
+        exprs = pc.Iter(data).map(into_duckdb).collect(tuple)
         cols = pc.Iter(data).map(lambda c: c.name).collect(pc.Vec)
         return cls(duckdb.values(exprs), cols)
 

@@ -36,12 +36,12 @@ def args_into_glot(args: Iterable[IntoExpr], *, as_col: bool = False) -> list[ex
     return (
         Iter(args)
         .filter_map(Option)
-        .map(lambda x: pql_into_glot(x, as_col=as_col))
+        .map(lambda x: into_glot(x, as_col=as_col))
         .collect(list)
     )
 
 
-def pql_into_glot(value: IntoExpr, *, as_col: bool = True) -> exp.Expr:
+def into_glot(value: IntoExpr, *, as_col: bool = True) -> exp.Expr:
     """Convert an `IntoExpr` value into a sqlglot `Expr` node.
 
     Args:
@@ -65,7 +65,7 @@ def pql_into_glot(value: IntoExpr, *, as_col: bool = True) -> exp.Expr:
             return exp.convert(value)
 
 
-def glot_into_duckdb(expr: exp.Expr) -> duckdb.Expression:
+def into_duckdb(expr: exp.Expr) -> duckdb.Expression:
     try:
         match expr:
             case exp.Alias():
@@ -87,7 +87,7 @@ def glot_into_duckdb(expr: exp.Expr) -> duckdb.Expression:
 
 
 def _ordered_expr(expr: exp.Ordered) -> duckdb.Expression:
-    ordered = glot_into_duckdb(expr.this)  # pyright: ignore[reportAny]
+    ordered = into_duckdb(expr.this)  # pyright: ignore[reportAny]
     match expr.args.get("desc", False):  # pyright: ignore[reportMatchNotExhaustive]
         case True:
             ordered = ordered.desc()
@@ -108,7 +108,7 @@ def _lambda_expr(expr: exp.Lambda) -> duckdb.Expression:
         case _ as item:  # pyright: ignore[reportAny]
             param = str(item)  # pyright: ignore[reportAny]
 
-    return duckdb.LambdaExpression(param, glot_into_duckdb(expr.this))  # pyright: ignore[reportAny]
+    return duckdb.LambdaExpression(param, into_duckdb(expr.this))  # pyright: ignore[reportAny]
 
 
 def _col_expr(expr: exp.Column) -> duckdb.Expression:
@@ -117,7 +117,7 @@ def _col_expr(expr: exp.Column) -> duckdb.Expression:
 
 
 def _alias_expr(expr: exp.Alias) -> duckdb.Expression:
-    return glot_into_duckdb(expr.this).alias(expr.alias)  # pyright: ignore[reportAny]
+    return into_duckdb(expr.this).alias(expr.alias)  # pyright: ignore[reportAny]
 
 
 def _anon_func_expr(
@@ -130,7 +130,7 @@ def _anon_func_expr(
         case _ as func_expr:
             name = func_expr.sql_name()
             exprs = func_expr.iter_expressions()
-    args = Iter(exprs).map(glot_into_duckdb)
+    args = Iter(exprs).map(into_duckdb)
     return duckdb.FunctionExpression(name, *args)
 
 

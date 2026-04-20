@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Literal, NamedTuple, Self, TypedDict, Unpack
 import pyochain as pc
 from sqlglot import exp
 
-from ._conversions import pql_into_glot
+from ._conversions import into_glot
 from .utils import TryIter, UpperStrEnum, try_iter
 
 if TYPE_CHECKING:
@@ -80,7 +80,7 @@ def get_partition(
     partition_by: pc.Option[TryIter[IntoExprColumn]],
 ) -> pc.Option[list[exp.Expr]]:
     return partition_by.map(try_iter).map(
-        lambda cols: cols.map(pql_into_glot).collect(list)
+        lambda cols: cols.map(into_glot).collect(list)
     )
 
 
@@ -103,7 +103,7 @@ def _ordered(
         )
         .map_star(
             lambda item, desc, nl: exp.Ordered(
-                this=pql_into_glot(item), desc=desc, nulls_first=not nl
+                this=into_glot(item), desc=desc, nulls_first=not nl
             )
         )
         .collect(list)
@@ -153,7 +153,7 @@ class OverBuilder:
             filter_cond
             .map(
                 lambda c: exp.Filter(
-                    this=self.expr, expression=exp.Where(this=pql_into_glot(c))
+                    this=self.expr, expression=exp.Where(this=into_glot(c))
                 )
             )
             .map(self.__class__)

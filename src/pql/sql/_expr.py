@@ -9,7 +9,7 @@ import pyochain as pc
 from sqlglot import exp
 
 from ._code_gen import Fns
-from ._conversions import args_into_glot, pql_into_glot
+from ._conversions import args_into_glot, into_glot
 from ._core import func
 from ._window import (
     BoundsValues,
@@ -72,7 +72,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         Returns:
             SqlExpr
         """
-        return cls(pql_into_glot(value, as_col=as_col))
+        return cls(into_glot(value, as_col=as_col))
 
     def _rolling_agg(
         self,
@@ -218,14 +218,12 @@ class SqlExpr(Fns):  # noqa: PLW1641
         return self._cls(expr)
 
     def _binop[T: exp.Binary](self, op: type[T], other: IntoExpr) -> Self:
-        return self._build_op(op, self.inner, pql_into_glot(other))
+        return self._build_op(op, self.inner, into_glot(other))
 
     def _rbinop[T: exp.Binary](self, op: type[T], other: IntoExpr) -> Self:
         from .._meta import Marker
 
-        return self._build_op(op, pql_into_glot(other), self.inner).alias(
-            Marker.LITERAL
-        )
+        return self._build_op(op, into_glot(other), self.inner).alias(Marker.LITERAL)
 
     def __add__(self, other: IntoExpr) -> Self:
         return self._binop(exp.Add, other)
@@ -256,7 +254,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         return self._build_op(exp.Div, left, right).floor()
 
     def __floordiv__(self, other: IntoExpr) -> Self:
-        return self._floordiv_op(self.inner, pql_into_glot(other))
+        return self._floordiv_op(self.inner, into_glot(other))
 
     def floordiv(self, other: IntoExpr) -> Self:
         return self.__floordiv__(other)
@@ -337,7 +335,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
     def __rfloordiv__(self, other: IntoExpr) -> Self:
         from .._meta import Marker
 
-        return self._floordiv_op(pql_into_glot(other), self.inner).alias(Marker.LITERAL)
+        return self._floordiv_op(into_glot(other), self.inner).alias(Marker.LITERAL)
 
     def rfloordiv(self, other: IntoExpr) -> Self:
         return self.__rfloordiv__(other)
@@ -396,9 +394,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
 
     def between(self, lower: IntoExpr, upper: IntoExpr) -> Self:
         return self._cls(
-            exp.Between(
-                this=self.inner, low=pql_into_glot(lower), high=pql_into_glot(upper)
-            )
+            exp.Between(this=self.inner, low=into_glot(lower), high=into_glot(upper))
         )
 
     def cast(self, dtype: IntoDataType) -> Self:
@@ -1161,9 +1157,7 @@ class SqlExpr(Fns):  # noqa: PLW1641
         Returns:
             Self
         """
-        return self._cls(
-            exp.BitwiseXor(this=self.inner, expression=pql_into_glot(right))
-        )
+        return self._cls(exp.BitwiseXor(this=self.inner, expression=into_glot(right)))
 
     def truncate(self, decimals: int = 0) -> Self:
         """Truncate numeric value to given number of decimal places.
