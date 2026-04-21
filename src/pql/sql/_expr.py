@@ -388,9 +388,8 @@ class Expr(Fns):
         return self.__sub__(other)
 
     def alias(self, name: str) -> Self:
-        return self._cls(
-            exp.Alias(this=self.inner.unalias(), alias=exp.to_identifier(name))
-        )
+        expr = exp.Alias(this=self.inner.unalias(), alias=exp.to_identifier(name))
+        return self.__class__(expr, self.meta.unalias())
 
     def asc(self) -> Self:
         return self._cls(exp.Ordered(this=self.inner, desc=False))
@@ -1287,3 +1286,51 @@ class Expr(Fns):
             Self
         """
         return self.atanh()
+
+    def max_by(self, by: IntoExpr, col2: IntoExprColumn | int | None = None) -> Self:
+        """Finds the row with the maximum val.
+
+        Calculates the non-NULL arg expression at that row.
+
+        **SQL name**: *max_by*
+
+        See Also:
+            arg_max, argmax
+
+        Args:
+            by (IntoExpr): `ANY | BIGINT | BLOB | DATE | DOUBLE | HUGEINT | INTEGER | TIMESTAMP | TIMESTAMP WITH TIME ZONE | VARCHAR` expression
+            col2 (IntoExprColumn | int | None): `BIGINT` expression
+
+        Examples:
+            ```sql
+            max_by(A, B)
+            ```
+
+        Returns:
+            Self
+        """
+        return self._cls(func("MAX_BY", self.inner, self.new(by, as_col=True), col2))
+
+    def min_by(self, by: IntoExpr, col2: IntoExprColumn | int | None = None) -> Self:
+        """Finds the row with the minimum val.
+
+        Calculates the non-NULL arg expression at that row.
+
+        **SQL name**: *min_by*
+
+        See Also:
+            arg_min, argmin
+
+        Args:
+            by (IntoExpr): `ANY | BIGINT | BLOB | DATE | DOUBLE | HUGEINT | INTEGER | TIMESTAMP | TIMESTAMP WITH TIME ZONE | VARCHAR` expression
+            col2 (IntoExprColumn | int | None): `BIGINT` expression
+
+        Examples:
+            ```sql
+            min_by(A, B)
+            ```
+
+        Returns:
+            Self
+        """
+        return self._cls(func("MIN_BY", self.inner, self.new(by, as_col=True), col2))

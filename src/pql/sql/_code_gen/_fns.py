@@ -218,7 +218,7 @@ class Fns(DuckHandler):
         **SQL name**: *arg_max*
 
         See Also:
-            argmax, max_by
+            argmax
 
         Args:
             val (IntoExpr): `ANY | BIGINT | BLOB | DATE | DOUBLE | HUGEINT | INTEGER | TIMESTAMP | TIMESTAMP WITH TIME ZONE | VARCHAR` expression
@@ -285,7 +285,7 @@ class Fns(DuckHandler):
         **SQL name**: *arg_min*
 
         See Also:
-            argmin, min_by
+            argmin
 
         Args:
             val (IntoExpr): `ANY | BIGINT | BLOB | DATE | DOUBLE | HUGEINT | INTEGER | TIMESTAMP | TIMESTAMP WITH TIME ZONE | VARCHAR` expression
@@ -352,7 +352,7 @@ class Fns(DuckHandler):
         **SQL name**: *argmax*
 
         See Also:
-            arg_max, max_by
+            arg_max
 
         Args:
             val (IntoExpr): `ANY | BIGINT | BLOB | DATE | DOUBLE | HUGEINT | INTEGER | TIMESTAMP | TIMESTAMP WITH TIME ZONE | VARCHAR` expression
@@ -376,7 +376,7 @@ class Fns(DuckHandler):
         **SQL name**: *argmin*
 
         See Also:
-            arg_min, min_by
+            arg_min
 
         Args:
             val (IntoExpr): `ANY | BIGINT | BLOB | DATE | DOUBLE | HUGEINT | INTEGER | TIMESTAMP | TIMESTAMP WITH TIME ZONE | VARCHAR` expression
@@ -2007,30 +2007,6 @@ class Fns(DuckHandler):
         """
         return self._cls(func("MAX", self.inner, col1))
 
-    def max_by(self, val: IntoExpr, col2: IntoExprColumn | int | None = None) -> Self:
-        """Finds the row with the maximum val.
-
-        Calculates the non-NULL arg expression at that row.
-
-        **SQL name**: *max_by*
-
-        See Also:
-            arg_max, argmax
-
-        Args:
-            val (IntoExpr): `ANY | BIGINT | BLOB | DATE | DOUBLE | HUGEINT | INTEGER | TIMESTAMP | TIMESTAMP WITH TIME ZONE | VARCHAR` expression
-            col2 (IntoExprColumn | int | None): `BIGINT` expression
-
-        Examples:
-            ```sql
-            max_by(A, B)
-            ```
-
-        Returns:
-            Self
-        """
-        return self._cls(func("MAX_BY", self.inner, val, col2))
-
     def md5(self) -> Self:
         r"""Returns the MD5 hash of the `blob` as a `VARCHAR`.
 
@@ -2137,30 +2113,6 @@ class Fns(DuckHandler):
             Self
         """
         return self._cls(func("MIN", self.inner, col1))
-
-    def min_by(self, val: IntoExpr, col2: IntoExprColumn | int | None = None) -> Self:
-        """Finds the row with the minimum val.
-
-        Calculates the non-NULL arg expression at that row.
-
-        **SQL name**: *min_by*
-
-        See Also:
-            arg_min, argmin
-
-        Args:
-            val (IntoExpr): `ANY | BIGINT | BLOB | DATE | DOUBLE | HUGEINT | INTEGER | TIMESTAMP | TIMESTAMP WITH TIME ZONE | VARCHAR` expression
-            col2 (IntoExprColumn | int | None): `BIGINT` expression
-
-        Examples:
-            ```sql
-            min_by(A, B)
-            ```
-
-        Returns:
-            Self
-        """
-        return self._cls(func("MIN_BY", self.inner, val, col2))
 
     def mod(self, col1: IntoExprColumn | Decimal | float) -> Self:
         """SQL mod function.

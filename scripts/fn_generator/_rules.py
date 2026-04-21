@@ -96,10 +96,12 @@ SPECIAL_CASES = pc.Set({
     "concat",  # too much conflict with list_concat, array_concat, etc..
     # sqlglot issues
     "xor",  # Actual match casing logic gives it `XOR` when really it should be `BitwiseXor`
-    # overrides
     "quantile",  # Allow to make quantile a parametrizable method
-    "array_sort",  # We need to handle specifically the arguments
-    "list_sort",  # We need to handle specifically the arguments
+    # Specific handling of arguments needed
+    "array_sort",
+    "list_sort",
+    "max_by",
+    "min_by",
 })
 """Function to exclude by name, either because they require special handling or because they conflict with existing names."""
 PREFIXES = pc.Set((
