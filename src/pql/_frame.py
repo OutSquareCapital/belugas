@@ -488,7 +488,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
                 lambda name: _project_col(name, unnest=unnest, replace=replace)
             )
 
-        cond = target.is_not_null().and_(target.len().gt(0))
+        cond = target.is_not_null().and_(target.list.length().gt(0))
 
         return (
             self
