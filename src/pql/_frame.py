@@ -1036,9 +1036,9 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
             match (try_seq(index), try_seq(values)):
                 case (pc.Some(idx), pc.Some(vals)):
                     return pc.Ok((idx, vals))
-                case (pc.Some(idx), _):
+                case (pc.Some(idx), pc.NONE):
                     return pc.Ok((idx, _cols_not_in(idx)))
-                case (_, pc.Some(vals)):
+                case (pc.NONE, pc.Some(vals)):
                     return pc.Ok((_cols_not_in(vals), vals))
                 case _:
                     msg = "`pivot` needs either `index` or `values` to be specified"
