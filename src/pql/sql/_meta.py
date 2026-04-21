@@ -105,7 +105,7 @@ def _broadcast_reducers(expr: Expr) -> Expr:
     def _window_agg(node: exp.Expr) -> exp.Expr:
         match node:
             case exp.AggFunc() | exp.List() if not _has_window_ancestor(node):
-                return expr.window().inner
+                return expr.__class__(node, expr.meta).window().inner
             case _:
                 return node
 
