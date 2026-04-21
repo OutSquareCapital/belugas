@@ -28,7 +28,6 @@ from ._expr import Expr
 from ._funcs import element, lit
 from ._meta import ExprPlan
 from ._when import when
-from ._window import NullsClause, SortClause
 
 if TYPE_CHECKING:
     from ._meta import Aliaser
@@ -861,14 +860,9 @@ class ExprListNameSpace(ListFns[Expr]):
         Returns:
             T
         """
-        return self._cls(
-            func(
-                "LIST_SORT",
-                self.inner,
-                lit(SortClause.order(desc=descending)),
-                lit(NullsClause.order(last=nulls_last)),
-            )
-        )
+        nulls_pos = "NULLS LAST" if nulls_last else "NULLS FIRST"
+        order = "DESC" if descending else "ASC"
+        return self._cls(func("LIST_SORT", self.inner, order, nulls_pos))
 
     def unique(self) -> Expr:
         """Removes all duplicates and NULL values from a list.
@@ -1104,14 +1098,9 @@ class ExprArrayNameSpace(ArrayFns[Expr]):
         Returns:
             T
         """
-        return self._cls(
-            func(
-                "ARRAY_SORT",
-                self.inner,
-                lit(SortClause.order(desc=descending)),
-                lit(NullsClause.order(last=nulls_last)),
-            )
-        )
+        nulls_pos = "NULLS LAST" if nulls_last else "NULLS FIRST"
+        order = "DESC" if descending else "ASC"
+        return self._cls(func("ARRAY_SORT", self.inner, order, nulls_pos))
 
     def unique(self) -> Expr:
         """Removes all duplicates and NULL values from a list.

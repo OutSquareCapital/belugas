@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import auto
 from functools import partial
-from typing import TYPE_CHECKING, Literal, NamedTuple, Self, TypedDict, Unpack
+from typing import TYPE_CHECKING, NamedTuple, Self, TypedDict, Unpack
 
 import pyochain as pc
 from sqlglot import exp
@@ -17,24 +17,6 @@ if TYPE_CHECKING:
 
 
 type FrameBound = int | Bounds | str
-
-
-class NullsClause(UpperStrEnum):
-    LAST = "NULLS LAST"
-    FIRST = "NULLS FIRST"
-
-    @classmethod
-    def order(cls, *, last: bool) -> Literal[NullsClause.LAST, NullsClause.FIRST]:
-        return cls.LAST if last else cls.FIRST
-
-
-class SortClause(UpperStrEnum):
-    ASC = auto()
-    DESC = auto()
-
-    @classmethod
-    def order(cls, *, desc: bool) -> Literal[SortClause.ASC, SortClause.DESC]:
-        return cls.DESC if desc else cls.ASC
 
 
 class Bounds(UpperStrEnum):
