@@ -322,18 +322,9 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
             Self: A new LazyFrame with the sliced rows.
         """
 
-        def _with_idx_and_len() -> Self:
-            return self.with_columns(
-                sql.row_number().window().sub(1).alias(Marker.TEMP),
-                sql.lit(1).count().window().alias(Marker.LEN),
-            )
-
-        def _from_end_start(off: int) -> Expr:
-            return Marker.TEMP.to_expr().ge(Marker.LEN.to_expr().add(off))
-
         def _filter_lf(
             lf_length: pc.Option[int], offset: int
-        ) -> pc.Result[Self, ValueError]:
+        ) -> pc.Result[exp.Select, ValueError]:
             match (lf_length, offset):
                 case (pc.Some(length), _) if length < 0:
                     msg = f"negative slice lengths ({length}) are invalid for LazyFrame"
@@ -344,32 +335,38 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
                         .from_("src")
                         .limit(len_val.unwrap_or(MAX_I64))
                         .offset(offset)
-                        .pipe(self._execute, src=self.inner)
                     )
                     return pc.Ok(lf)
                 case (pc.Some(0), _):
-                    return pc.Ok(self.limit(0))
-                case (pc.Some(length), offset):
-                    predicate = _from_end_start(offset).and_(
-                        Marker.TEMP.to_expr().lt(
-                            Marker.LEN.to_expr().add(offset).add(length)
-                        )
-                    )
-                    lf = (
-                        _with_idx_and_len()
-                        .filter(predicate)
-                        .drop(Marker.TEMP, Marker.LEN)
-                    )
-                    return pc.Ok(lf)
+                    return pc.Ok(_slct_all().from_("src").limit(0))
                 case (_, offset):
-                    lf = (
-                        _with_idx_and_len()
-                        .filter(_from_end_start(offset))
-                        .drop(Marker.TEMP, Marker.LEN)
+                    count_expr = Expr(
+                        exp.select(sql.lit(1).count().inner).from_("src").subquery()
                     )
-                    return pc.Ok(lf)
+                    start_expr = count_expr.add(offset).greatest(0)
+                    qry = _slct_all().from_("src").offset(start_expr.inner)
 
-        return _filter_lf(pc.Option(length), offset).unwrap()
+                    match lf_length:
+                        case pc.Some(length):
+                            return pc.Ok(
+                                qry.limit(
+                                    count_expr
+                                    .add(offset)
+                                    .add(length)
+                                    .least(count_expr)
+                                    .sub(start_expr)
+                                    .greatest(0)
+                                    .inner
+                                )
+                            )
+                        case _:
+                            return pc.Ok(qry)
+
+        return (
+            _filter_lf(pc.Option(length), offset)
+            .map(self._execute, src=self.inner)
+            .unwrap()
+        )
 
     def tail(self, n: int = 5) -> Self:
         """Get the last n rows.
