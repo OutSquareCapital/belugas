@@ -1229,7 +1229,7 @@ class LazyFrame(sql.CoreHandler[ScanSource]):
         return (
             sql
             .row_number()
-            .window(order_by=pc.Some(order_by))
+            .window(order_by=order_by)
             .sub(1)
             .alias(name)
             .inner.pipe(lambda row_nb: exp.select(row_nb, exp.Star()))

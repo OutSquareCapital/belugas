@@ -98,8 +98,8 @@ class JoinKeys[T: pc.Seq[str] | str](NamedTuple):
                         msg = "`by_left` and `by_right` must have the same length."
                         return pc.Err(ValueError(msg))
             case (pc.NONE, pc.NONE, pc.NONE):
-                fn = pc.Seq[str].new
-                return pc.Ok(JoinKeys(fn(), fn()))
+                empty = pc.Seq[str].new()
+                return pc.Ok(JoinKeys(empty, empty))
             case (pc.NONE, _, _):
                 msg = "Can not specify only `by_left` or `by_right`, you need to specify both."
                 return pc.Err(ValueError(msg))

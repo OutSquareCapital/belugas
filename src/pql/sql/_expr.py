@@ -42,10 +42,8 @@ if TYPE_CHECKING:
     from .utils import TryIter
 
 _FILL_STRATEGY: dict[FillNullStrategy, Callable[[Expr], Expr]] = {
-    "forward": lambda expr: expr.last_value().window(
-        frame_end=pc.Some(0), ignore_nulls=True
-    ),
-    "backward": lambda expr: expr.any_value().window(frame_start=pc.Some(0)),
+    "forward": lambda expr: expr.last_value().window(frame_end=0, ignore_nulls=True),
+    "backward": lambda expr: expr.any_value().window(frame_start=0),
     "min": lambda expr: expr.coalesce(expr.min().window()),
     "max": lambda expr: expr.coalesce(expr.max().window()),
     "mean": lambda expr: expr.coalesce(expr.mean().window()),
@@ -439,9 +437,9 @@ class Expr(Fns):
     def _reversed(self, *, reverse: bool = False) -> Self:
         match reverse:
             case True:
-                return self.window(frame_start=pc.Some(0))
+                return self.window(frame_start=0)
             case False:
-                return self.window(frame_end=pc.Some(0))
+                return self.window(frame_end=0)
 
     @property
     def arr(self) -> nm.ExprArrayNameSpace:
@@ -781,7 +779,7 @@ class Expr(Fns):
         Returns:
             Self: A boolean expression indicating whether the value is the first occurrence.
         """
-        return self.row_number().window(pc.Some(self)).eq(1)
+        return self.row_number().window(self).eq(1)
 
     def is_last_distinct(self) -> Self:
         """Check if value is last occurrence.
@@ -790,12 +788,7 @@ class Expr(Fns):
             Self: A boolean expression indicating whether the value is the last occurrence.
         """
         row_idx = Marker.TEMP.to_expr()
-        return (
-            self
-            .row_number()
-            .window(pc.Some(self), pc.Some(row_idx), descending=True)
-            .eq(1)
-        )
+        return self.row_number().window(self, row_idx, descending=True).eq(1)
 
     def is_duplicated(self) -> Self:
         """Check if value is duplicated.
@@ -805,7 +798,7 @@ class Expr(Fns):
         """
         from ._funcs import all
 
-        return self._cls(all().count().window(pc.Some(self)).gt(1).inner)
+        return self._cls(all().count().window(self).gt(1).inner)
 
     def is_unique(self) -> Self:
         """Check if value is unique.
@@ -815,7 +808,7 @@ class Expr(Fns):
         """
         from ._funcs import all
 
-        return self._cls(all().count().window(pc.Some(self)).eq(1).inner)
+        return self._cls(all().count().window(self).eq(1).inner)
 
     def arg_sort(self, *, descending: bool = False, nulls_last: bool = False) -> Self:
         """Return indices that would sort the expression."""
@@ -824,7 +817,7 @@ class Expr(Fns):
             row_idx
             .nth_value(row_idx.add(1))
             .window(
-                order_by=pc.Some((self, row_idx)),
+                order_by=(self, row_idx),
                 descending=(descending, False),
                 nulls_last=(nulls_last, False),
             )
@@ -837,7 +830,7 @@ class Expr(Fns):
         Returns:
             Self: An expression with null values filled with the last non-null value.
         """
-        return self.last_value().window(frame_end=pc.Some(0), ignore_nulls=True)
+        return self.last_value().window(frame_end=0, ignore_nulls=True)
 
     def backward_fill(self, limit: int | None) -> Self:
         """Fill null values with the next non-null value.
@@ -849,8 +842,8 @@ class Expr(Fns):
         return (
             pc
             .Option(limit)
-            .map(lambda lmt: expr(frame_start=pc.Some(0), frame_end=pc.Some(lmt)))
-            .unwrap_or_else(lambda: expr(frame_start=pc.Some(0)))
+            .map(lambda lmt: expr(frame_start=0, frame_end=lmt))
+            .unwrap_or_else(lambda: expr(frame_start=0))
         )
 
     def fill_nan(self, value: float | IntoExprColumn | None) -> Self:
@@ -941,14 +934,14 @@ class Expr(Fns):
 
     def window(  # noqa: PLR0913, PLR0917
         self,
-        partition_by: pc.Option[TryIter[IntoExprColumn]] = pc.NONE,
-        order_by: pc.Option[TryIter[IntoExprColumn]] = pc.NONE,
-        frame_start: pc.Option[FrameBound] = pc.NONE,
-        frame_end: pc.Option[FrameBound] = pc.NONE,
+        partition_by: TryIter[IntoExprColumn] | None = None,
+        order_by: TryIter[IntoExprColumn] | None = None,
+        frame_start: FrameBound | None = None,
+        frame_end: FrameBound | None = None,
         frame_mode: FrameMode = "ROWS",
-        exclude: pc.Option[WindowExclude] = pc.NONE,
-        filter_cond: pc.Option[IntoExprColumn] = pc.NONE,
-        fn_order_by: pc.Option[TryIter[IntoExprColumn]] = pc.NONE,
+        exclude: WindowExclude | None = None,
+        filter_cond: IntoExprColumn | None = None,
+        fn_order_by: TryIter[IntoExprColumn] | None = None,
         *,
         descending: TryIter[bool] = False,
         nulls_last: TryIter[bool] = False,
@@ -957,26 +950,30 @@ class Expr(Fns):
         fn_descending: TryIter[bool] = False,
         fn_nulls_last: TryIter[bool] = False,
     ) -> Self:
-        order = get_order(order_by, descending=descending, nulls_last=nulls_last)
+        order = get_order(
+            pc.Option(order_by), descending=descending, nulls_last=nulls_last
+        )
         spec = make_spec(
             frame_mode,
-            has_order_by=order_by.is_some(),
-            frame_start=frame_start,
-            frame_end=frame_end,
-            exclude=exclude,
+            has_order_by=order_by is not None,
+            frame_start=pc.Option(frame_start),
+            frame_end=pc.Option(frame_end),
+            exclude=pc.Option(exclude),
         )
         return self._cls(
             OverBuilder(self.inner)
             .handle_nulls(ignore_nulls=ignore_nulls)
             .handle_distinct(distinct=distinct)
             .handle_fn_order_by(
-                fn_order_by=fn_order_by,
+                fn_order_by=pc.Option(fn_order_by),
                 fn_descending=fn_descending,
                 fn_nulls_last=fn_nulls_last,
             )
-            .handle_filter(filter_cond)
+            .handle_filter(pc.Option(filter_cond))
             .handle_clauses(
-                partition_by=get_partition(partition_by), order=order, spec=spec
+                partition_by=get_partition(pc.Option(partition_by)),
+                order=order,
+                spec=spec,
             )
             .build()
         )
@@ -990,7 +987,7 @@ class Expr(Fns):
         nulls_last: bool = False,
     ) -> Self:
         expr = partial(self.window, descending=descending, nulls_last=nulls_last)
-        partition_exprs: pc.Option[TryIter[IntoExprColumn]] = pc.Some(
+        partition_exprs = (
             try_iter(partition_by)
             .chain(more_exprs)
             .map(lambda x: self.new(x, as_col=True))
@@ -999,7 +996,7 @@ class Expr(Fns):
             pc
             .Option(order_by)
             .map(lambda value: try_iter(value).map(lambda x: self.new(x, as_col=True)))
-            .map(lambda order_exprs: expr(partition_exprs, pc.Some(order_exprs)))
+            .map(lambda order_exprs: expr(partition_exprs, order_exprs))
             .unwrap_or_else(lambda: expr(partition_exprs))
         )
 
@@ -1089,7 +1086,7 @@ class Expr(Fns):
         def _peer_count() -> Expr:
             from ._funcs import all
 
-            return all().count().window(pc.Some(self.inner))
+            return all().count().window(self.inner)
 
         def _base_rank() -> Self:
             return (
@@ -1105,7 +1102,7 @@ class Expr(Fns):
             )
 
         def _over(expr: Self) -> Self:
-            return expr.window(order_by=pc.Some(self.inner), descending=descending)
+            return expr.window(order_by=self.inner, descending=descending)
 
         match method:
             case "average":
