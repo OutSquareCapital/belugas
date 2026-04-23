@@ -6,6 +6,7 @@ from operator import itemgetter as get
 from typing import TYPE_CHECKING, Any, Self, cast
 
 import duckdb
+from duckdb import DuckDBPyRelation
 from pyochain import Dict, Iter, Seq, Vec
 
 from ._funcs import unnest
@@ -101,19 +102,19 @@ error:
 
 @dataclass(slots=True)
 class ScanSource:
-    relation: duckdb.DuckDBPyRelation
+    relation: DuckDBPyRelation
     columns: Vec[str]
 
     @classmethod
     def from_query(cls, query: exp.Expr, **relations: IntoRel) -> Self:
-        """Create a `duckdb.DuckDBPyRelation` from a  `exp.Expr` node.
+        """Create a `DuckDBPyRelation` from a  `exp.Expr` node.
 
         Args:
             query (exp.Expr): The SQL node to execute.
             **relations (IntoRel): Relations to include in the query.
 
         Returns:
-            duckdb.DuckDBPyRelation: The resulting DuckDB relation.
+            DuckDBPyRelation: The resulting DuckDB relation.
 
         Raises:
                 PQLConversionError: If the SQL query cannot be parsed by DuckDB.
@@ -127,7 +128,7 @@ class ScanSource:
             parsed = query.sql(dialect="duckdb", identify=True)
             namespace = {"duckdb": duckdb, "parsed": parsed, **rels}
             exec("relation = duckdb.from_query(parsed)", namespace)
-            result = cast(duckdb.DuckDBPyRelation, namespace["relation"])
+            result = cast(DuckDBPyRelation, namespace["relation"])
             return cls.from_relation(result)
         except duckdb.ParserException as e:
             raise PQLConversionError(e, query) from e
@@ -141,7 +142,7 @@ class ScanSource:
                 return cls.from_none()
             case ScanSource():
                 return cls.copy(source)  # pyright: ignore[reportArgumentType]
-            case duckdb.DuckDBPyRelation():
+            case DuckDBPyRelation():
                 return cls.from_relation(source)
             case LazyFrame():
                 return cls.from_lf(source)
@@ -153,6 +154,14 @@ class ScanSource:
                 return cls.from_df(source)
             case Sequence():
                 return cls.from_records(source, orient=orient)
+
+    @property
+    def identity(self) -> str:
+        return f"pql_scan_{id(self.relation)}"
+
+    def set_alias(self) -> Self:
+        self.relation = self.relation.set_alias(self.identity)
+        return self
 
     def into_frame(self) -> LazyFrame:
         from ._frame import LazyFrame
@@ -243,7 +252,7 @@ class ScanSource:
                         case _:
                             return 0, lambda j: arr[j]  # pyright: ignore[reportAny]
 
-                def _named_array(names: Seq[str]) -> duckdb.DuckDBPyRelation:
+                def _named_array(names: Seq[str]) -> DuckDBPyRelation:
                     vals = (
                         names
                         .iter()
@@ -268,7 +277,7 @@ class ScanSource:
         return cls.from_relation(duckdb.table_function(name, *args))
 
     @classmethod
-    def from_relation(cls, relation: duckdb.DuckDBPyRelation) -> Self:
+    def from_relation(cls, relation: DuckDBPyRelation) -> Self:
         return cls(relation, Vec.from_ref(relation.columns))
 
     @classmethod

@@ -76,12 +76,8 @@ class LazyFrame(CoreHandler[ScanSource]):
                 self._inner = data.inner
                 self._ast = data._ast
             case _:
-                source = ScanSource.build(data, orient)
-                source_name = f"pql_scan_{id(source.relation)}"
-                self._inner = ScanSource(
-                    source.relation.set_alias(source_name), source.columns.into(pc.Vec)
-                )
-                self._ast = exp.from_(exp.to_table(source_name))
+                self._inner = ScanSource.build(data, orient).set_alias()
+                self._ast = exp.from_(exp.to_table(self._inner.identity))
 
     def _execute(self, expr: exp.Expr, **kwargs: IntoRel) -> Self:
         qry = ScanSource.from_query(expr, **kwargs).relation
