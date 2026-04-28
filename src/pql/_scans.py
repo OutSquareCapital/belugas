@@ -135,8 +135,6 @@ class ScanSource:
 
     @classmethod
     def build(cls, source: IntoRel | None, orient: Orientation = "col") -> Self:  # noqa: PLR0911
-        from ._frame import LazyFrame
-
         match source:
             case None:
                 return cls.from_none()
@@ -144,8 +142,6 @@ class ScanSource:
                 return cls.copy(source)  # pyright: ignore[reportArgumentType]
             case DuckDBPyRelation():
                 return cls.from_relation(source)
-            case LazyFrame():
-                return cls.from_lf(source)
             case Mapping():
                 return cls.from_dict(source)
             case NPArrayLike():
@@ -170,10 +166,6 @@ class ScanSource:
 
     def copy(self) -> Self:
         return self.__class__(self.relation, self.columns.into(Vec))
-
-    @classmethod
-    def from_lf(cls, lf: LazyFrame) -> Self:
-        return cls(lf.inner.relation, lf.columns)
 
     @classmethod
     def from_records(cls, data: SeqIntoVals, orient: Orientation = "col") -> Self:
