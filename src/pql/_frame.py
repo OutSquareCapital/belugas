@@ -45,7 +45,7 @@ if TYPE_CHECKING:
         RenderModeLiteral,
     )
     from duckdb import DuckDBPyRelation
-    from pyochain.traits import PyoKeysView, PyoValuesView
+    from pyochain.traits import PyoKeysView
 
     from ._groupby import LazyGroupBy
     from ._parser import ParsedQuery
@@ -602,7 +602,8 @@ class LazyFrame(CoreHandler[exp.Query]):
         targets = try_iter(columns).chain(more_columns).collect(Set)
 
         def _proj(name: str) -> Iter[exp.Expr]:
-            match (name in targets, self._schema.get_item(name).unwrap()):
+            dtype = self._schema.get_item(name).map(dt.DataType.from_sql).unwrap()
+            match name in targets, dtype:
                 case (True, dt.Struct() as s):
                     return s.fields.iter().map(
                         lambda f: col(name).struct.field(f).alias(f).inner
@@ -797,9 +798,9 @@ class LazyFrame(CoreHandler[exp.Query]):
         return self._schema.keys()
 
     @property
-    def dtypes(self) -> PyoValuesView[dt.DataType]:
+    def dtypes(self) -> Iter[dt.DataType]:
         """Get column data types."""
-        return self._schema.values()
+        return self._schema.values().iter().map(dt.DataType.from_sql)
 
     @property
     def width(self) -> int:
@@ -1474,18 +1475,7 @@ def _compute_schema(ast: exp.Query, sources: Dict[str, ScanSource]) -> Schema:
         sources
         .items()
         .iter()
-        .for_each_star(
-            lambda k, v: schema.add_table(  # pyright: ignore[reportUnknownMemberType]
-                k,
-                (
-                    v.schema
-                    .items()
-                    .iter()
-                    .map_star(lambda c, dt: (c, dt.raw))
-                    .collect(dict)
-                ),
-            )
-        )
+        .for_each_star(lambda k, v: schema.add_table(k, v.schema.into(dict)))  # pyright: ignore[reportUnknownMemberType]
     )
 
     def _into_selects(expr: exp.Query) -> Iter[exp.Expr]:
@@ -1498,11 +1488,6 @@ def _compute_schema(ast: exp.Query, sources: Dict[str, ScanSource]) -> Schema:
         .pipe(qualify, schema=schema, validate_qualify_columns=False)
         .pipe(annotate_types, schema=schema)
         .pipe(_into_selects)  # pyright: ignore[reportArgumentType]
-        .map(
-            lambda p: (
-                p.alias_or_name,
-                Option(p.type).map(dt.DataType.from_sql).unwrap(),
-            )
-        )
+        .map(lambda p: (p.alias_or_name, Option(p.type).unwrap()))
         .collect(Dict)
     )

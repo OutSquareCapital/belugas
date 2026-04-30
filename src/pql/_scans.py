@@ -8,14 +8,13 @@ from typing import TYPE_CHECKING, Any, Self, cast
 import duckdb
 from duckdb import DuckDBPyRelation
 from pyochain import Dict, Iter, Seq
+from sqlglot import exp
 
 from ._funcs import unnest
-from .datatypes import DataType
 from .typing import FrameLike, LitSeq, NestedSeq, NPArrayLike
 
 if TYPE_CHECKING:
     from narwhals.typing import IntoFrame
-    from sqlglot import exp
 
     from ._frame import LazyFrame
     from .typing import (
@@ -79,7 +78,7 @@ error:
         super().__init__(msg)
 
 
-type Schema = Dict[str, DataType]
+type Schema = Dict[str, exp.DataType]
 
 
 @dataclass(slots=True)
@@ -269,7 +268,7 @@ class ScanSource:
         schema = (
             Iter(relation.columns)
             .zip(relation.dtypes, strict=True)
-            .map_star(lambda k, d: (k, DataType.from_duckdb(d)))
+            .map_star(lambda k, d: (k, exp.DataType.build(str(d))))
             .collect(Dict)
         )
 
