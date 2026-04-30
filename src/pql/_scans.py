@@ -62,28 +62,6 @@ def from_records(data: SeqIntoVals, orient: Orientation = "col") -> LazyFrame:
 COL0 = "column_0"
 
 
-def _single_col(name: str = COL0) -> Seq[str]:
-    return Seq((name,))
-
-
-def _named(j: object) -> str:
-    return f"column_{j}"
-
-
-def _into_tup[T](
-    vals: Iterable[Sequence[T]] | Iterable[Mapping[T, object]], key: T
-) -> tuple[T, ...]:
-    return Iter(vals).map(get(key)).collect(tuple)
-
-
-def _to_expr(k: str, v: PythonLiteral) -> duckdb.Expression:
-    return duckdb.ConstantExpression(v).alias(k)
-
-
-def _unnest(k: str) -> duckdb.Expression:
-    return duckdb.SQLExpression(unnest(k).alias(k).inner.sql(dialect="duckdb"))
-
-
 class PQLConversionError(ValueError):
     """Raised when a conversion from a sqlglot expression to a DuckDB expression fails."""
 
@@ -151,21 +129,66 @@ class ScanSource:
             case Sequence():
                 return cls.from_records(source, orient=orient)
 
-    @property
-    def identity(self) -> str:
-        return f"pql_scan_{id(self.relation)}"
+    @classmethod
+    def from_none(cls) -> Self:
+        from ._meta import Marker
 
-    def set_alias(self) -> Self:
-        self.relation = self.relation.set_alias(self.identity)
-        return self
-
-    def into_frame(self) -> LazyFrame:
-        from ._frame import LazyFrame
-
-        return LazyFrame(self.relation)
+        return cls.from_dict({Marker.TEMP: ()})
 
     def copy(self) -> Self:
         return self.__class__(self.relation, self.columns)
+
+    @classmethod
+    def from_dict(cls, data: IntoDict[str, Any]) -> Self:  # pyright: ignore[reportExplicitAny]
+        data = Dict(data)
+
+        raw_vals = data.items().iter().map_star(_to_expr).collect(tuple)
+        rel = duckdb.values(raw_vals).select(*data.iter().map(_unnest))
+        return cls(rel, data.keys().into(Seq))
+
+    @classmethod
+    def from_numpy(cls, data: AnyArray, orient: Orientation = "col") -> Self:
+
+        match data.ndim:
+            case 1:
+                rel = duckdb.values(_to_expr(COL0, data)).select(_unnest(COL0))
+                return cls(rel, _single_col())
+            case _:
+                arr = data.T if orient == "col" else data
+
+                def _array_strategy() -> tuple[int, Callable[[int], AnyArray]]:
+                    match (arr.ndim, orient):
+                        case (2, _) | (_, "row"):
+                            return 1, lambda j: arr[:, j]  # pyright: ignore[reportAny]
+                        case _:
+                            return 0, lambda j: arr[j]  # pyright: ignore[reportAny]
+
+                def _named_array(names: Seq[str]) -> DuckDBPyRelation:
+                    vals = (
+                        names
+                        .iter()
+                        .enumerate()
+                        .map_star(lambda j, name: _to_expr(name, arr_getter(j)))
+                        .collect(tuple)
+                    )
+
+                    return duckdb.values(vals).select(*names.iter().map(_unnest))
+
+                axis, arr_getter = _array_strategy()
+                names_nb: int = arr.shape[axis]  # pyright: ignore[reportAny]
+                cols = Iter(range(names_nb)).map(_named).collect()
+                return cls(cols.into(_named_array), cols)
+
+    @classmethod
+    def from_df(cls, data: IntoFrame) -> Self:
+        import narwhals as nw
+
+        match nw.from_native(data):
+            case nw.DataFrame() as df:
+                rel = df.lazy(backend="duckdb").to_native()  # pyright: ignore[reportAny]
+            case nw.LazyFrame() as lf:
+                rel = duckdb.from_arrow(lf.collect())
+        return cls.from_relation(rel)
 
     @classmethod
     def from_records(cls, data: SeqIntoVals, orient: Orientation = "col") -> Self:
@@ -216,49 +239,18 @@ class ScanSource:
             .into(cls.from_dict)
         )
 
-    @classmethod
-    def from_df(cls, data: IntoFrame) -> Self:
-        import narwhals as nw
+    @property
+    def identity(self) -> str:
+        return f"pql_scan_{id(self.relation)}"
 
-        match nw.from_native(data):
-            case nw.DataFrame() as df:
-                rel = df.lazy(backend="duckdb").to_native()  # pyright: ignore[reportAny]
-            case nw.LazyFrame() as lf:
-                rel = duckdb.from_arrow(lf.collect())
-        return cls.from_relation(rel)
+    def set_alias(self) -> Self:
+        self.relation = self.relation.set_alias(self.identity)
+        return self
 
-    @classmethod
-    def from_numpy(cls, data: AnyArray, orient: Orientation = "col") -> Self:
+    def into_frame(self) -> LazyFrame:
+        from ._frame import LazyFrame
 
-        match data.ndim:
-            case 1:
-                rel = duckdb.values(_to_expr(COL0, data)).select(_unnest(COL0))
-                return cls(rel, _single_col())
-            case _:
-                arr = data.T if orient == "col" else data
-
-                def _array_strategy() -> tuple[int, Callable[[int], AnyArray]]:
-                    match (arr.ndim, orient):
-                        case (2, _) | (_, "row"):
-                            return 1, lambda j: arr[:, j]  # pyright: ignore[reportAny]
-                        case _:
-                            return 0, lambda j: arr[j]  # pyright: ignore[reportAny]
-
-                def _named_array(names: Seq[str]) -> DuckDBPyRelation:
-                    vals = (
-                        names
-                        .iter()
-                        .enumerate()
-                        .map_star(lambda j, name: _to_expr(name, arr_getter(j)))
-                        .collect(tuple)
-                    )
-
-                    return duckdb.values(vals).select(*names.iter().map(_unnest))
-
-                axis, arr_getter = _array_strategy()
-                names_nb: int = arr.shape[axis]  # pyright: ignore[reportAny]
-                cols = Iter(range(names_nb)).map(_named).collect()
-                return cls(cols.into(_named_array), cols)
+        return LazyFrame(self.relation)
 
     @classmethod
     def from_table(cls, name: str) -> Self:
@@ -272,16 +264,24 @@ class ScanSource:
     def from_relation(cls, relation: DuckDBPyRelation) -> Self:
         return cls(relation, Vec.from_ref(relation.columns))
 
-    @classmethod
-    def from_none(cls) -> Self:
-        from ._meta import Marker
 
-        return cls.from_dict({Marker.TEMP: ()})
+def _single_col(name: str = COL0) -> Seq[str]:
+    return Seq((name,))
 
-    @classmethod
-    def from_dict(cls, data: IntoDict[str, Any]) -> Self:  # pyright: ignore[reportExplicitAny]
-        data = Dict(data)
 
-        raw_vals = data.items().iter().map_star(_to_expr).collect(tuple)
-        rel = duckdb.values(raw_vals).select(*data.iter().map(_unnest))
-        return cls(rel, data.keys().into(Seq))
+def _named(j: object) -> str:
+    return f"column_{j}"
+
+
+def _into_tup[T](
+    vals: Iterable[Sequence[T]] | Iterable[Mapping[T, object]], key: T
+) -> tuple[T, ...]:
+    return Iter(vals).map(get(key)).collect(tuple)
+
+
+def _to_expr(k: str, v: PythonLiteral) -> duckdb.Expression:
+    return duckdb.ConstantExpression(v).alias(k)
+
+
+def _unnest(k: str) -> duckdb.Expression:
+    return duckdb.SQLExpression(unnest(k).alias(k).inner.sql(dialect="duckdb"))
