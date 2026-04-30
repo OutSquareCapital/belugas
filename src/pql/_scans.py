@@ -7,9 +7,10 @@ from typing import TYPE_CHECKING, Any, Self, cast
 
 import duckdb
 from duckdb import DuckDBPyRelation
-from pyochain import Dict, Iter, Seq, Vec
+from pyochain import Dict, Iter, Seq
 
 from ._funcs import unnest
+from .datatypes import DataType
 from .typing import FrameLike, LitSeq, NestedSeq, NPArrayLike
 
 if TYPE_CHECKING:
@@ -78,10 +79,13 @@ error:
         super().__init__(msg)
 
 
+type Schema = Dict[str, DataType]
+
+
 @dataclass(slots=True)
 class ScanSource:
     relation: DuckDBPyRelation
-    columns: Seq[str]
+    schema: Schema
 
     @classmethod
     def from_query(cls, query: exp.Expr, **relations: IntoRel) -> Self:
@@ -136,7 +140,7 @@ class ScanSource:
         return cls.from_dict({Marker.TEMP: ()})
 
     def copy(self) -> Self:
-        return self.__class__(self.relation, self.columns)
+        return self.__class__(self.relation, self.schema)
 
     @classmethod
     def from_dict(cls, data: IntoDict[str, Any]) -> Self:  # pyright: ignore[reportExplicitAny]
@@ -144,7 +148,7 @@ class ScanSource:
 
         raw_vals = data.items().iter().map_star(_to_expr).collect(tuple)
         rel = duckdb.values(raw_vals).select(*data.iter().map(_unnest))
-        return cls(rel, data.keys().into(Seq))
+        return cls.from_relation(rel)
 
     @classmethod
     def from_numpy(cls, data: AnyArray, orient: Orientation = "col") -> Self:
@@ -152,7 +156,7 @@ class ScanSource:
         match data.ndim:
             case 1:
                 rel = duckdb.values(_to_expr(COL0, data)).select(_unnest(COL0))
-                return cls(rel, _single_col())
+                return cls.from_relation(rel)
             case _:
                 arr = data.T if orient == "col" else data
 
@@ -177,7 +181,7 @@ class ScanSource:
                 axis, arr_getter = _array_strategy()
                 names_nb: int = arr.shape[axis]  # pyright: ignore[reportAny]
                 cols = Iter(range(names_nb)).map(_named).collect()
-                return cls(cols.into(_named_array), cols)
+                return cls.from_relation(_named_array(cols))
 
     @classmethod
     def from_df(cls, data: IntoFrame) -> Self:
@@ -219,7 +223,7 @@ class ScanSource:
     @classmethod
     def from_seq_lit(cls, data: LitSeq) -> Self:
         rel = duckdb.values(_to_expr(COL0, tuple(data))).select(_unnest(COL0))
-        return cls(rel, _single_col())
+        return cls.from_relation(rel)
 
     @classmethod
     def from_seq_col(cls, data: NestedSeq) -> Self:
@@ -262,11 +266,14 @@ class ScanSource:
 
     @classmethod
     def from_relation(cls, relation: DuckDBPyRelation) -> Self:
-        return cls(relation, Vec.from_ref(relation.columns))
+        schema = (
+            Iter(relation.columns)
+            .zip(relation.dtypes, strict=True)
+            .map_star(lambda k, d: (k, DataType.from_duckdb(d)))
+            .collect(Dict)
+        )
 
-
-def _single_col(name: str = COL0) -> Seq[str]:
-    return Seq((name,))
+        return cls(relation, schema)
 
 
 def _named(j: object) -> str:

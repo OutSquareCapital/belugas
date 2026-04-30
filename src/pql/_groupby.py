@@ -100,16 +100,10 @@ class LazyGroupBy:
                     return key_glots
 
         plan = self._cols.into(ExprPlan, aggs, more_aggs, named_aggs)
-        cols = (
-            Iter(key_glots)
-            .map(lambda k: k.output_name)
-            .chain(plan.select_names())
-            .collect()
-        )
 
         return (
             plan
             .agg_ctx(Iter(key_glots))
             .group_by(*_group_by_clause())
-            .pipe(self._frame._execute, cols, src=self._frame)  # pyright: ignore[reportPrivateUsage]
+            .pipe(self._frame._execute, src=self._frame)  # pyright: ignore[reportPrivateUsage]
         )

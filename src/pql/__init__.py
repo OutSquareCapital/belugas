@@ -2,7 +2,7 @@
 
 from . import meta, selectors
 from ._expr import Expr
-from ._frame import LazyFrame, Schema
+from ._frame import LazyFrame
 from ._funcs import (
     all,
     all_horizontal,
@@ -23,6 +23,7 @@ from ._funcs import (
     sum_horizontal,
 )
 from ._scans import (
+    Schema,
     from_df,
     from_dict,
     from_dicts,
