@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, Protocol, Self, runtime_checkable
 
-from pyochain import Result, Seq
+from pyochain import Dict, Result, Seq
 from sqlglot import exp
 
 if TYPE_CHECKING:
@@ -160,7 +160,8 @@ PivotAgg = Literal[
 ]
 type JoinKeysRes[T: Seq[str] | str] = Result[JoinKeys[T], ValueError]
 type GroupByClause = Literal["ROLLUP", "CUBE"]
-
+type Schema = Dict[str, exp.DataType]
+"""Types that can be used to define a schema (mapping of column names to data types)."""
 # theme marker START
 Themes = Literal[
     "abap",

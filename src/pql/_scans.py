@@ -23,6 +23,7 @@ if TYPE_CHECKING:
         IntoRel,
         Orientation,
         PythonLiteral,
+        Schema,
         SeqIntoVals,
     )
 
@@ -76,9 +77,6 @@ error:
         {expr.sql(dialect="duckdb", pretty=True, identify=True)}
 """
         super().__init__(msg)
-
-
-type Schema = Dict[str, exp.DataType]
 
 
 @dataclass(slots=True)
@@ -268,7 +266,7 @@ class ScanSource:
         schema = (
             Iter(relation.columns)
             .zip(relation.dtypes, strict=True)
-            .map_star(lambda k, d: (k, exp.DataType.build(str(d))))
+            .map_star(lambda k, d: (k, exp.DataType.build(str(d), dialect="duckdb")))
             .collect(Dict)
         )
 
