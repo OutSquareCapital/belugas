@@ -12,6 +12,8 @@ from pyochain import Seq
 import pql
 from pql._groupby import LazyGroupBy  # noqa: PLC2701
 
+from ._utils import into_ids
+
 pql_salary = pql.col("salary")
 pl_salary = pl.col("salary")
 assert_eq = partial(assert_frame_equal, check_dtypes=False, check_row_order=False)
@@ -87,11 +89,7 @@ _GROUP_BY_METHODS = Seq((
 ))
 
 
-@pytest.mark.parametrize(
-    "fns",
-    _GROUP_BY_METHODS,
-    ids=_GROUP_BY_METHODS.iter().map_star(lambda f1, _f2: f1.__name__),
-)
+@pytest.mark.parametrize("fns", _GROUP_BY_METHODS, ids=_GROUP_BY_METHODS.into(into_ids))
 def test_lazygroupby_simple_computations(
     sample_df: pl.DataFrame,
     fns: tuple[

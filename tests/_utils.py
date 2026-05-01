@@ -1,10 +1,10 @@
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
-from typing import NamedTuple, override
+from typing import Any, NamedTuple, override
 
 import polars as pl
-import pyochain as pc
 from polars.testing import assert_frame_equal
+from pyochain import Iter, Seq
 from pyochain.traits import PyoIterable
 from rich.traceback import install
 
@@ -27,6 +27,10 @@ class Fns(NamedTuple):
         return self.pql_fn(*args, **kwargs), self.pl_fn(*args, **kwargs)
 
 
+def into_ids(fns: Seq[tuple[Callable[..., Any], Callable[..., Any]]]) -> Iter[str]:  # pyright: ignore[reportExplicitAny]
+    return fns.iter().map_star(lambda f1, _f2: f1.__name__)
+
+
 class ExprPair(NamedTuple):
     pql_expr: pql.Expr
     pl_expr: pl.Expr
@@ -34,16 +38,16 @@ class ExprPair(NamedTuple):
 
 @dataclass(slots=True, init=False)
 class FnsCat(PyoIterable[Fns]):
-    fns: pc.Seq[Fns]
+    fns: Seq[Fns]
 
     def __init__(self, *fns: tuple[PqlFn, PlFn]) -> None:
-        self.fns = pc.Iter(fns).map_star(Fns).collect()
+        self.fns = Iter(fns).map_star(Fns).collect()
 
     @override
     def __iter__(self) -> Iterator[Fns]:
         return self.fns.iter()
 
-    def into_ids(self) -> pc.Iter[str]:
+    def into_ids(self) -> Iter[str]:
         return self.fns.iter().map(lambda x: x.pql_fn.__name__)
 
 

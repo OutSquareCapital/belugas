@@ -1,7 +1,7 @@
 from collections.abc import Callable
 
-import pyochain as pc
 import pytest
+from pyochain import Iter, Seq
 
 import pql
 from pql import meta
@@ -11,9 +11,8 @@ def _get_fn(name: str) -> Callable[..., pql.LazyFrame]:
     return getattr(meta, name)  # pyright: ignore[reportAny]
 
 
-_META_FNS: pc.Seq[Callable[[], pql.LazyFrame]] = (
-    pc
-    .Iter(dir(meta))
+_META_FNS: Seq[Callable[[], pql.LazyFrame]] = (
+    Iter(dir(meta))
     .map(_get_fn)
     .filter(lambda fn: callable(fn) and fn.__name__ != "LazyFrame")
     .collect()

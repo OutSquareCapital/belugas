@@ -1,5 +1,5 @@
-import pyochain as pc
 import pytest
+from pyochain import Err, Ok, Result
 
 import pql
 
@@ -19,10 +19,10 @@ def test_slots(obj: object) -> None:
     assert _check_slots(obj).is_ok()
 
 
-def _check_slots(obj: object) -> pc.Result[None, str]:
+def _check_slots(obj: object) -> Result[None, str]:
     try:
         _ = obj.__dict__
         msg = f"{obj.__class__.__name__} has __dict__, but should have __slots__"
-        return pc.Err(msg)
+        return Err(msg)
     except AttributeError:
-        return pc.Ok(None)
+        return Ok(None)

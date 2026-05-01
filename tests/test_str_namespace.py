@@ -1,7 +1,7 @@
 import polars as pl
-import pyochain as pc
 import pytest
 from polars.testing import assert_frame_equal
+from pyochain import Iter
 
 import pql
 from pql.typing import TransferEncoding
@@ -106,7 +106,7 @@ _LF = pql.LazyFrame({
         "suffix",
         "data",
     ],
-    "suffix_val": pc.Iter(range(4)).map(lambda _: "suffix").collect(list),
+    "suffix_val": Iter(range(4)).map(lambda _: "suffix").collect(list),
     "json": ['{"a": 1}', '{"a": 2}', '{"a": 3}', '{"a": 4}'],
     "json_path": ["$.a", "$.a", "$.a", "$.a"],
     "numbers": ["123.456", "456.789", "789.123", "1234.567"],

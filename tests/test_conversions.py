@@ -4,10 +4,10 @@ from typing import Any
 import duckdb
 import numpy as np
 import polars as pl
-import pyochain as pc
 import pytest
 import sqlglot
 from polars.testing import assert_frame_equal
+from pyochain import Iter
 
 import pql
 import pql.typing as t
@@ -118,7 +118,7 @@ def test_from_numpy_4d(orient: t.Orientation) -> None:
 
 
 def test_from_seq_of_dicts() -> None:
-    dicts = pc.Iter(range(10)).map(lambda _: _get_data()).collect()
+    dicts = Iter(range(10)).map(lambda _: _get_data()).collect()
     assert_eq(pql.LazyFrame(dicts).collect(), pl.DataFrame(dicts))
     assert_eq(pql.from_records(dicts).collect(), pl.from_records(dicts))
     assert_eq(pql.from_dicts(dicts).collect(), pl.from_dicts(dicts))
@@ -145,7 +145,7 @@ def _get_data() -> TestData:
 
 
 def test_from_seq_of_seqs() -> None:
-    seqs = pc.Iter(range(10)).map(lambda _: tuple(range(5))).collect()
+    seqs = Iter(range(10)).map(lambda _: tuple(range(5))).collect()
     assert_eq(pql.LazyFrame(seqs).collect(), pl.DataFrame(seqs))
     assert_eq(pql.from_records(seqs).collect(), pl.from_records(seqs))
 
@@ -164,7 +164,7 @@ def test_from_seq_of_seqs_orient(orient: t.Orientation) -> None:
 
 
 def test_from_seq_of_vals() -> None:
-    vals = pc.Iter(range(10)).map(lambda _: 42).collect()
+    vals = Iter(range(10)).map(lambda _: 42).collect()
     assert_eq(pql.LazyFrame(vals).collect(), pl.DataFrame(vals))
     assert_eq(pql.from_records(vals).collect(), pl.from_records(vals))
 

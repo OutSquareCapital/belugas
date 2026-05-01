@@ -7,7 +7,7 @@ from pyochain import Seq
 import pql
 import pql.typing as t
 
-from ._utils import assert_eq
+from ._utils import assert_eq, into_ids
 
 dt = "dt"
 pql_dt = pql.col(dt).dt
@@ -38,9 +38,7 @@ _SIMPLE_FNS = Seq((
 ))
 
 
-@pytest.mark.parametrize(
-    "fn", _SIMPLE_FNS, ids=_SIMPLE_FNS.iter().map_star(lambda f1, _f2: f1.__name__)
-)
+@pytest.mark.parametrize("fn", _SIMPLE_FNS, ids=_SIMPLE_FNS.into(into_ids))
 def test_simple_fns(fn: tuple[Callable[[], pql.Expr], Callable[[], pl.Expr]]) -> None:
     assert_eq(fn[0](), fn[1]())
 

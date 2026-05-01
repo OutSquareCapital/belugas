@@ -12,7 +12,7 @@ import pql
 from pql import selectors as cs
 
 from ._data import sample_lf, sample_pql
-from ._utils import assert_eq, assert_lf_eq
+from ._utils import assert_eq, assert_lf_eq, into_ids
 
 
 def test_with_columns() -> None:
@@ -185,11 +185,7 @@ _SELECTOR_FNS = Seq((
 ))
 
 
-@pytest.mark.parametrize(
-    "fns",
-    _SELECTOR_FNS,
-    ids=_SELECTOR_FNS.iter().map_star(lambda f1, _f2: f1.__name__),
-)
+@pytest.mark.parametrize("fns", _SELECTOR_FNS, ids=_SELECTOR_FNS.into(into_ids))
 def test_dtype_selector(
     fns: tuple[Callable[[], cs.Selector], Callable[[], cs_pl.Selector]],
 ) -> None:
