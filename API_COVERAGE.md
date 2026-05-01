@@ -10,17 +10,17 @@ Each summary cell is relative to Polars.
 | Class               | Coverage                                                                                     | Implemented | Matched | Missing | Mismatched | Extra |
 | ------------------- | -------------------------------------------------------------------------------------------- | ----------- | ------- | ------- | ---------- | ----- |
 | LazyFrame           | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (38.8%) | 80          | 31      | 24      | 25         | 7     |
-| Expr                | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (43.0%) | 214         | 92      | 90      | 32         | 1     |
+| Expr                | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (39.3%) | 214         | 84      | 86      | 44         | 203   |
 | LazyGroupBy         | <span style="color: #27ae60;">██████</span><span style="color: #bdc3c7;">░░░░</span> (62.5%) | 16          | 10      | 4       | 2          | 0     |
-| ExprStrNameSpace    | <span style="color: #e74c3c;">██</span><span style="color: #bdc3c7;">░░░░░░░░</span> (29.8%) | 47          | 14      | 10      | 23         | 2     |
-| ExprListNameSpace   | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (46.5%) | 43          | 20      | 19      | 4          | 2     |
-| ExprStructNameSpace | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (40.0%) | 5           | 2       | 2       | 1          | 2     |
-| ExprNameNameSpace   | <span style="color: #27ae60;">███████</span><span style="color: #bdc3c7;">░░░</span> (70.0%) | 10          | 7       | 3       | 0          | 2     |
-| ExprArrNameSpace    | <span style="color: #f39c12;">█████</span><span style="color: #bdc3c7;">░░░░░</span> (54.8%) | 31          | 17      | 9       | 5          | 4     |
-| ExprDtNameSpace     | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (48.9%) | 45          | 22      | 18      | 5          | 2     |
-| ModuleFunctions     | <span style="color: #e74c3c;">█</span><span style="color: #bdc3c7;">░░░░░░░░░</span> (14.3%) | 168         | 24      | 120     | 24         | 13    |
+| ExprStrNameSpace    | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (31.2%) | 48          | 15      | 10      | 23         | 84    |
+| ExprListNameSpace   | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (37.2%) | 43          | 16      | 17      | 10         | 63    |
+| ExprStructNameSpace | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (40.0%) | 5           | 2       | 2       | 1          | 13    |
+| ExprNameNameSpace   | <span style="color: #27ae60;">██████</span><span style="color: #bdc3c7;">░░░░</span> (60.0%) | 10          | 6       | 3       | 1          | 1     |
+| ExprArrNameSpace    | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (45.2%) | 31          | 14      | 7       | 10         | 44    |
+| ExprDtNameSpace     | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (46.7%) | 45          | 21      | 18      | 6          | 52    |
+| ModuleFunctions     | <span style="color: #e74c3c;">█</span><span style="color: #bdc3c7;">░░░░░░░░░</span> (14.2%) | 169         | 24      | 121     | 24         | 13    |
 | selectors           | <span style="color: #f39c12;">█████</span><span style="color: #bdc3c7;">░░░░░</span> (54.3%) | 35          | 19      | 12      | 4          | 0     |
-| DataType            | <span style="color: #f39c12;">█████</span><span style="color: #bdc3c7;">░░░░░</span> (57.1%) | 14          | 8       | 5       | 1          | 2     |
+| DataType            | <span style="color: #f39c12;">█████</span><span style="color: #bdc3c7;">░░░░░</span> (53.3%) | 15          | 8       | 6       | 1          | 2     |
 | Schema              | <span style="color: #e74c3c;"></span><span style="color: #bdc3c7;">░░░░░░░░░░</span> (0.0%)  | 17          | 0       | 17      | 0          | 0     |
 
 ## LazyFrame
@@ -42,17 +42,17 @@ Each summary cell is relative to Polars.
 - `join_where`
   - **Polars**: (other: LazyFrame, *predicates: Expr | Iterable[Expr], suffix: str) -> LazyFrame
 - `map_batches`
-  - **Polars**: (function: Callable[[DataFrame], DataFrame], predicate_pushdown: bool, projection_pushdown: bool, slice_pushdown: bool, no_optimizations: bool, schema: None | SchemaDict, validate_output_schema: bool, streamable: bool) -> LazyFrame
+  - **Polars**: (function: Callable[[DataFrame], DataFrame], predicate_pushdown: bool, projection_pushdown: bool, slice_pushdown: bool, no_optimizations: bool | None, schema: None | SchemaDict, validate_output_schema: bool, streamable: bool) -> LazyFrame
 - `match_to_schema`
-  - **Polars**: (schema: SchemaDict | Schema, missing_columns: Literal['insert', 'raise'] | Mapping[str, Literal['insert', 'raise'] | Expr], missing_struct_fields: Literal['insert', 'raise'] | Mapping[str, Literal['insert', 'raise']], extra_columns: Literal['ignore', 'raise'], extra_struct_fields: Literal['ignore', 'raise'] | Mapping[str, Literal['ignore', 'raise']], integer_cast: Literal['upcast', 'forbid'] | Mapping[str, Literal['upcast', 'forbid']], float_cast: Literal['upcast', 'forbid'] | Mapping[str, Literal['upcast', 'forbid']]) -> LazyFrame
+  - **Polars**: (schema: SchemaDict | Schema, missing_columns: Literal['insert', 'raise'] | Mapping[str, Literal['insert', 'raise'] | Expr] | Expr, missing_struct_fields: Literal['insert', 'raise'] | Mapping[str, Literal['insert', 'raise']], extra_columns: Literal['ignore', 'raise'], extra_struct_fields: Literal['ignore', 'raise'] | Mapping[str, Literal['ignore', 'raise']], integer_cast: Literal['upcast', 'forbid'] | Mapping[str, Literal['upcast', 'forbid']], float_cast: Literal['upcast', 'forbid'] | Mapping[str, Literal['upcast', 'forbid']]) -> LazyFrame
 - `merge_sorted`
-  - **Polars**: (other: LazyFrame, key: str) -> LazyFrame
+  - **Polars**: (other: LazyFrame, key: str, maintain_order: bool) -> LazyFrame
 - `pipe_with_schema`
   - **Polars**: (function: Callable[[LazyFrame, Schema], LazyFrame]) -> LazyFrame
 - `profile`
   - **Polars**: (type_coercion: bool, predicate_pushdown: bool, projection_pushdown: bool, simplify_expression: bool, no_optimization: bool, slice_pushdown: bool, comm_subplan_elim: bool, comm_subexpr_elim: bool, cluster_with_columns: bool, collapse_joins: bool, show_plot: bool, truncate_nodes: int, figsize: tuple[int, int], engine: EngineType, optimizations: QueryOptFlags, **_kwargs: Any) -> tuple[DataFrame, DataFrame]
 - `remote`
-  - **Polars**: (context: ComputeContext | None, plan_type: PlanTypePreference, n_retries: int, engine: Engine, scaling_mode: ScalingMode) -> LazyFrameRemote
+  - **Polars**: (context: ClientContext | None, plan_type: PlanTypePreference, n_retries: int, engine: Engine, scaling_mode: ScalingMode) -> LazyFrameRemote
 - `remove`
   - **Polars**: (*predicates: IntoExprColumn | Iterable[IntoExprColumn] | bool | list[bool] | np.ndarray[Any, Any], **constraints: Any) -> LazyFrame
 - `rolling`
@@ -80,7 +80,7 @@ Each summary cell is relative to Polars.
 
 - `cast`
   - **Polars**: (`dtypes: Mapping[ColumnNameOrSelector | PolarsDataType, PolarsDataType | PythonDataType] | PolarsDataType | pl.DataTypeExpr | Schema`, `strict: bool`) -> LazyFrame
-  - **pql**: (`dtypes: Mapping[str, DataType] | DataType`) -> Self
+  - **pql**: (`dtypes: Mapping[str, dt.DataType] | dt.DataType`) -> Self
 - `collect`
   - **Polars**: (`type_coercion: bool`, `predicate_pushdown: bool`, `projection_pushdown: bool`, `simplify_expression: bool`, `slice_pushdown: bool`, `comm_subplan_elim: bool`, `comm_subexpr_elim: bool`, `cluster_with_columns: bool`, `collapse_joins: bool`, `no_optimization: bool`, `engine: EngineType`, `background: bool`, `optimizations: QueryOptFlags`, `**_kwargs: Any`) -> DataFrame | InProcessQuery
   - **pql**: () -> DataFrame
@@ -106,7 +106,7 @@ Each summary cell is relative to Polars.
   - **Polars**: (`value: Any | Expr | None`, strategy: FillNullStrategy | None, limit: int | None, `matches_supertype: bool`) -> LazyFrame
   - **pql**: (value: IntoExpr, strategy: FillNullStrategy | None, limit: int | None) -> Self
 - `filter`
-  - **Polars**: (`*predicates: IntoExprColumn | Iterable[IntoExprColumn] | bool | list[bool] | np.ndarray[Any, Any]`, **constraints: Any) -> LazyFrame
+  - **Polars**: (`*predicates: IntoExprColumn | Iterable[IntoExprColumn] | bool | list[bool]`, **constraints: Any) -> LazyFrame
   - **pql**: (predicates: TryIter[IntoExprColumn], *more_predicates: IntoExprColumn, **constraints: IntoExpr) -> Self
 - `group_by`
   - **Polars**: (`*by: IntoExpr | Iterable[IntoExpr]`, `maintain_order: bool`, `**named_by: IntoExpr`) -> LazyGroupBy
@@ -139,13 +139,13 @@ Each summary cell is relative to Polars.
   - **Polars**: (`path: str | Path | IO[bytes] | IO[str] | PartitionBy`, `compression: Literal['uncompressed', 'gzip', 'zstd']`, `compression_level: int | None`, `check_extension: bool`, `maintain_order: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `sync_on_close: SyncOnCloseMethod | None`, `mkdir: bool`, `lazy: bool`, `engine: EngineType`, `optimizations: QueryOptFlags`) -> LazyFrame | None
   - **pql**: (path: str | Path) -> None
 - `sink_parquet`
-  - **Polars**: (`path: str | Path | IO[bytes] | PartitionBy`, `compression: str`, `compression_level: int | None`, `statistics: bool | str | dict[str, bool]`, `row_group_size: int | None`, `data_page_size: int | None`, `maintain_order: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `sync_on_close: SyncOnCloseMethod | None`, `metadata: ParquetMetadata | None`, `arrow_schema: ArrowSchemaExportable | None`, `mkdir: bool`, `lazy: bool`, `engine: EngineType`, `optimizations: QueryOptFlags`) -> LazyFrame | None
+  - **Polars**: (`path: str | Path | IO[bytes] | PartitionBy`, `compression: str`, `compression_level: int | None`, `statistics: bool | str | dict[str, bool]`, `row_group_size: int | None`, `data_page_size: int | None`, `maintain_order: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `sync_on_close: SyncOnCloseMethod | None`, `metadata: ParquetMetadata | None`, `arrow_schema: ArrowSchemaExportable | None`, `mkdir: bool`, `lazy: bool`, `engine: EngineType`, `optimizations: QueryOptFlags`, `_sinked_paths_callback: SinkedPathsCallback | None`) -> LazyFrame | None
   - **pql**: (path: str | Path, `compression: ParquetCompression`) -> None
 - `unique`
   - **Polars**: (`subset: IntoExpr | Collection[IntoExpr] | None`, keep: UniqueKeepStrategy, `maintain_order: bool`) -> LazyFrame
   - **pql**: (`subset: TryIter[str] | None`, keep: UniqueKeepStrategy, `order_by: TrySeq[str]`) -> Self
 - `unnest`
-  - **Polars**: (columns: ColumnNameOrSelector | Collection[ColumnNameOrSelector], *more_columns: ColumnNameOrSelector, `separator: str | None`) -> LazyFrame
+  - **Polars**: (`columns: ColumnNameOrSelector | Collection[ColumnNameOrSelector] | None`, *more_columns: ColumnNameOrSelector, `separator: str | None`) -> LazyFrame
   - **pql**: (`columns: TryIter[IntoExprColumn]`, *more_columns: IntoExprColumn) -> Self
 - `unpivot`
   - **Polars**: (`on: ColumnNameOrSelector | Sequence[ColumnNameOrSelector] | None`, `index: ColumnNameOrSelector | Sequence[ColumnNameOrSelector] | None`, `variable_name: str | None`, `value_name: str | None`, `streamable: bool`) -> LazyFrame
@@ -166,22 +166,16 @@ Each summary cell is relative to Polars.
 
 ## Expr
 
-### [x] Missing Methods (90)
+### [x] Missing Methods (86)
 
 - `agg_groups`
   - **Polars**: () -> Expr
 - `append`
   - **Polars**: (other: IntoExpr, upcast: bool) -> Expr
-- `arg_max`
-  - **Polars**: () -> Expr
-- `arg_min`
-  - **Polars**: () -> Expr
 - `arg_true`
   - **Polars**: () -> Expr
 - `arg_unique`
   - **Polars**: () -> Expr
-- `bin`
-  - **Polars**: () -> ExprBinaryNameSpace
 - `bitwise_count_ones`
   - **Polars**: () -> Expr
 - `bitwise_count_zeros`
@@ -230,8 +224,6 @@ Each summary cell is relative to Polars.
   - **Polars**: (value: IntoExpr, n: int | IntoExprColumn) -> Expr
 - `filter`
   - **Polars**: (*predicates: IntoExprColumn | Iterable[IntoExprColumn], **constraints: Any) -> Expr
-- `from_json`
-  - **Polars**: (value: str_) -> Expr
 - `gather`
   - **Polars**: (indices: int | Sequence[int] | IntoExpr | Series | np.ndarray[Any, Any]) -> Expr
 - `gather_every`
@@ -349,7 +341,7 @@ Each summary cell is relative to Polars.
 - `value_counts`
   - **Polars**: (sort: bool, parallel: bool, name: str_ | None, normalize: bool) -> Expr
 
-### [!] Signature Mismatches (32)
+### [!] Signature Mismatches (44)
 
 - `alias`
   - **Polars**: (`name: str_`) -> Expr
@@ -357,12 +349,21 @@ Each summary cell is relative to Polars.
 - `all`
   - **Polars**: (`ignore_nulls: bool`) -> Expr
   - **pql**: () -> Self
+- `and_`
+  - **Polars**: (`*others: Any`) -> Expr
+  - **pql**: (`other: IntoExpr`) -> Self
 - `any`
   - **Polars**: (`ignore_nulls: bool`) -> Expr
   - **pql**: () -> Self
+- `arg_max`
+  - **Polars**: () -> Expr
+  - **pql**: (`val: IntoExpr`, `col2: IntoExprColumn | int | None`) -> Self
+- `arg_min`
+  - **Polars**: () -> Expr
+  - **pql**: (`val: IntoExpr`, `col2: IntoExprColumn | int | None`) -> Self
 - `cast`
   - **Polars**: (`dtype: DataTypeExpr | type[Any]`, `strict: bool`, `wrap_numerical: bool`) -> Expr
-  - **pql**: (`dtype: DataType`) -> Self
+  - **pql**: (`dtype: IntoDataType`) -> Self
 - `clip`
   - **Polars**: (`lower_bound: NumericLiteral | TemporalLiteral | IntoExprColumn | None`, `upper_bound: NumericLiteral | TemporalLiteral | IntoExprColumn | None`) -> Expr
   - **pql**: (`lower_bound: IntoExpr`, `upper_bound: IntoExpr`) -> Self
@@ -378,9 +379,15 @@ Each summary cell is relative to Polars.
 - `fill_null`
   - **Polars**: (`value: Any | Expr | None`, strategy: FillNullStrategy | None, limit: int | None) -> Expr
   - **pql**: (value: IntoExpr, strategy: FillNullStrategy | None, limit: int | None) -> Self
+- `first`
+  - **Polars**: (`ignore_nulls: bool`) -> Expr
+  - **pql**: () -> Self
 - `forward_fill`
   - **Polars**: (`limit: int | None`) -> Expr
   - **pql**: () -> Self
+- `from_json`
+  - **Polars**: (`value: str_`) -> Expr
+  - **pql**: (`col1: IntoExprColumn`) -> Self
 - `hash`
   - **Polars**: (seed: int, `seed_1: int | None`, `seed_2: int | None`, `seed_3: int | None`) -> Expr
   - **pql**: (seed: int) -> Self
@@ -389,16 +396,34 @@ Each summary cell is relative to Polars.
   - **pql**: () -> Self
 - `is_in`
   - **Polars**: (`other: Expr | Collection[Any] | Series`, `nulls_equal: bool`) -> Expr
-  - **pql**: (`other: TryIter[IntoExpr]`) -> Self
+  - **pql**: (`args: TryIter[IntoExpr]`, *more_args: IntoExpr) -> Self
 - `last`
   - **Polars**: (`ignore_nulls: bool`) -> Expr
   - **pql**: () -> Self
 - `log`
   - **Polars**: (`base: float | IntoExpr`) -> Expr
-  - **pql**: (base: float) -> Self
+  - **pql**: (`x: IntoExprColumn | float | None`) -> Self
+- `max`
+  - **Polars**: () -> Expr
+  - **pql**: (`col1: IntoExprColumn | int | None`) -> Self
+- `max_by`
+  - **Polars**: (by: IntoExpr) -> Expr
+  - **pql**: (by: IntoExpr, `col2: IntoExprColumn | int | None`) -> Self
+- `min`
+  - **Polars**: () -> Expr
+  - **pql**: (`col1: IntoExprColumn | int | None`) -> Self
+- `min_by`
+  - **Polars**: (by: IntoExpr) -> Expr
+  - **pql**: (by: IntoExpr, `col2: IntoExprColumn | int | None`) -> Self
+- `mod`
+  - **Polars**: (`other: Any`) -> Expr
+  - **pql**: (`col1: IntoExprColumn | Decimal | float`) -> Self
 - `mode`
   - **Polars**: (`maintain_order: bool`) -> Expr
   - **pql**: () -> Self
+- `or_`
+  - **Polars**: (`*others: Any`) -> Expr
+  - **pql**: (`other: IntoExpr`) -> Self
 - `over`
   - **Polars**: (`partition_by: IntoExpr | Iterable[IntoExpr] | None`, *more_exprs: IntoExpr, `order_by: IntoExpr | Iterable[IntoExpr] | None`, descending: bool, nulls_last: bool, `mapping_strategy: WindowMappingStrategy`) -> Expr
   - **pql**: (partition_by: TryIter[IntoExpr], *more_exprs: IntoExpr, order_by: TryIter[IntoExpr], descending: bool, nulls_last: bool) -> Self
@@ -407,7 +432,7 @@ Each summary cell is relative to Polars.
   - **pql**: (n: int) -> Self
 - `pow`
   - **Polars**: (`exponent: IntoExprColumn | int | float`) -> Expr
-  - **pql**: (`other: IntoExprColumn | float`) -> Self
+  - **pql**: (`y: IntoExprColumn | float`) -> Self
 - `quantile`
   - **Polars**: (`quantile: float | list_[float] | Expr`, interpolation: QuantileMethod) -> Expr
   - **pql**: (quantile: float, interpolation: bool) -> Self
@@ -447,10 +472,215 @@ Each summary cell is relative to Polars.
 - `unique`
   - **Polars**: (`maintain_order: bool`) -> Expr
   - **pql**: () -> Self
+- `xor`
+  - **Polars**: (`other: Any`) -> Expr
+  - **pql**: (`right: IntoExprColumn | bytes | bytearray | memoryview | int`) -> Self
 
-### [+] Extra Methods (pql-only) (1)
+### [+] Extra Methods (pql-only) (203)
 
+- `acos`
+- `acosh`
+- `age`
+- `ago`
+- `any_value`
+- `approx_count_distinct`
+- `approx_quantile`
+- `approx_top_k`
+- `arbitrary`
+- `arg_max_null`
+- `arg_max_nulls_last`
+- `arg_min_null`
+- `arg_min_nulls_last`
+- `argmax`
+- `argmin`
+- `asc`
+- `asin`
+- `asinh`
+- `atan`
+- `atan2`
+- `atanh`
+- `avg`
+- `between`
+- `bit_and`
+- `bit_count`
+- `bit_length`
+- `bit_or`
+- `bit_position`
+- `bit_xor`
+- `bitstring`
+- `bitstring_agg`
+- `can_cast_implicitly`
+- `cardinality`
+- `cast_to_type`
+- `ceiling`
+- `char_length`
+- `character_length`
+- `coalesce`
+- `col_description`
+- `collate`
+- `combine`
+- `constant_or_null`
+- `contains`
+- `corr`
+- `count_if`
+- `countif`
+- `covar_pop`
+- `covar_samp`
+- `create_sort_key`
+- `cume_dist`
+- `currval`
+- `decode`
+- `dense_rank`
+- `desc`
+- `element_at`
+- `encode`
+- `entropy_shannon`
+- `enum`
+- `equi_width_bins`
+- `error`
+- `even`
+- `factorial`
+- `favg`
+- `fdiv`
+- `fill`
+- `finalize`
+- `first_value`
+- `fmod`
+- `format_pg_type`
+- `format_type`
+- `from_json_strict`
+- `fsum`
+- `gamma`
+- `gcd`
+- `generate_subscripts`
+- `geo`
+- `geomean`
+- `geometric_mean`
+- `get_bit`
+- `get_block_size`
+- `get_type`
+- `getvariable`
+- `greatest`
+- `greatest_common_divisor`
+- `group_concat`
+- `hex`
+- `histogram`
+- `histogram_exact`
+- `in_search_path`
 - `inner`
+- `is_histogram_other_bin`
+- `is_inf`
+- `is_not_in`
+- `json`
+- `kahan_sum`
+- `kurtosis_fisher`
+- `kurtosis_pop`
+- `kurtosis_samp`
+- `lag`
+- `last_value`
+- `lcm`
+- `lead`
+- `least`
+- `least_common_multiple`
+- `length`
+- `lgamma`
+- `listagg`
+- `ln`
+- `log2`
+- `mad`
+- `make_type`
+- `map`
+- `md5`
+- `md5_number`
+- `md5_number_lower`
+- `md5_number_upper`
+- `new`
+- `nextafter`
+- `nextval`
+- `nth_value`
+- `ntile`
+- `nullif`
+- `nulls_first`
+- `nulls_last`
+- `obj_description`
+- `octet_length`
+- `parse_duckdb_log_message`
+- `percent_rank`
+- `power`
+- `quantile_cont`
+- `quantile_disc`
+- `radd`
+- `rand`
+- `re`
+- `regr_avgx`
+- `regr_avgy`
+- `regr_count`
+- `regr_intercept`
+- `regr_r2`
+- `regr_slope`
+- `regr_sxx`
+- `regr_sxy`
+- `regr_syy`
+- `remap_struct`
+- `repeat`
+- `replace_type`
+- `reservoir_quantile`
+- `rfloordiv`
+- `rmod`
+- `rmul`
+- `ror`
+- `round_even`
+- `round_from_zero`
+- `roundbankers`
+- `row`
+- `row_number`
+- `row_to_json`
+- `rpow`
+- `rsub`
+- `rtruediv`
+- `sem`
+- `set_bit`
+- `set_order`
+- `setseed`
+- `sha1`
+- `sha256`
+- `shobj_description`
+- `show`
+- `signbit`
+- `skewness`
+- `sleep_ms`
+- `split_part`
+- `stats`
+- `stddev`
+- `stddev_pop`
+- `stddev_samp`
+- `sum_no_overflow`
+- `sumkahan`
+- `switch`
+- `to_binary`
+- `to_hex`
+- `to_json`
+- `to_map`
+- `trunc`
+- `try_strptime`
+- `typeof`
+- `union_extract`
+- `union_tag`
+- `union_value`
+- `uuid_extract_timestamp`
+- `uuid_extract_version`
+- `var_pop`
+- `var_samp`
+- `variance`
+- `variant_extract`
+- `variant_normalize`
+- `variant_to_parquet_variant`
+- `variant_typeof`
+- `vector_type`
+- `wavg`
+- `weighted_avg`
+- `window`
+- `write_log`
 
 ## LazyGroupBy
 
@@ -501,15 +731,18 @@ Each summary cell is relative to Polars.
 
 ### [!] Signature Mismatches (23)
 
+- `concat`
+  - **Polars**: (`delimiter: str | None`, `ignore_nulls: bool`) -> Expr
+  - **pql**: (`*args: IntoExpr`) -> Expr
 - `contains`
-  - **Polars**: (`pattern: str | Expr`, literal: bool, `strict: bool`) -> Expr
-  - **pql**: (`pattern: IntoExprColumn`, literal: bool) -> Expr
+  - **Polars**: (`pattern: str | Expr`, `literal: bool`, `strict: bool`) -> Expr
+  - **pql**: (`search_string: IntoExprColumn`) -> T
 - `count_matches`
   - **Polars**: (`pattern: str | Expr`, literal: bool) -> Expr
   - **pql**: (`pattern: IntoExprColumn`, literal: bool) -> Expr
 - `ends_with`
   - **Polars**: (`suffix: str | Expr`) -> Expr
-  - **pql**: (`suffix: IntoExprColumn`) -> Expr
+  - **pql**: (`search_string: IntoExprColumn`) -> T
 - `extract_all`
   - **Polars**: (`pattern: str | Expr`) -> Expr
   - **pql**: (`pattern: IntoExprColumn`) -> Expr
@@ -529,8 +762,8 @@ Each summary cell is relative to Polars.
   - **Polars**: (`length: int | IntoExprColumn`, fill_char: str) -> Expr
   - **pql**: (length: int, `fill_char: IntoExprColumn`) -> Expr
 - `replace`
-  - **Polars**: (`pattern: str | Expr`, `value: str | Expr`, literal: bool, n: int) -> Expr
-  - **pql**: (pattern: str, `value: IntoExprColumn`, literal: bool, n: int) -> Expr
+  - **Polars**: (`pattern: str | Expr`, `value: str | Expr`, `literal: bool`, `n: int`) -> Expr
+  - **pql**: (`source: IntoExprColumn`, `target: IntoExprColumn`) -> T
 - `replace_all`
   - **Polars**: (`pattern: str | Expr`, `value: str | Expr`, literal: bool) -> Expr
   - **pql**: (`pattern: IntoExprColumn`, `value: IntoExprColumn`, literal: bool) -> Expr
@@ -539,10 +772,10 @@ Each summary cell is relative to Polars.
   - **pql**: (offset: int, length: int | None) -> Expr
 - `split`
   - **Polars**: (`by: IntoExpr`, `inclusive: bool`, `literal: bool`, `strict: bool`) -> Expr
-  - **pql**: (by: IntoExprColumn) -> Expr
+  - **pql**: (`separator: IntoExprColumn`) -> T
 - `starts_with`
   - **Polars**: (`prefix: str | Expr`) -> Expr
-  - **pql**: (`prefix: IntoExprColumn`) -> Expr
+  - **pql**: (`search_string: IntoExprColumn`) -> T
 - `strip_chars`
   - **Polars**: (`characters: IntoExpr`) -> Expr
   - **pql**: (`characters: IntoExprColumn | None`) -> Expr
@@ -554,7 +787,7 @@ Each summary cell is relative to Polars.
   - **pql**: (`characters: IntoExprColumn | None`) -> Expr
 - `strptime`
   - **Polars**: (`dtype: PolarsTemporalType`, `format: str | None`, `strict: bool`, `exact: bool`, `cache: bool`, `ambiguous: Ambiguous | Expr`) -> Expr
-  - **pql**: (`format: IntoExprColumn`) -> Expr
+  - **pql**: (`format_arg: IntoExprColumn | SeqLiteral[str]`) -> T
 - `tail`
   - **Polars**: (`n: int | IntoExprColumn`) -> Expr
   - **pql**: (n: int) -> Expr
@@ -567,18 +800,97 @@ Each summary cell is relative to Polars.
 - `to_time`
   - **Polars**: (format: str | None, `strict: bool`, `cache: bool`) -> Expr
   - **pql**: (`format: IntoExprColumn | None`) -> Expr
-- `zfill`
-  - **Polars**: (`length: int | IntoExprColumn`) -> Expr
-  - **pql**: (`width: int`) -> Expr
 
-### [+] Extra Methods (pql-only) (2)
+### [+] Extra Methods (pql-only) (84)
 
+- `agg`
+- `ascii`
+- `bar`
+- `base64`
+- `bin`
+- `bit_length`
+- `char_length`
+- `character_length`
+- `chr`
+- `concat_ws`
+- `damerau_levenshtein`
+- `editdist3`
+- `format`
+- `format_bytes`
+- `formatreadabledecimalsize`
+- `formatreadablesize`
+- `from_base64`
+- `from_binary`
+- `from_hex`
+- `hamming`
+- `hash`
+- `hex`
+- `ilike_escape`
 - `inner`
-- `pipe`
+- `instr`
+- `jaccard`
+- `jaro_similarity`
+- `jaro_winkler_similarity`
+- `lcase`
+- `left`
+- `left_grapheme`
+- `len`
+- `length`
+- `length_grapheme`
+- `levenshtein`
+- `like_escape`
+- `lower`
+- `lpad`
+- `ltrim`
+- `md5`
+- `md5_number`
+- `mismatches`
+- `nfc_normalize`
+- `not_ilike_escape`
+- `not_like_escape`
+- `ord`
+- `parse_dirname`
+- `parse_dirpath`
+- `parse_filename`
+- `parse_formatted_bytes`
+- `parse_path`
+- `position`
+- `prefix`
+- `printf`
+- `repeat`
+- `right`
+- `right_grapheme`
+- `rpad`
+- `rtrim`
+- `sha1`
+- `sha256`
+- `split_regex`
+- `strftime`
+- `strip_accents`
+- `strlen`
+- `strpos`
+- `substr`
+- `substring`
+- `substring_grapheme`
+- `suffix`
+- `to_array`
+- `to_base`
+- `to_base64`
+- `to_binary`
+- `to_hex`
+- `translate`
+- `trim`
+- `ucase`
+- `unbin`
+- `unhex`
+- `unicode`
+- `upper`
+- `url_decode`
+- `url_encode`
 
 ## ExprListNameSpace
 
-### [x] Missing Methods (19)
+### [x] Missing Methods (17)
 
 - `agg`
   - **Polars**: (expr: Expr) -> Expr
@@ -586,8 +898,6 @@ Each summary cell is relative to Polars.
   - **Polars**: () -> Expr
 - `arg_min`
   - **Polars**: () -> Expr
-- `concat`
-  - **Polars**: (other: list[Expr | str] | Expr | str | Series | list[Any]) -> Expr
 - `diff`
   - **Polars**: (n: int, null_behavior: NullBehavior) -> Expr
 - `gather`
@@ -610,8 +920,6 @@ Each summary cell is relative to Polars.
   - **Polars**: (other: IntoExpr | Collection[Any]) -> Expr
 - `shift`
   - **Polars**: (n: int | IntoExprColumn) -> Expr
-- `slice`
-  - **Polars**: (offset: int | str | Expr, length: int | str | Expr | None) -> Expr
 - `tail`
   - **Polars**: (n: int | str | Expr) -> Expr
 - `to_array`
@@ -619,25 +927,104 @@ Each summary cell is relative to Polars.
 - `to_struct`
   - **Polars**: (n_field_strategy: ListToStructWidthStrategy | None, fields: Sequence[str] | Callable[[int], str] | None, upper_bound: int | None) -> Expr
 
-### [!] Signature Mismatches (4)
+### [!] Signature Mismatches (10)
 
+- `all`
+  - **Polars**: (`ignore_nulls: bool`) -> Expr
+  - **pql**: () -> Expr
+- `any`
+  - **Polars**: (`ignore_nulls: bool`) -> Expr
+  - **pql**: () -> Expr
+- `concat`
+  - **Polars**: (`other: list[Expr | str] | Expr | str | Series | list[Any]`) -> Expr
+  - **pql**: (`*args: IntoExpr`) -> T
 - `contains`
-  - **Polars**: (item: IntoExpr, `nulls_equal: bool`) -> Expr
-  - **pql**: (item: IntoExpr) -> Expr
+  - **Polars**: (`item: IntoExpr`, `nulls_equal: bool`) -> Expr
+  - **pql**: (`element: IntoExpr`) -> T
+- `count_matches`
+  - **Polars**: (`element: IntoExpr`) -> Expr
+  - **pql**: (`elem: IntoExpr`) -> Expr
 - `explode`
   - **Polars**: (`empty_as_null: bool`, `keep_nulls: bool`) -> Expr
   - **pql**: () -> Expr
+- `filter`
+  - **Polars**: (`predicate: Expr`) -> Expr
+  - **pql**: (`lambda_arg: IntoExprColumn`) -> Expr
 - `get`
   - **Polars**: (`index: int | Expr | str`, `null_on_oob: bool`) -> Expr
   - **pql**: (index: int) -> Expr
+- `slice`
+  - **Polars**: (`offset: int | str | Expr`, `length: int | str | Expr | None`) -> Expr
+  - **pql**: (`begin: IntoExpr`, `end: IntoExpr`, `step: IntoExprColumn | int | None`) -> T
 - `unique`
   - **Polars**: (`maintain_order: bool`) -> Expr
   - **pql**: () -> Expr
 
-### [+] Extra Methods (pql-only) (2)
+### [+] Extra Methods (pql-only) (63)
 
+- `aggr`
+- `aggregate`
+- `any_value`
+- `append`
+- `apply`
+- `approx_count_distinct`
+- `avg`
+- `bit_and`
+- `bit_or`
+- `bit_xor`
+- `bool_and`
+- `bool_or`
+- `cat`
+- `char_length`
+- `character_length`
+- `cosine_distance`
+- `cosine_similarity`
+- `count`
+- `distance`
+- `distinct`
+- `dot_product`
+- `element`
+- `entropy`
+- `extract`
+- `flatten`
+- `generate_series`
+- `grade_up`
+- `has`
+- `has_all`
+- `has_any`
+- `histogram`
+- `indexof`
 - `inner`
-- `pipe`
+- `inner_product`
+- `intersect`
+- `kurtosis`
+- `kurtosis_pop`
+- `length`
+- `mad`
+- `mode`
+- `negative_dot_product`
+- `negative_inner_product`
+- `pack`
+- `position`
+- `prepend`
+- `product`
+- `range`
+- `reduce`
+- `resize`
+- `reverse_sort`
+- `select`
+- `sem`
+- `skewness`
+- `stddev_pop`
+- `stddev_samp`
+- `string_agg`
+- `transform`
+- `unpivot_list`
+- `value`
+- `var_pop`
+- `var_samp`
+- `where`
+- `zip`
 
 ## ExprStructNameSpace
 
@@ -654,10 +1041,21 @@ Each summary cell is relative to Polars.
   - **Polars**: (`name: str | list[str]`, *more_names: str) -> Expr
   - **pql**: (name: str) -> Expr
 
-### [+] Extra Methods (pql-only) (2)
+### [+] Extra Methods (pql-only) (13)
 
+- `concat`
+- `contains`
+- `extract`
+- `extract_at`
+- `has`
+- `indexof`
 - `inner`
-- `pipe`
+- `insert`
+- `keys`
+- `pack`
+- `position`
+- `update`
+- `values`
 
 ## ExprNameNameSpace
 
@@ -670,17 +1068,20 @@ Each summary cell is relative to Polars.
 - `suffix_fields`
   - **Polars**: (suffix: str) -> Expr
 
-### [+] Extra Methods (pql-only) (2)
+### [!] Signature Mismatches (1)
+
+- `map`
+  - **Polars**: (`function: Callable[[str], str]`) -> Expr
+  - **pql**: (`function: Aliaser`) -> Expr
+
+### [+] Extra Methods (pql-only) (1)
 
 - `inner`
-- `pipe`
 
 ## ExprArrNameSpace
 
-### [x] Missing Methods (9)
+### [x] Missing Methods (7)
 
-- `agg`
-  - **Polars**: (expr: Expr) -> Expr
 - `arg_max`
   - **Polars**: () -> Expr
 - `arg_min`
@@ -689,8 +1090,6 @@ Each summary cell is relative to Polars.
   - **Polars**: (n: int | str | Expr, as_array: bool) -> Expr
 - `shift`
   - **Polars**: (n: int | IntoExprColumn) -> Expr
-- `slice`
-  - **Polars**: (offset: int | str | Expr, length: int | str | Expr | None, as_array: bool) -> Expr
 - `tail`
   - **Polars**: (n: int | str | Expr, as_array: bool) -> Expr
 - `to_list`
@@ -698,11 +1097,23 @@ Each summary cell is relative to Polars.
 - `to_struct`
   - **Polars**: (fields: Sequence[str] | Callable[[int], str] | None) -> Expr
 
-### [!] Signature Mismatches (5)
+### [!] Signature Mismatches (10)
 
+- `agg`
+  - **Polars**: (`expr: Expr`) -> Expr
+  - **pql**: () -> T
+- `all`
+  - **Polars**: (`ignore_nulls: bool`) -> Expr
+  - **pql**: () -> Expr
+- `any`
+  - **Polars**: (`ignore_nulls: bool`) -> Expr
+  - **pql**: () -> Expr
 - `contains`
-  - **Polars**: (item: IntoExpr, `nulls_equal: bool`) -> Expr
-  - **pql**: (item: IntoExpr) -> Expr
+  - **Polars**: (`item: IntoExpr`, `nulls_equal: bool`) -> Expr
+  - **pql**: (`element: IntoExpr`) -> T
+- `count_matches`
+  - **Polars**: (`element: IntoExpr`) -> Expr
+  - **pql**: (`elem: IntoExpr`) -> Expr
 - `eval`
   - **Polars**: (expr: Expr, `as_list: bool`) -> Expr
   - **pql**: (expr: Expr) -> Expr
@@ -712,16 +1123,59 @@ Each summary cell is relative to Polars.
 - `get`
   - **Polars**: (`index: int | IntoExprColumn`, `null_on_oob: bool`) -> Expr
   - **pql**: (index: int) -> Expr
+- `slice`
+  - **Polars**: (`offset: int | str | Expr`, `length: int | str | Expr | None`, `as_array: bool`) -> Expr
+  - **pql**: (`begin: IntoExpr`, `end: IntoExpr`, `step: IntoExprColumn | int | None`) -> T
 - `unique`
   - **Polars**: (`maintain_order: bool`) -> Expr
   - **pql**: () -> Expr
 
-### [+] Extra Methods (pql-only) (4)
+### [+] Extra Methods (pql-only) (44)
 
+- `aggr`
+- `aggregate`
+- `append`
+- `apply`
+- `cat`
+- `concat`
+- `cosine_distance`
+- `cosine_similarity`
+- `cross_product`
+- `distance`
+- `distinct`
+- `dot_product`
 - `drop_nulls`
+- `extract`
 - `filter`
+- `grade_up`
+- `has`
+- `has_all`
+- `has_any`
+- `indexof`
 - `inner`
-- `pipe`
+- `inner_product`
+- `intersect`
+- `length`
+- `length_dimension`
+- `negative_dot_product`
+- `negative_inner_product`
+- `pop_back`
+- `pop_front`
+- `position`
+- `prepend`
+- `push_back`
+- `push_front`
+- `reduce`
+- `resize`
+- `reverse_sort`
+- `select`
+- `to_json`
+- `to_string`
+- `to_string_comma_default`
+- `transform`
+- `value`
+- `where`
+- `zip`
 
 ## ExprDtNameSpace
 
@@ -737,8 +1191,6 @@ Each summary cell is relative to Polars.
   - **Polars**: (time: time | Expr, time_unit: TimeUnit) -> Expr
 - `convert_time_zone`
   - **Polars**: (time_zone: str) -> Expr
-- `days_in_month`
-  - **Polars**: () -> Expr
 - `dst_offset`
   - **Polars**: () -> Expr
 - `is_business_day`
@@ -749,6 +1201,8 @@ Each summary cell is relative to Polars.
   - **Polars**: (year: int | IntoExpr | None, month: int | IntoExpr | None, day: int | IntoExpr | None, hour: int | IntoExpr | None, minute: int | IntoExpr | None, second: int | IntoExpr | None, microsecond: int | IntoExpr | None, ambiguous: Ambiguous | Expr) -> Expr
 - `replace_time_zone`
   - **Polars**: (time_zone: str | None, ambiguous: Ambiguous | Expr, non_existent: NonExistent) -> Expr
+- `strftime`
+  - **Polars**: (format: str) -> Expr
 - `total_days`
   - **Polars**: (fractional: bool) -> Expr
 - `total_hours`
@@ -764,8 +1218,11 @@ Each summary cell is relative to Polars.
 - `total_seconds`
   - **Polars**: (fractional: bool) -> Expr
 
-### [!] Signature Mismatches (5)
+### [!] Signature Mismatches (6)
 
+- `epoch`
+  - **Polars**: (`time_unit: EpochTimeUnit`) -> Expr
+  - **pql**: () -> T
 - `offset_by`
   - **Polars**: (`by: str | Expr`) -> Expr
   - **pql**: (`by: IntoExpr`) -> Expr
@@ -774,7 +1231,7 @@ Each summary cell is relative to Polars.
   - **pql**: (every: str) -> Expr
 - `second`
   - **Polars**: (`fractional: bool`) -> Expr
-  - **pql**: () -> Expr
+  - **pql**: () -> T
 - `to_string`
   - **Polars**: (`format: str | None`) -> Expr
   - **pql**: (`format: IntoExprColumn`) -> Expr
@@ -782,14 +1239,64 @@ Each summary cell is relative to Polars.
   - **Polars**: (`every: timedelta | Expr`) -> Expr
   - **pql**: (`every: str`) -> Expr
 
-### [+] Extra Methods (pql-only) (2)
+### [+] Extra Methods (pql-only) (52)
 
+- `add`
+- `dayname`
+- `dayofmonth`
+- `dayofweek`
+- `dayofyear`
+- `decade`
+- `diff`
+- `epoch_by`
+- `epoch_ms`
+- `epoch_ns`
+- `epoch_us`
+- `era`
 - `inner`
-- `pipe`
+- `isodow`
+- `isoyear`
+- `julian`
+- `last_day`
+- `make_date`
+- `make_date_month_day`
+- `make_time`
+- `make_timestamp`
+- `make_timestamp_ms`
+- `make_timestamp_ns`
+- `make_timestamptz`
+- `monthname`
+- `normalized_interval`
+- `part`
+- `sub`
+- `time_bucket`
+- `timetz_byte_comparable`
+- `timezone`
+- `timezone_hour`
+- `timezone_minute`
+- `to_centuries`
+- `to_datetime`
+- `to_days`
+- `to_decades`
+- `to_hours`
+- `to_microseconds`
+- `to_millennia`
+- `to_milliseconds`
+- `to_minutes`
+- `to_months`
+- `to_quarters`
+- `to_seconds`
+- `to_time`
+- `to_timestamp`
+- `to_weeks`
+- `to_years`
+- `trunc`
+- `weekofyear`
+- `yearweek`
 
 ## ModuleFunctions
 
-### [x] Missing Methods (120)
+### [x] Missing Methods (121)
 
 - `BaseExtension`
   - **Polars**: (name: str, storage: PolarsDataType, metadata: str | None) -> None
@@ -929,6 +1436,8 @@ Each summary cell is relative to Polars.
   - **Polars**: (exprs: Sequence[str | Expr], function: Callable[[Sequence[Series]], Series | Any], return_dtype: DataTypeExpr | None, is_elementwise: bool, returns_scalar: bool) -> Expr
 - `map_groups`
   - **Polars**: (exprs: Sequence[str | Expr], function: Callable[[Sequence[Series]], Series | Any], return_dtype: DataTypeExpr | None, is_elementwise: bool, returns_scalar: bool) -> Expr
+- `merge_sorted`
+  - **Polars**: (items: Iterable[PolarsType], key: str, maintain_order: bool) -> PolarsType
 - `n_unique`
   - **Polars**: (*columns: str) -> Expr
 - `nth`
@@ -990,7 +1499,7 @@ Each summary cell is relative to Polars.
 - `scan_iceberg`
   - **Polars**: (source: Table, snapshot_id: int | None, storage_options: StorageOptionsDict | None, catalog: IcebergCatalogConfig | None, reader_override: Literal['native', 'pyiceberg'] | None, use_metadata_statistics: bool, fast_deletion_count: bool | None, use_pyiceberg_filter: bool) -> LazyFrame
 - `scan_ipc`
-  - **Polars**: (source: str | Path | IO[bytes] | bytes | list[str] | list[Path] | list[IO[bytes]] | list[bytes], n_rows: int | None, cache: bool, rechunk: bool, row_index_name: str | None, row_index_offset: int, glob: bool, storage_options: StorageOptionsDict | None, credential_provider: CredentialProviderFunction | Literal['auto'] | None, memory_map: bool, retries: int | None, file_cache_ttl: int | None, hive_partitioning: bool | None, hive_schema: SchemaDict | None, try_parse_hive_dates: bool, include_file_paths: str | None,_record_batch_statistics: bool) -> LazyFrame
+  - **Polars**: (source: str | Path | IO[bytes] | bytes | list[str] | list[Path] | list[IO[bytes]] | list[bytes], n_rows: int | None, cache: bool | None, rechunk: bool, row_index_name: str | None, row_index_offset: int, glob: bool, storage_options: StorageOptionsDict | None, credential_provider: CredentialProviderFunction | Literal['auto'] | None, memory_map: bool, retries: int | None, file_cache_ttl: int | None, hive_partitioning: bool | None, hive_schema: SchemaDict | None, try_parse_hive_dates: bool, include_file_paths: str | None,_record_batch_statistics: bool) -> LazyFrame
 - `scan_lines`
   - **Polars**: (source: str | Path | IO[str] | IO[bytes] | bytes | list[str] | list[Path] | list[IO[str]] | list[IO[bytes]], name: str, n_rows: int | None, row_index_name: str | None, row_index_offset: int, glob: bool, storage_options: StorageOptionsDict | None, credential_provider: CredentialProviderFunction | Literal['auto'] | None, include_file_paths: str | None) -> LazyFrame
 - `scan_ndjson`
@@ -1051,7 +1560,7 @@ Each summary cell is relative to Polars.
   - **pql**: (`categories: Iterable[str] | type[PyEnum]`) -> None
 - `Expr`
   - **Polars**: ()
-  - **pql**: (`_inner: SqlExpr`, `meta: ExprMeta`) -> None
+  - **pql**: (`_inner: T`, `meta: ExprMeta`) -> None
 - `LazyFrame`
   - **Polars**: (`data: FrameInitTypes | None`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `strict: bool`, `orient: Orientation | None`, `infer_schema_length: int | None`, `nan_to_null: bool`, `height: int | None`) -> None
   - **pql**: (`data: IntoRel`, orient: Orientation) -> None
@@ -1146,7 +1655,7 @@ Each summary cell is relative to Polars.
 - `first`
   - **Polars**: (strict: bool) -> Selector
 - `is_selector`
-  - **Polars**: (obj: Any) -> bool
+  - **Polars**: (obj: Any) -> TypeIs[Selector]
 - `last`
   - **Polars**: (strict: bool) -> Selector
 - `list`
@@ -1169,12 +1678,14 @@ Each summary cell is relative to Polars.
 
 ## DataType
 
-### [x] Missing Methods (5)
+### [x] Missing Methods (6)
 
 - `base_type`
   - **Polars**: () -> type[Self]
 - `from_python`
   - **Polars**: (py_type: PythonDataType) -> PolarsDataType
+- `is_extension`
+  - **Polars**: () -> bool
 - `is_object`
   - **Polars**: () -> bool
 - `to_dtype_expr`
