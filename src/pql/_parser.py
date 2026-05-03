@@ -33,17 +33,14 @@ DUCK_PYGMENT_MAP = Dict.from_ref({
 })
 
 
-def _get_names(lf: LazyFrame, col_name: str) -> Set[str]:
-    return lf.select(col_name).fetch_all().iter().flatten().collect(Set)
-
-
 type ProcessedToken = tuple[int, TokenType, str]
 
 
 class DuckDbSqlLexer(SqlLexer):
     @override
     def get_tokens_unprocessed(self, text: str) -> Iter[ProcessedToken]:  # pyright: ignore[reportIncompatibleMethodOverride]
-        process = partial(self._process, Dict(duckdb.tokenize(text)))
+        duck_tokens = Dict(duckdb.tokenize(text))
+        process = partial(self._process, duck_tokens)
         return Iter(super().get_tokens_unprocessed(text)).map_star(process)
 
     def _process(  # noqa: PLR6301
@@ -68,14 +65,25 @@ class DuckDbSqlLexer(SqlLexer):
                 return (pos, tokentype, token_text)
 
 
-DTYPES = (
-    meta
-    .types()
-    .pipe(_get_names, "type_name")
-    .union(meta.types().pipe(_get_names, "logical_type"))
-)
-FUNCTIONS = meta.functions().pipe(_get_names, "function_name")
+def _get_dtypes() -> Set[str]:
+    return (
+        meta
+        .types()
+        .pipe(_get_names, "type_name")
+        .union(meta.types().pipe(_get_names, "logical_type"))
+    )
 
+
+def _get_functions() -> Set[str]:
+    return meta.functions().pipe(_get_names, "function_name")
+
+
+def _get_names(lf: LazyFrame, col_name: str) -> Set[str]:
+    return lf.select(col_name).fetch_all().iter().flatten().collect(Set)
+
+
+DTYPES = _get_dtypes()
+FUNCTIONS = _get_functions()
 SYNTAX = partial(Syntax, lexer=DuckDbSqlLexer(), background_color="default")
 
 
