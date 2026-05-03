@@ -312,15 +312,9 @@ class ResolvedExpr(Pipeable):
         ).pipe(self.maybe_alias)
 
     def is_windowed(self, marker: Marker) -> bool:
-        def _check_temp(col: exp.Column) -> bool:
-            return (
-                Option
-                .if_some(col.parts[-1])
-                .map(lambda part: part.name == marker)
-                .unwrap_or(default=False)
-            )
-
-        is_temp = self.expr.inner.pipe(_find_all, exp.Column).any(_check_temp)
+        is_temp = self.expr.inner.pipe(_find_all, exp.Column).any(
+            lambda col: col.parts[-1].name == marker
+        )
         return self.name != marker and is_temp
 
 
