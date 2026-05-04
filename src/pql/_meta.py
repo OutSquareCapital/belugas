@@ -97,8 +97,7 @@ def _has_window_ancestor(node: exp.Expr) -> bool:
                 return True
             case exp.Distinct() | exp.Filter() | exp.IgnoreNulls() | exp.WithinGroup():
                 return (
-                    Option
-                    .if_some(ancestor.parent)
+                    Option(ancestor.parent)
                     .map(_ancestor_is_window)
                     .unwrap_or(default=False)
                 )
