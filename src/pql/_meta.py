@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Collection, Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from enum import StrEnum, auto
 from functools import partial
@@ -13,7 +13,6 @@ from sqlglot import exp
 from .utils import TryIter, try_iter
 
 if TYPE_CHECKING:
-    from narwhals.typing import IntoFrameT
     from pyochain.traits import PyoIterable
 
     from ._expr import Expr
@@ -27,7 +26,6 @@ type Aliaser = Callable[[str], str]
 class Marker(StrEnum):
     """Column name markers for special expression types."""
 
-    ELEMENT = auto()
     LITERAL = auto()
     LEN = auto()
     TEMP = "__pql_temp__"
@@ -37,46 +35,16 @@ class Marker(StrEnum):
 
         return col(self.value)
 
-    @classmethod
-    def replace_col(cls, expr: Expr, column_name: str) -> Expr:
-        target = exp.column(column_name)
 
-        def _replacer(node: exp.Expr) -> exp.Expr:
-            match node:
-                case exp.Star() | exp.Columns():
-                    return target
-                case _:
-                    return node
+def _into_windowed(source: exp.Expr, cols: PyoIterable[ResolvedExpr]) -> exp.Expr:
+    from ._funcs import row_number
 
-        return expr.__class__(expr.inner.transform(_replacer))
-
-    @classmethod
-    def drop_marker(cls, result: IntoFrameT, cols: Collection[str]) -> IntoFrameT:
-        import narwhals as nw
-
-        match cls.TEMP in cols:
-            case True:
-                return nw.from_native(result).drop(cls.TEMP).to_native()
-            case False:
-                return result
-
-    @classmethod
-    def windowed(cls, source: exp.Expr, cols: PyoIterable[ResolvedExpr]) -> exp.Expr:
-        from ._funcs import row_number
-
-        match cols.any(lambda p: p.is_windowed(cls.TEMP)):
-            case True:
-                return (
-                    row_number()
-                    .window()
-                    .sub(1)
-                    .alias(cls.TEMP)
-                    .inner.pipe(lambda row_nb: exp.select(row_nb, exp.Star()))
-                    .from_(source)
-                    .subquery("src")
-                )
-            case False:
-                return source
+    match cols.any(lambda p: p.is_windowed(Marker.TEMP)):
+        case True:
+            row_nb = row_number().window().sub(1).alias(Marker.TEMP).inner
+            return exp.select(row_nb, exp.Star()).from_(source).subquery("src")
+        case False:
+            return source
 
 
 def _broadcast_reducers(expr: Expr) -> Expr:
@@ -87,7 +55,7 @@ def _broadcast_reducers(expr: Expr) -> Expr:
             case _:
                 return node
 
-    return expr.__class__(expr.inner.transform(_window_agg))
+    return expr.inner.transform(_window_agg).pipe(expr.__class__)
 
 
 def _has_window_ancestor(node: exp.Expr) -> bool:
@@ -119,31 +87,14 @@ def _resolve_exploded(expr: Expr, *, is_distinct: bool) -> Expr:
             return expr.implode()
 
 
-def _extract_root_name(node: exp.Expr) -> str:  # noqa: C901, PLR0911, PLR0912
+def _extract_root_name(node: exp.Expr) -> str:  # noqa: PLR0911
     match node:
         case exp.Alias() | exp.Column():
             return node.output_name
         case exp.Literal() | exp.Boolean() | exp.Null():
             return Marker.LITERAL
         case exp.Case():
-            match node.args.get("ifs", []):
-                case [exp.If() as first_if, *_]:
-                    match first_if.args.get("true"):
-                        case exp.Expr() as then_val:
-                            name = _extract_root_name(then_val)
-                            match name:
-                                case Marker.LITERAL:
-                                    match node.args.get("default"):
-                                        case exp.Expr() as default_val:
-                                            return _extract_root_name(default_val)
-                                        case _:
-                                            return name
-                                case _:
-                                    return name
-                        case _:
-                            return Marker.LITERAL
-                case _:  # pyright: ignore[reportAny]
-                    return Marker.LITERAL
+            return _case_root_name(node)
         case exp.Anonymous() | exp.AnonymousAggFunc() | exp.Distinct() | exp.List():
             match node.expressions:
                 case [exp.Expr() as first_arg, *_]:
@@ -151,29 +102,58 @@ def _extract_root_name(node: exp.Expr) -> str:  # noqa: C901, PLR0911, PLR0912
                 case _:
                     return Marker.LITERAL
         case exp.Func():
-            match node.this:  # pyright: ignore[reportAny]
-                case exp.Expr() as inner:
-                    name = _extract_root_name(inner)
-                    match name:
-                        case Marker.LITERAL:
-                            return _root_col_name(node)
-                        case _:
-                            return name
-                case _:  # pyright: ignore[reportAny]
-                    return _root_col_name(node)
+            return _func_root_name(node)
         case exp.Window():
-            name = _extract_root_name(node.this)  # pyright: ignore[reportAny]
-            match name in {Marker.LITERAL, Marker.TEMP}:
-                case True:
-                    return _root_col_name(node)
-                case False:
-                    return name
-        case _:
+            return _window_root_name(node)
+        case exp.Expr():
             match node.this:  # pyright: ignore[reportAny]
                 case exp.Expr() as inner:
                     return _extract_root_name(inner)
                 case _:  # pyright: ignore[reportAny]
                     return Marker.LITERAL
+
+
+def _case_root_name(node: exp.Case) -> str:
+    match node.args.get("ifs", []):
+        case [exp.If() as first_if, *_]:
+            match first_if.args.get("true"):
+                case exp.Expr() as then_val:
+                    name = _extract_root_name(then_val)
+                    match name:
+                        case Marker.LITERAL:
+                            match node.args.get("default"):
+                                case exp.Expr() as default_val:
+                                    return _extract_root_name(default_val)
+                                case _:
+                                    return name
+                        case _:
+                            return name
+                case _:
+                    return Marker.LITERAL
+        case _:  # pyright: ignore[reportAny]
+            return Marker.LITERAL
+
+
+def _func_root_name(node: exp.Func) -> str:
+    match node.this:  # pyright: ignore[reportAny]
+        case exp.Expr() as inner:
+            name = _extract_root_name(inner)
+            match name:
+                case Marker.LITERAL:
+                    return _root_col_name(node)
+                case _:
+                    return name
+        case _:  # pyright: ignore[reportAny]
+            return _root_col_name(node)
+
+
+def _window_root_name(node: exp.Window) -> str:
+    name = _extract_root_name(node.this)  # pyright: ignore[reportAny]
+    match name in {Marker.LITERAL, Marker.TEMP}:
+        case True:
+            return _root_col_name(node)
+        case False:
+            return name
 
 
 def _root_col_name(node: exp.Expr) -> str:
@@ -231,7 +211,21 @@ class MultiMeta(ExprMeta):
         output_names = self.get_output_names(base_names, expr)
 
         def _resolved(expr: Expr, col_name: str, name: str) -> ResolvedExpr:
-            return ResolvedExpr(Marker.replace_col(expr, col_name), name)
+            target = exp.column(col_name)
+
+            def _replacer(node: exp.Expr) -> exp.Expr:
+                match node:
+                    case exp.Star() | exp.Columns():
+                        return target
+                    case _:
+                        return node
+
+            return (
+                expr.inner
+                .transform(_replacer)
+                .pipe(expr.__class__)
+                .pipe(ResolvedExpr, name)
+            )
 
         match expr.inner:
             case exp.Alias():
@@ -288,7 +282,7 @@ class ResolvedExpr(Pipeable):
                         case _:
                             return node
 
-                self.expr = expr.__class__(inner.transform(_strip))
+                self.expr = inner.transform(_strip).pipe(expr.__class__)
             case False:
                 self.expr = expr
 
@@ -366,24 +360,14 @@ class ExprPlan:
         def _non_empty_slct(projs: Seq[ResolvedExpr], lf: exp.Expr) -> exp.Select:
             match projs.all(lambda r: r.has_projection_distinct):
                 case True:
-                    return (
-                        self
-                        .aliased_sql(broadcast_agg=False)
-                        .into(lambda exprs: exp.select(*exprs).from_(lf))
-                        .distinct()
-                    )
+                    return self.aliased_sql(broadcast_agg=False).from_(lf).distinct()
                 case False:
                     broadcast = projs.all(lambda r: r.is_pure_reducer)
-                    return (
-                        self
-                        .aliased_sql(broadcast_agg=not broadcast)
-                        .into(lambda exprs: exp.select(*exprs))
-                        .from_(lf)
-                    )
+                    return self.aliased_sql(broadcast_agg=not broadcast).from_(lf)
 
         return self.projections.then(
             lambda projs: _non_empty_slct(
-                projs, exp.to_table("src").pipe(Marker.windowed, projs)
+                projs, exp.to_table("src").pipe(_into_windowed, projs)
             )
         )
 
@@ -436,7 +420,7 @@ class ExprPlan:
                 .into(_resolved)
             )
 
-        source = exp.to_table("src").pipe(Marker.windowed, self.projections)
+        source = exp.to_table("src").pipe(_into_windowed, self.projections)
         return exp.select(*_resolve()).from_(source)
 
     def with_fields_ctx(self, expr: Expr) -> Expr:
@@ -448,19 +432,13 @@ class ExprPlan:
         )
 
     def group_by_all_ctx(self) -> exp.Select:
-        return (
-            self
-            .aliased_sql(broadcast_agg=False)
-            .into(lambda exprs: exp.select(*exprs))
-            .from_("src")
-            .group_by("ALL")
-        )
+        return self.aliased_sql(broadcast_agg=False).from_("src").group_by("ALL")
 
-    def aliased_sql(self, *, broadcast_agg: bool) -> Iter[exp.Expr]:
+    def aliased_sql(self, *, broadcast_agg: bool) -> exp.Select:
         def _into_expr(resolved: ResolvedExpr) -> exp.Expr:
             return resolved.as_aliased(broadcast_agg=broadcast_agg).inner
 
-        return self.projections.iter().map(_into_expr)
+        return exp.select(*self.projections.iter().map(_into_expr))
 
     def agg_ctx(self, keys: PyoIterable[exp.Expr]) -> exp.Select:
         def _lower_projection(proj: ResolvedExpr) -> Iter[exp.Expr]:
@@ -488,7 +466,7 @@ class ExprPlan:
                         .map(_into_glot)
                     )
                 case exp.Explode(this=exp.Expr() as inner):
-                    return Iter.once(
+                    return (
                         proj.expr
                         .__class__(inner)
                         .pipe(
@@ -496,13 +474,10 @@ class ExprPlan:
                         )
                         .list.flatten()
                         .alias(proj.name)
-                        .inner
+                        .inner.pipe(Iter.once)
                     )
                 case _:
-                    return Iter.once(proj.implode_or_scalar().inner)
+                    return proj.implode_or_scalar().inner.pipe(Iter.once)
 
-        plan = self.projections.iter().flat_map(_lower_projection)
-
-        return (
-            keys.iter().chain(plan).into(lambda exprs: exp.select(*exprs)).from_("src")
-        )
+        exprs = keys.iter().chain(self.projections.iter().flat_map(_lower_projection))
+        return exp.select(*exprs).from_("src")

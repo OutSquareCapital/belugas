@@ -148,7 +148,7 @@ class LazyFrame(CoreHandler[exp.Query]):
             .chain(self._sources.items())
             .collect(Dict)
         )
-        return self._make(ast.transform(_replacer), new_sources)  # pyright: ignore[reportArgumentType]
+        return ast.transform(_replacer).pipe(self._make, new_sources)  # pyright: ignore[reportArgumentType]
 
     def _materialize(self) -> DuckDBPyRelation:
         return self._inner.pipe(ScanSource.from_query, **self._sources).relation
@@ -166,7 +166,15 @@ class LazyFrame(CoreHandler[exp.Query]):
     @overload
     def _into_pl(self, *, lazy: Literal[False]) -> pl.DataFrame: ...
     def _into_pl(self, *, lazy: bool) -> pl.LazyFrame | pl.DataFrame:
-        return self._materialize().pl(lazy=lazy).pipe(Marker.drop_marker, self.columns)
+        import narwhals as nw
+
+        df = self._materialize().pl(lazy=lazy)
+
+        match Marker.TEMP in self.columns:
+            case True:
+                return nw.from_native(df).drop(Marker.TEMP).to_native()
+            case False:
+                return df
 
     def lazy(self) -> pl.LazyFrame:
         """Get a Polars LazyFrame.
@@ -428,9 +436,11 @@ class LazyFrame(CoreHandler[exp.Query]):
                         _slct_all()
                         .from_("src")
                         .offset(
-                            Expr(
-                                exp.select(lit(1).count().inner).from_("src").subquery()
-                            )
+                            exp
+                            .select(lit(1).count().inner)
+                            .from_("src")
+                            .subquery()
+                            .pipe(Expr)
                             .add(offset)
                             .greatest(0)
                             .inner
@@ -614,14 +624,8 @@ class LazyFrame(CoreHandler[exp.Query]):
                 case _:
                     return Iter.once(col(name).inner)
 
-        return (
-            self._schema
-            .iter()
-            .flat_map(_proj)
-            .into(lambda exprs: exp.select(*exprs))
-            .from_("src")
-            .pipe(self._execute, src=self)
-        )
+        exprs = self._schema.iter().flat_map(_proj)
+        return exp.select(*exprs).from_("src").pipe(self._execute, src=self)
 
     def first(self) -> Self:
         """Get the first row.
@@ -884,21 +888,20 @@ class LazyFrame(CoreHandler[exp.Query]):
                     return Iter.once("lhs.*")
 
         join_type = "full outer" if how == "outer" else how
-        return (
+        condition = (
             join_keys.left
             .iter()
             .zip(join_keys.right)
             .map_star(builder.equals)
             .reduce(Expr.and_)
-            .inner.pipe(
-                lambda condition: (
-                    _cols_how()
-                    .into(lambda exprs: exp.select(*exprs))
-                    .from_("lhs")
-                    .join("rhs", on=condition, join_type=join_type)
-                    .pipe(self._execute, lhs=self, rhs=other)
-                )
-            )
+            .inner
+        )
+        return (
+            exp
+            .select(*_cols_how())
+            .from_("lhs")
+            .join("rhs", on=condition, join_type=join_type)
+            .pipe(self._execute, lhs=self, rhs=other)
         )
 
     def join_cross(self, other: Self, *, suffix: str = "_right") -> Self:
@@ -912,13 +915,16 @@ class LazyFrame(CoreHandler[exp.Query]):
             Self: A new LazyFrame resulting from the cross join.
         """
         builder = JoinBuilder(suffix, self.columns, other.columns)
-        return (
+        exprs = (
             builder.left
             .iter()
             .map(builder.lhs)
             .chain(builder.right.iter().map(builder.for_outer))
             .map(lambda c: c.inner)
-            .into(lambda exprs: exp.select(*exprs))
+        )
+        return (
+            exp
+            .select(*exprs)
             .from_("lhs")
             .join("rhs", join_type="cross")
             .pipe(self._execute, lhs=self, rhs=other)
@@ -979,13 +985,16 @@ class LazyFrame(CoreHandler[exp.Query]):
             .reduce(Expr.and_)
             .inner
         )
-        return (
+        exprs = (
             builder.left
             .iter()
             .map(builder.lhs)
             .chain(other.columns.iter().filter_map(builder.for_inner_left))
             .map(lambda c: c.inner)
-            .into(lambda exprs: exp.select(*exprs))
+        )
+        return (
+            exp
+            .select(*exprs)
             .from_("lhs")
             .join("rhs", on=by_cond, join_type="asof left")
             .pipe(self._execute, lhs=self, rhs=other)
@@ -1349,15 +1358,8 @@ class LazyFrame(CoreHandler[exp.Query]):
         Returns:
             Self: A new LazyFrame with the row index added.
         """
-        return (
-            row_number()
-            .window(order_by=order_by)
-            .sub(1)
-            .alias(name)
-            .inner.pipe(lambda row_nb: exp.select(row_nb, exp.Star()))
-            .from_("src")
-            .pipe(self._execute, src=self)
-        )
+        row_nb = row_number().window(order_by=order_by).sub(1).alias(name).inner
+        return exp.select(row_nb, exp.Star()).from_("src").pipe(self._execute, src=self)
 
     def top_k(
         self, k: int, by: TryIter[IntoExpr], *, reverse: TrySeq[bool] = False
