@@ -3,7 +3,7 @@ import pytest
 
 import pql
 
-from ._utils import assert_eq
+from ._utils import assert_eq, assert_lf_eq
 
 pql_list_num = pql.col("list_num").list
 pl_list_num = pl.col("list_num").list
@@ -109,6 +109,38 @@ def test_first() -> None:
 
 def test_last() -> None:
     assert_eq(pql_list_num.last(), pl_list_num.last())
+
+
+@pytest.mark.parametrize("n", [0, 1, 2, 20])
+def test_head(n: int) -> None:
+    assert_eq(pql_list_num.head(n), pl_list_num.head(n))
+
+
+@pytest.mark.parametrize("n", [0, 1, 2, 20])
+def test_tail(n: int) -> None:
+    assert_eq(pql_list_num.tail(n), pl_list_num.tail(n))
+
+
+def test_head_expr() -> None:
+    assert_eq(pql_list_num.head(pql.lit(2)), pl_list_num.head(pl.lit(2)))
+
+
+def test_tail_expr() -> None:
+    assert_eq(pql_list_num.tail(pql.lit(2)), pl_list_num.tail(pl.lit(2)))
+
+
+def test_head_tail_with_str_n() -> None:
+    data = {"vals": [[1, 2, 3], [4, 5, 6], [7, 8, 9]], "n": [1, 2, 3]}
+    assert_lf_eq(
+        pl.LazyFrame(data).select(
+            pl.col("vals").list.head("n").alias("head"),
+            pl.col("vals").list.tail("n").alias("tail"),
+        ),
+        pql.LazyFrame(data).select(
+            pql.col("vals").list.head("n").alias("head"),
+            pql.col("vals").list.tail("n").alias("tail"),
+        ),
+    )
 
 
 def test_std() -> None:

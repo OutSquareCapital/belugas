@@ -5,7 +5,7 @@ import pytest
 
 import pql
 
-from ._utils import assert_eq
+from ._utils import assert_eq, assert_lf_eq
 
 pql_arr = pql.col("arr_num").arr
 pl_arr = pl.col("arr_num").arr
@@ -51,6 +51,41 @@ def test_get_out_of_bounds() -> None:
 @pytest.mark.parametrize("index", [0, 1, -1])
 def test_get(index: int) -> None:
     assert_eq(pql_arr.get(index), pl_arr.get(index))
+
+
+@pytest.mark.parametrize("n", [0, 1, 2, 20])
+def test_head(n: int) -> None:
+    assert_eq(pql_arr.head(n), pl_arr.head(n))
+
+
+@pytest.mark.parametrize("n", [0, 1, 2, 20])
+def test_tail(n: int) -> None:
+    assert_eq(pql_arr.tail(n), pl_arr.tail(n))
+
+
+def test_head_expr() -> None:
+    assert_eq(pql_arr.head(pql.lit(2)), pl_arr.head(pl.lit(2)))
+
+
+def test_tail_expr() -> None:
+    assert_eq(pql_arr.tail(pql.lit(2)), pl_arr.tail(pl.lit(2)))
+
+
+def test_head_tail_with_str_n() -> None:
+    data = pl.DataFrame(
+        {"vals": [[1, 2, 3], [4, 5, 6], [7, 8, 9]], "n": [1, 2, 3]},
+        schema_overrides={"vals": pl.Array(pl.Int64, shape=3)},
+    )
+    assert_lf_eq(
+        data.lazy().select(
+            pl.col("vals").arr.head("n").alias("head"),
+            pl.col("vals").arr.tail("n").alias("tail"),
+        ),
+        pql.LazyFrame(data).select(
+            pql.col("vals").arr.head("n").alias("head"),
+            pql.col("vals").arr.tail("n").alias("tail"),
+        ),
+    )
 
 
 @pytest.mark.parametrize(

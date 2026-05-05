@@ -790,6 +790,24 @@ class ExprListNameSpace(ListFns[Expr]):
         """
         return self.filter(element().is_not_null())
 
+    def head(self, n: int | str | Expr) -> Expr:
+        """Get the first n elements of each list.
+
+        Returns:
+            Expr
+        """
+        return self.slice(1, into_expr(n))
+
+    def tail(self, n: int | str | Expr) -> Expr:
+        """Get the last n elements of each list.
+
+        Returns:
+            Expr
+        """
+        end = self.length()
+        start = end.sub(n).add(1)
+        return self.slice(when(start.lt(1)).then(1).otherwise(start), end)
+
     def filter(self, lambda_arg: IntoExprColumn) -> Expr:
         """Constructs a list from those elements of the input `list` for which the `lambda` function returns `true`.
 
@@ -954,6 +972,22 @@ class ExprArrayNameSpace(ArrayFns[Expr]):
             Expr
         """
         return self.filter(element().is_not_null())
+
+    def head(self, n: int | str | Expr) -> Expr:
+        """Get the first n elements of each array.
+
+        Returns:
+            Expr
+        """
+        return self.inner.list.head(n)
+
+    def tail(self, n: int | str | Expr) -> Expr:
+        """Get the last n elements of each array.
+
+        Returns:
+            Expr
+        """
+        return self.inner.list.tail(n)
 
     def filter(self, lambda_arg: IntoExprColumn) -> Expr:
         """Constructs a list from those elements of the input `list` for which the `lambda` function returns `true`.

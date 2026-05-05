@@ -13,10 +13,10 @@ Each summary cell is relative to Polars.
 | Expr                | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (39.3%) | 214         | 84      | 86      | 44         | 203   |
 | LazyGroupBy         | <span style="color: #27ae60;">██████</span><span style="color: #bdc3c7;">░░░░</span> (62.5%) | 16          | 10      | 4       | 2          | 0     |
 | ExprStrNameSpace    | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (31.2%) | 48          | 15      | 10      | 23         | 84    |
-| ExprListNameSpace   | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (37.2%) | 43          | 16      | 17      | 10         | 63    |
+| ExprListNameSpace   | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (41.9%) | 43          | 18      | 15      | 10         | 63    |
 | ExprStructNameSpace | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (40.0%) | 5           | 2       | 2       | 1          | 13    |
 | ExprNameNameSpace   | <span style="color: #27ae60;">██████</span><span style="color: #bdc3c7;">░░░░</span> (60.0%) | 10          | 6       | 3       | 1          | 1     |
-| ExprArrNameSpace    | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (45.2%) | 31          | 14      | 7       | 10         | 44    |
+| ExprArrNameSpace    | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (45.2%) | 31          | 14      | 5       | 12         | 44    |
 | ExprDtNameSpace     | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (46.7%) | 45          | 21      | 18      | 6          | 52    |
 | ModuleFunctions     | <span style="color: #e74c3c;">█</span><span style="color: #bdc3c7;">░░░░░░░░░</span> (14.2%) | 169         | 24      | 121     | 24         | 13    |
 | selectors           | <span style="color: #f39c12;">█████</span><span style="color: #bdc3c7;">░░░░░</span> (54.3%) | 35          | 19      | 12      | 4          | 0     |
@@ -890,7 +890,7 @@ Each summary cell is relative to Polars.
 
 ## ExprListNameSpace
 
-### [x] Missing Methods (17)
+### [x] Missing Methods (15)
 
 - `agg`
   - **Polars**: (expr: Expr) -> Expr
@@ -904,8 +904,6 @@ Each summary cell is relative to Polars.
   - **Polars**: (indices: Expr | Series | list[int] | list[list[int]], null_on_oob: bool) -> Expr
 - `gather_every`
   - **Polars**: (n: int | IntoExprColumn, offset: int | IntoExprColumn) -> Expr
-- `head`
-  - **Polars**: (n: int | str | Expr) -> Expr
 - `item`
   - **Polars**: (allow_empty: bool) -> Expr
 - `sample`
@@ -920,8 +918,6 @@ Each summary cell is relative to Polars.
   - **Polars**: (other: IntoExpr | Collection[Any]) -> Expr
 - `shift`
   - **Polars**: (n: int | IntoExprColumn) -> Expr
-- `tail`
-  - **Polars**: (n: int | str | Expr) -> Expr
 - `to_array`
   - **Polars**: (width: int) -> Expr
 - `to_struct`
@@ -1080,24 +1076,20 @@ Each summary cell is relative to Polars.
 
 ## ExprArrNameSpace
 
-### [x] Missing Methods (7)
+### [x] Missing Methods (5)
 
 - `arg_max`
   - **Polars**: () -> Expr
 - `arg_min`
   - **Polars**: () -> Expr
-- `head`
-  - **Polars**: (n: int | str | Expr, as_array: bool) -> Expr
 - `shift`
   - **Polars**: (n: int | IntoExprColumn) -> Expr
-- `tail`
-  - **Polars**: (n: int | str | Expr, as_array: bool) -> Expr
 - `to_list`
   - **Polars**: () -> Expr
 - `to_struct`
   - **Polars**: (fields: Sequence[str] | Callable[[int], str] | None) -> Expr
 
-### [!] Signature Mismatches (10)
+### [!] Signature Mismatches (12)
 
 - `agg`
   - **Polars**: (`expr: Expr`) -> Expr
@@ -1123,9 +1115,15 @@ Each summary cell is relative to Polars.
 - `get`
   - **Polars**: (`index: int | IntoExprColumn`, `null_on_oob: bool`) -> Expr
   - **pql**: (index: int) -> Expr
+- `head`
+  - **Polars**: (n: int | str | Expr, `as_array: bool`) -> Expr
+  - **pql**: (n: int | str | Expr) -> Expr
 - `slice`
   - **Polars**: (`offset: int | str | Expr`, `length: int | str | Expr | None`, `as_array: bool`) -> Expr
   - **pql**: (`begin: IntoExpr`, `end: IntoExpr`, `step: IntoExprColumn | int | None`) -> T
+- `tail`
+  - **Polars**: (n: int | str | Expr, `as_array: bool`) -> Expr
+  - **pql**: (n: int | str | Expr) -> Expr
 - `unique`
   - **Polars**: (`maintain_order: bool`) -> Expr
   - **pql**: () -> Expr
