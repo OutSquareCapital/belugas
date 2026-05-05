@@ -1479,7 +1479,7 @@ def _slct_all() -> exp.Select:
 
 
 def _compute_schema(ast: exp.Query, sources: Dict[str, ScanSource]) -> Schema:
-    schema = MappingSchema()
+    schema = MappingSchema(dialect="duckdb")
     _ = (
         sources
         .items()
