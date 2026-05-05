@@ -1,32 +1,9 @@
 
 # pql
 
-Write Polars-style queries, compile them to DuckDB, and keep access to DuckDB-specific features.
+`pql` is a lazy dataframe library for DuckDB with a Polars-like API. It compiles expression trees to DuckDB SQL via `sqlglot` and returns native Polars objects on collect.
 
-`pql` is a lazy dataframe library for DuckDB. It aims to feel familiar to Polars users while staying honest about DuckDB semantics instead of hiding them behind a compatibility layer.
-
-At a glance, `pql` gives you:
-
-- a Polars-like `LazyFrame` and `Expr` API
-- DuckDB-backed execution
-- SQL inspection tools for understanding generated queries
-- 200+ DuckDB-backed expression methods
-- native support for DuckDB-specific features such as geometry types and functions
-- direct conversion back to native Polars objects with `.collect()` and `.lazy()`
-
-This project is still early, but it already covers a meaningful part of the Polars lazy API and exposes a large amount of DuckDB surface that Polars does not target directly.
-
-## Why `pql`
-
-`pql` is designed for the case where you want all of the following at once:
-
-- DuckDB as the execution engine
-- a fluent dataframe API instead of handwritten SQL
-- a syntax close to Polars rather than Spark, Pandas, or Ibis
-- visibility into the generated SQL when you need it
-- access to DuckDB-specific functionality
-
-In other words: `pql` is not trying to be a universal dataframe abstraction. It is trying to be a good DuckDB-native query builder for people who like Polars ergonomics.
+It targets the case where DuckDB is the execution engine, and you want a fluent dataframe API close to Polars rather than handwritten SQL or a generic multi-backend abstraction.
 
 ## Quick Start
 
@@ -122,110 +99,35 @@ Output:
 └───────────────────────────┘
 ```
 
-## What The Library Exposes
+## API
 
-### Core objects
+The two core types are `LazyFrame` (relational operations) and `Expr` (expression trees). Both are used in the same way as their Polars counterparts.
 
-The public API is centered on two types:
+`LazyFrame` can be built from Python objects, NumPy arrays, any Narwhals-compatible frame, DuckDB relations, named tables, and DuckDB table functions. It supports `select`, `with_columns`, `filter`, `sort`, `join`, `group_by`, `pivot`, `unpivot`, `sink_*`, and more.
 
-- `LazyFrame`: the query builder for relational operations
-- `Expr`: the expression object used inside `select`, `with_columns`, `filter`, `group_by`, joins, pivots, windows, and aggregations
+`Expr` exposes 700+ DuckDB-backed methods, including namespaces for strings (`.str`), lists (`.list`), arrays (`.arr`), structs (`.struct`), datetimes (`.dt`), JSON (`.json`), regex (`.re`), maps (`.map`), enums (`.enum`), geospatial (`.geo`), and naming (`.name`).
 
-### Constructors
+Module-level helpers cover the usual entry points: `col`, `lit`, `when`, `coalesce`, scalar and horizontal aggregations.
 
-You can create a `LazyFrame` from multiple sources: Python objects, NumPy arrays, Any DataFrame/LazyFrame convertible by narwhals, DuckDB relations, tables, and DuckDB table functions.
-
-### Frame operations
-
-`LazyFrame` already covers a solid set of day-to-day lazy operations, including:
-
-- projection and derived columns with `select()` and `with_columns()`
-- filtering with boolean expressions or named constraints
-- sorting, limiting, slicing, renaming, dropping, casting, and exploding
-- joins
-- grouped aggregations and `group_by_all()`
-- pivots and unpivots
-- schema inspection with `collect_schema()`
-- SQL inspection with `sql_query()` and plan inspection with `explain()`
-- export helpers such as `sink_csv()`, `sink_parquet()`, and `sink_ndjson()`
-
-### Expression helpers
-
-At the module level, `pql` exposes the usual expression entry points:
-
-- `col()` and `lit()`
-- `when(...).then(...).otherwise(...)`
-- `coalesce()`
-- scalar aggregations such as `sum`, `mean`, `median`, `min`, `max`, `len`
-- horizontal aggregations such as `sum_horizontal`, `mean_horizontal`, `min_horizontal`, `max_horizontal`, `all_horizontal`, `any_horizontal`
-
-### Expression namespaces
-
-`Expr` exposes namespaces for both Polars-like workflows and DuckDB-oriented features:
-
-- `.str` for strings
-- `.list` for list operations
-- `.arr` for DuckDB array operations
-- `.struct` for structs
-- `.dt` for datetime operations
-- `.json` for JSON functions
-- `.re` for regex operations
-- `.map` for map operations
-- `.enum` for DuckDB enums
-- `.geo` for DuckDB geospatial functions
-- `.name` for alias and naming transforms
-
-### Selectors
-
-`pql.selectors` provides a selectors API similar in spirit to Polars selectors, with support for:
-
-- all columns
-- name-based selection and exclusion
-- string pattern-based selection
-- dtype-oriented selectors
-- composition of selectors inside frame operations
-
-### Datatypes
-
-`pql` exposes public datatype objects such as:
-
-- `Int*`, `UInt*`, `Float*`, `Boolean`, `String`, `Date`, `Datetime`, `Duration`
-- `List`, `Array`, `Struct`, `Map`, `Json`, `Enum`
-- `Geometry`
-
-Those objects are used for explicit casts and schema work while staying aligned with DuckDB types.
+`pql.selectors` mirrors the Polars selectors API. `pql.datatypes` exposes DuckDB-aligned type objects used for casts and schema work, including `Geometry`.
 
 ## Notable Features
 
-### 1. DuckDB-native function coverage
+### DuckDB function coverage
 
-`pql` currently exposes 200+ DuckDB-backed expression methods.
+`pql` exposes 700+ DuckDB-backed expression methods, covering most of what DuckDB's function catalog offers in a fluent chainable style.
 
-That matters because it lets you keep a fluent dataframe style while still reaching deep parts of DuckDB's function surface.
+### Native geometry support
 
-### 2. Native geometry support
+The `Geometry` datatype and `.geo` namespace expose DuckDB's spatial functions directly. This is not something Polars targets.
 
-DuckDB ships geometry types and functions, and `pql` exposes them directly.
+### `group_by_all()`
 
-That includes:
+`LazyFrame.group_by_all()` maps to DuckDB's `GROUP BY ALL`, which is convenient when the grouping columns are all non-aggregated ones.
 
-- the public `Geometry` datatype
-- a `.geo` namespace on expressions
-- a large set of spatial functions
+### Pyochain integration
 
-This is one of the clearest areas where `pql` goes beyond plain Polars parity.
-
-### 4. `group_by_all()`
-
-DuckDB supports `GROUP BY ALL`, and `pql` exposes it as `LazyFrame.group_by_all()`.
-
-If you work with DuckDB regularly, this is much nicer than forcing everything through a Polars-only mental model.
-
-### 5. Pyochain integration
-
-Many APIs that would normally return plain Python iterables return `pyochain` objects instead.
-
-That means you can keep chaining operations instead of falling back to ad-hoc list manipulation.
+Iterable-returning methods return `pyochain` objects, so column lists and schema views stay chainable:
 
 ```python
 import pql
@@ -239,55 +141,21 @@ print(result)
 # PyoKeysView(Dict('price': DataType(this=DType.INT, nested=False)))
 ```
 
-## Differences Vs Polars
+## Differences vs Polars
 
-`pql` aims to be close to Polars where that makes sense, but it does not force perfect behavioral parity when DuckDB semantics differ.
+`pql` follows Polars conventions where they translate cleanly to DuckDB, and deviates where they don't. See [API_COVERAGE.md](API_COVERAGE.md) for the full method matrix.
 
-For the exhaustive method-by-method matrix, see [API_COVERAGE.md](API_COVERAGE.md).
+**Structural:** lazy-only — no eager `DataFrame`. `.collect()` and `.lazy()` return native Polars objects. Cross joins use `join_cross()` instead of `join(how="cross")`.
 
-### Structural differences
+**Semantics:** null handling, ordering, and some aggregation behavior follow DuckDB. Logical operators follow SQL semantics. `Categorical` is not supported.
 
-- There is no eager `DataFrame` type in `pql`. The library is lazy-only.
-- `LazyFrame.collect()` and `LazyFrame.lazy()` convert back to native Polars objects.
-- `join(how="cross")` does not exist. Use `join_cross()` instead.
+**Signatures:** some methods (`collect`, `explain`, `group_by`, `join`, `join_asof`, `pivot`, `unique`, `with_row_index`) have different signatures because they expose DuckDB-specific options rather than mimicking Polars exactly.
 
-### DuckDB-driven differences
+**Gaps:** async sinks, several serialization helpers, and some expression methods are not yet implemented. Coverage is tracked in [API_COVERAGE.md](API_COVERAGE.md).
 
-- `Categorical` is not supported because it does not map cleanly to DuckDB.
-- logical operators follow SQL semantics, not Polars' integer-bitwise behavior
-- null handling, ordering behavior, and some aggregation semantics follow DuckDB first
-- some APIs expose DuckDB concepts directly instead of hiding them behind Polars-shaped signatures
+## DuckDB catalog access
 
-### API shape differences
-
-Some methods exist with deliberately different signatures because `pql` prefers a clean DuckDB-oriented surface over full Polars argument compatibility.
-
-Examples include:
-
-- `collect()`
-- `explain()`
-- `group_by()`
-- `join()` and `join_asof()`
-- `pivot()`
-- `unique()`
-- `with_row_index()`
-
-### Current gaps
-
-`pql` is not feature-complete relative to Polars yet. Notable missing areas include:
-
-- async collection and streaming sinks
-- several serialization helpers
-- a number of expression methods and namespace methods still tracked in the coverage report
-- some higher-level convenience APIs that exist in Polars but are not implemented yet
-
-## Additions And DuckDB-Specific Strengths
-
-Compared to Polars, `pql` is interesting not only because of what it matches, but because of what it exposes that Polars does not treat as a core target.
-
-### DuckDB table functions and catalog access
-
-Because `pql` can start from DuckDB tables and table functions directly, it works well for database introspection workflows.
+`pql` can start from DuckDB tables and table functions directly, which makes catalog introspection straightforward:
 
 ```python
 import pql
@@ -311,79 +179,19 @@ import pql
 # └───────────────┴────────────────────┴─────────────┘
 ```
 
-### Better fit when DuckDB is the target, not just a backend
+## Comparison with other tools
 
-If DuckDB is your main target, `pql` is built to keep that focus in the public API.
+**Narwhals** is a compatibility layer aimed at library authors who want to write dataframe-agnostic code that runs across Polars, pandas, and other backends. The API is Polars-inspired but intentionally limited to what can be expressed portably — it is not trying to expose deep DuckDB surface. End users doing data work are not the primary audience.
 
-## Comparison With Other Tools
+**Ibis** targets portability across 20+ backends (DuckDB, BigQuery, Snowflake, Spark, ...) under a single Ibis-native API. It also uses `sqlglot` internally and can use DuckDB as a local backend. The tradeoff is that the API stays generic enough to compile to all those targets, so DuckDB-specific functionality is not exposed. If you need the same query graph to run on multiple engines, Ibis is the right tool.
 
-The relevant question is not “which library is best?”, but “which one is optimized for the workflow you actually want?”.
+**SQLFrame** implements the PySpark DataFrame API on top of SQL engines. The syntax is PySpark-first — `withColumn`, `F.col`, `SparkSession` — not Polars-like. It is designed for teams who want to run PySpark transformation pipelines on DuckDB, BigQuery, or Snowflake without an actual Spark cluster.
 
-| Tool | Main goal | Syntax bias | Backend strategy | Best fit |
-| --- | --- | --- | --- | --- |
-| `pql` | Polars-like lazy API for DuckDB | Polars-like | DuckDB-first | You want DuckDB features with Polars ergonomics |
-| Narwhals | portable dataframe compatibility layer | Polars-inspired | multi-backend | You write library code or want broad backend portability |
-| SQLFrame | PySpark DataFrame API on SQL engines | Spark/PySpark | multi-engine SQL execution | You want PySpark-style code without Spark clusters |
-| Ibis | portable dataframe expression system | Ibis-native | multi-backend | You want one API across many engines and data systems |
-
-### Narwhals
-
-Narwhals is primarily a compatibility layer for library authors who want one dataframe-facing API across multiple backends.
-
-It also has a `narwhals.sql` module, so it can be used to generate DuckDB SQL with a Polars-like style. That makes it relevant here, but this is still a narrower SQL-oriented surface built around portability.
-
-`pql` is closer to a dedicated DuckDB query library:
-
-- it is designed specifically for DuckDB
-- it exposes more DuckDB-specific functionality in the public API
-- it targets a broader DuckDB-oriented surface than Narwhals' SQL layer
-
-### SQLFrame
-
-SQLFrame implements the PySpark DataFrame API on top of SQL engines.
-
-That is a very different ergonomic target:
-
-- if you think in Spark, SQLFrame is the natural comparison
-- if you think in Polars, `pql` is a much closer fit
-
-### Ibis
-
-Ibis is a mature multi-backend expression system with support for many engines and a strong SQL compilation story.
-
-Its value proposition is portability and backend independence. `pql` is narrower and more opinionated:
-
-- Ibis gives you one Spark-like API for many backends
-- `pql` gives you a Polars-like API specifically optimized around DuckDB as the execution target
-
-If you need to move the same query graph between DuckDB, BigQuery, Spark, and others, Ibis is built for that. If you know you want DuckDB and want something closer to Polars, `pql` is the more direct fit.
-
-## Current Maturity
-
-`pql` is still a work in progress. The project tracks parity explicitly in [API_COVERAGE.md](API_COVERAGE.md).
-
-- the library is already useful for real lazy DuckDB work
-- it is not yet a drop-in Polars replacement
-- the main direction is still to widen API coverage while keeping DuckDB semantics intact
+`pql` sits in a different spot: Polars-like syntax, DuckDB as the fixed target, and access to the full DuckDB function surface (700+ methods, geospatial, `GROUP BY ALL`, catalog introspection) that generalist multi-backend tools do not expose.
 
 ## How It Works
 
-Internally, `pql` is organized around a few clear layers:
-
-- `LazyFrame` in `src/pql/_frame.py` builds relational queries
-- `Expr` in `src/pql/_expr.py` builds expression trees
-- `sqlglot` is used as the AST layer for query and expression composition
-- `ScanSource` in `src/pql/_scans.py` bridges AST queries to executable DuckDB relations
-- generated code in `src/pql/_code_gen/_fns.py` exposes large parts of the DuckDB function catalog
-
-The short version is:
-
-1. you write dataframe-style code
-2. `pql` builds `sqlglot` expressions and queries
-3. those queries are materialized through DuckDB
-4. results come back as native Polars objects when you collect
-
-For a contributor-oriented architecture overview, see [CONTRIBUTING.md](CONTRIBUTING.md).
+`pql` compiles `Expr` and `LazyFrame` operations into a `sqlglot` AST, then materializes queries through `ScanSource` against a DuckDB relation. Generated code in `src/pql/_code_gen/_fns.py` covers most of the DuckDB function catalog.
 
 ## Contributing
 
