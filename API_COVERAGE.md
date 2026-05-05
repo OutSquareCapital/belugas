@@ -18,7 +18,7 @@ Each summary cell is relative to Polars.
 | ExprNameNameSpace   | <span style="color: #27ae60;">██████</span><span style="color: #bdc3c7;">░░░░</span> (60.0%) | 10          | 6       | 3       | 1          | 1     |
 | ExprArrNameSpace    | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (45.2%) | 31          | 14      | 5       | 12         | 44    |
 | ExprDtNameSpace     | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (46.7%) | 45          | 21      | 18      | 6          | 52    |
-| ModuleFunctions     | <span style="color: #e74c3c;">█</span><span style="color: #bdc3c7;">░░░░░░░░░</span> (14.2%) | 169         | 24      | 121     | 24         | 13    |
+| ModuleFunctions     | <span style="color: #e74c3c;">█</span><span style="color: #bdc3c7;">░░░░░░░░░</span> (16.0%) | 169         | 27      | 110     | 32         | 13    |
 | selectors           | <span style="color: #f39c12;">█████</span><span style="color: #bdc3c7;">░░░░░</span> (54.3%) | 35          | 19      | 12      | 4          | 0     |
 | DataType            | <span style="color: #f39c12;">█████</span><span style="color: #bdc3c7;">░░░░░</span> (53.3%) | 15          | 8       | 6       | 1          | 2     |
 | Schema              | <span style="color: #e74c3c;"></span><span style="color: #bdc3c7;">░░░░░░░░░░</span> (0.0%)  | 17          | 0       | 17      | 0          | 0     |
@@ -1294,7 +1294,7 @@ Each summary cell is relative to Polars.
 
 ## ModuleFunctions
 
-### [x] Missing Methods (121)
+### [x] Missing Methods (110)
 
 - `BaseExtension`
   - **Polars**: (name: str, storage: PolarsDataType, metadata: str | None) -> None
@@ -1322,14 +1322,8 @@ Each summary cell is relative to Polars.
   - **Polars**: ()
 - `align_frames`
   - **Polars**: (*frames: FrameType | Iterable[FrameType], on: str | Expr | Sequence[str] | Sequence[Expr] | Sequence[str | Expr], how: JoinStrategy, select: str | Expr | Sequence[str | Expr] | None, descending: bool | Sequence[bool]) -> list[FrameType]
-- `any`
-  - **Polars**: (*names: str, ignore_nulls: bool) -> Expr | bool | None
-- `approx_n_unique`
-  - **Polars**: (*columns: str) -> Expr
 - `arange`
   - **Polars**: (start: int | IntoExprColumn, end: int | IntoExprColumn | None, step: int, dtype: PolarsIntegerType | DataTypeExpr, eager: bool) -> Expr | Series
-- `arctan2`
-  - **Polars**: (y: str | Expr, x: str | Expr) -> Expr
 - `arg_sort_by`
   - **Polars**: (exprs: IntoExpr | Iterable[IntoExpr], *more_exprs: IntoExpr, descending: bool | Sequence[bool], nulls_last: bool | Sequence[bool], multithreaded: bool, maintain_order: bool) -> Expr
 - `arg_where`
@@ -1352,18 +1346,12 @@ Each summary cell is relative to Polars.
   - **Polars**: (exprs: IntoExpr | Iterable[IntoExpr], *more_exprs: IntoExpr, separator: str, ignore_nulls: bool) -> Expr
 - `corr`
   - **Polars**: (a: IntoExpr, b: IntoExpr, method: CorrelationMethod, ddof: int | None, propagate_nans: bool, eager: bool) -> Expr | Series
-- `count`
-  - **Polars**: (*columns: str) -> Expr
 - `cov`
   - **Polars**: (a: IntoExpr, b: IntoExpr, ddof: int, eager: bool) -> Expr | Series
-- `cum_count`
-  - **Polars**: (*columns: str, reverse: bool) -> Expr
 - `cum_fold`
   - **Polars**: (acc: IntoExpr, function: Callable[[Series, Series], Series], exprs: Sequence[Expr | str] | Expr, returns_scalar: bool, return_dtype: DataTypeExpr | PolarsDataType | None, include_init: bool) -> Expr
 - `cum_reduce`
   - **Polars**: (function: Callable[[Series, Series], Series], exprs: Sequence[Expr | str] | Expr, returns_scalar: bool, return_dtype: DataTypeExpr | PolarsDataType | None) -> Expr
-- `cum_sum`
-  - **Polars**: (*names: str) -> Expr
 - `cum_sum_horizontal`
   - **Polars**: (*exprs: IntoExpr | Iterable[IntoExpr]) -> Expr
 - `date`
@@ -1392,8 +1380,6 @@ Each summary cell is relative to Polars.
   - **Polars**: (lazy_frames: Iterable[LazyFrame], optimizations: QueryOptFlags) -> str
 - `field`
   - **Polars**: (name: str | list[str]) -> Expr
-- `first`
-  - **Polars**: (*columns: str) -> Expr
 - `fold`
   - **Polars**: (acc: IntoExpr, function: Callable[[Series, Series], Series], exprs: Sequence[Expr | str] | Expr, returns_scalar: bool, return_dtype: DataTypeExpr | PolarsDataType | None) -> Expr
 - `format`
@@ -1424,8 +1410,6 @@ Each summary cell is relative to Polars.
   - **Polars**: (start: int | IntoExprColumn, end: int | IntoExprColumn | None, step: int | IntoExprColumn, dtype: PolarsIntegerType | DataTypeExpr, eager: bool) -> Expr | Series
 - `json_normalize`
   - **Polars**: (data: dict[Any, Any] | Sequence[dict[Any, Any] | Any], separator: str, max_level: int | None, schema: Schema | None, strict: bool, infer_schema_length: int | None, encoder: JSONEncoder | None) -> DataFrame
-- `last`
-  - **Polars**: (*columns: str) -> Expr
 - `linear_space`
   - **Polars**: (start: NumericLiteral | TemporalLiteral | IntoExpr, end: NumericLiteral | TemporalLiteral | IntoExpr, num_samples: int | IntoExpr, closed: ClosedInterval, eager: bool) -> Expr | Series
 - `linear_spaces`
@@ -1436,8 +1420,6 @@ Each summary cell is relative to Polars.
   - **Polars**: (exprs: Sequence[str | Expr], function: Callable[[Sequence[Series]], Series | Any], return_dtype: DataTypeExpr | None, is_elementwise: bool, returns_scalar: bool) -> Expr
 - `merge_sorted`
   - **Polars**: (items: Iterable[PolarsType], key: str, maintain_order: bool) -> PolarsType
-- `n_unique`
-  - **Polars**: (*columns: str) -> Expr
 - `nth`
   - **Polars**: (*indices: int | Sequence[int], strict: bool) -> Expr
 - `ones`
@@ -1516,8 +1498,6 @@ Each summary cell is relative to Polars.
   - **Polars**: (query: str, eager: bool) -> DataFrame | LazyFrame
 - `sql_expr`
   - **Polars**: (sql: str | Sequence[str]) -> Expr | list[Expr]
-- `std`
-  - **Polars**: (column: str, ddof: int) -> Expr
 - `struct`
   - **Polars**: (*exprs: IntoExpr | Iterable[IntoExpr], schema: SchemaDict | None, eager: bool, **named_exprs: IntoExpr) -> Expr | Series
 - `struct_with_fields`
@@ -1534,12 +1514,10 @@ Each summary cell is relative to Polars.
   - **Polars**: (start: time | IntoExprColumn | None, end: time | IntoExprColumn | None, interval: str | timedelta, closed: ClosedInterval, eager: bool) -> Series | Expr
 - `union`
   - **Polars**: (items: Iterable[PolarsType], how: ConcatMethod, strict: bool) -> PolarsType
-- `var`
-  - **Polars**: (column: str, ddof: int) -> Expr
 - `zeros`
   - **Polars**: (n: int | Expr, dtype: PolarsDataType, eager: bool) -> Expr | Series
 
-### [!] Signature Mismatches (24)
+### [!] Signature Mismatches (32)
 
 - `Array`
   - **Polars**: (`inner: PolarsDataType | PythonDataType`, `shape: int | tuple[int, ...] | None`, `width: int | None`) -> None
@@ -1571,9 +1549,27 @@ Each summary cell is relative to Polars.
 - `all`
   - **Polars**: (`*names: str`, `ignore_nulls: bool`) -> Expr
   - **pql**: (`exclude: TryIter[IntoExprColumn]`) -> Expr
+- `approx_n_unique`
+  - **Polars**: (`*columns: str`) -> Expr
+  - **pql**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+- `arctan2`
+  - **Polars**: (`y: str | Expr`, `x: str | Expr`) -> Expr
+  - **pql**: (`y: IntoExprColumn | float`, `x: IntoExprColumn | float`) -> Expr
 - `coalesce`
   - **Polars**: (exprs: IntoExpr | Iterable[IntoExpr], *more_exprs: IntoExpr, `eager: bool`) -> Expr | Series
   - **pql**: (exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> Expr
+- `count`
+  - **Polars**: (`*columns: str`) -> Expr
+  - **pql**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+- `cum_count`
+  - **Polars**: (`*columns: str`, reverse: bool) -> Expr
+  - **pql**: (`cols: TryIter[str]`, *more_cols: str, reverse: bool) -> Expr
+- `cum_sum`
+  - **Polars**: (`*names: str`) -> Expr
+  - **pql**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+- `first`
+  - **Polars**: (`*columns: str`) -> Expr
+  - **pql**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `from_dict`
   - **Polars**: (`data: Mapping[str, Sequence[object] | Mapping[str, Sequence[object]] | Series]`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `strict: bool`) -> DataFrame
   - **pql**: (`mapping: IntoDict[str, PythonLiteral]`) -> LazyFrame
@@ -1586,6 +1582,9 @@ Each summary cell is relative to Polars.
 - `from_records`
   - **Polars**: (`data: Sequence[Any]`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `strict: bool`, `orient: Orientation | None`, `infer_schema_length: int | None`) -> DataFrame
   - **pql**: (`data: SeqIntoVals`, orient: Orientation) -> LazyFrame
+- `last`
+  - **Polars**: (`*columns: str`) -> Expr
+  - **pql**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `lit`
   - **Polars**: (value: Any, `dtype: PolarsDataType | DataTypeExpr | None`, `allow_object: bool`) -> Expr
   - **pql**: (value: PythonLiteral) -> Expr
@@ -1603,6 +1602,9 @@ Each summary cell is relative to Polars.
   - **pql**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `min`
   - **Polars**: (`*names: str`) -> Expr
+  - **pql**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+- `n_unique`
+  - **Polars**: (`*columns: str`) -> Expr
   - **pql**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `sum`
   - **Polars**: (`*names: str`) -> Expr

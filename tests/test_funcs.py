@@ -29,6 +29,9 @@ def test_all_chained() -> None:
 
 
 _MULTI_FNS = FnsCat(
+    (pql.count, pl.count),
+    (pql.first, pl.first),
+    (pql.last, pl.last),
     (pql.sum, pl.sum),
     (pql.mean, pl.mean),
     (pql.median, pl.median),
@@ -56,6 +59,12 @@ _NULL_PROP_FNS = FnsCat(
     (pql.min_horizontal, pl.min_horizontal), (pql.max_horizontal, pl.max_horizontal)
 )
 
+_STD_VAR_FNS = FnsCat((pql.std, pl.std), (pql.var, pl.var))
+_N_UNIQUE_FNS = FnsCat(
+    (pql.approx_n_unique, pl.approx_n_unique),
+    (pql.n_unique, pl.n_unique),
+)
+
 
 @pytest.mark.parametrize("fns", _NULL_PROP_FNS, ids=_NULL_PROP_FNS.into_ids())
 def test_horizontal_minmax_propagates_null(fns: Fns) -> None:
@@ -76,6 +85,41 @@ def test_all_horizontal() -> None:
 
 def test_any_horizontal() -> None:
     assert_eq(pql.any_horizontal("a", "b"), pl.any_horizontal("a", "b"))
+
+
+@pytest.mark.parametrize("ignore_nulls", [False, True])
+def test_any(ignore_nulls: bool) -> None:
+    assert_eq(
+        pql.any("a", "b", ignore_nulls=ignore_nulls),
+        pl.any("a", "b", ignore_nulls=ignore_nulls),  # pyright: ignore[reportArgumentType]
+    )
+
+
+def test_arctan2() -> None:
+    assert_eq(pql.arctan2("x", "n"), pl.arctan2("x", "n"))
+
+
+@pytest.mark.parametrize("fns", _N_UNIQUE_FNS, ids=_N_UNIQUE_FNS.into_ids())
+def test_n_unique_family(fns: Fns) -> None:
+    assert_eq(*fns.call("x"))
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_cum_count(reverse: bool) -> None:
+    assert_eq(
+        pql.cum_count("x", reverse=reverse),
+        pl.cum_count("x", reverse=reverse),
+    )
+
+
+def test_cum_sum() -> None:
+    assert_eq(pql.cum_sum("x"), pl.cum_sum("x"))
+
+
+@pytest.mark.parametrize("ddof", [0, 1])
+@pytest.mark.parametrize("fns", _STD_VAR_FNS, ids=_STD_VAR_FNS.into_ids())
+def test_std_var(fns: Fns, ddof: int) -> None:
+    assert_eq(*fns.call("x", ddof=ddof))
 
 
 def test_when_then_simple() -> None:

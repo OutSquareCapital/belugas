@@ -121,6 +121,18 @@ def all(exclude: TryIter[IntoExprColumn] = None) -> Expr:
     )
 
 
+def any(names: TryIter[str], *more_names: str, ignore_nulls: bool = True) -> Expr:
+    match ignore_nulls:
+        case True:
+            return _agg_expr(
+                lambda expr: expr.any().fill_null(lit(value=False)),
+                names,
+                more_names,
+            )
+        case False:
+            return _agg_expr(Expr.any, names, more_names)
+
+
 def lit(value: PythonLiteral) -> Expr:
     """Create a literal expression.
 
@@ -157,6 +169,10 @@ def coalesce(exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> Expr:
     all_exprs = try_iter(exprs).chain(more_exprs)
     expr = all_exprs.next().map(Expr.new, as_col=True).unwrap()
     return expr.coalesce(all_exprs).alias(expr.inner.output_name)
+
+
+def arctan2(y: IntoExprColumn | float, x: IntoExprColumn | float) -> Expr:
+    return Expr.new(y, as_col=True).atan2(Expr.new(x, as_col=True))
 
 
 _HORIZONTAL_ERR = "At least one expression is required."
@@ -241,6 +257,34 @@ def sum(cols: TryIter[str], *more_cols: str) -> Expr:
     return _agg_expr(Expr.sum, cols, more_cols)
 
 
+def count(cols: TryIter[str], *more_cols: str) -> Expr:
+    return _agg_expr(Expr.count, cols, more_cols)
+
+
+def approx_n_unique(cols: TryIter[str], *more_cols: str) -> Expr:
+    return _agg_expr(Expr.approx_count_distinct, cols, more_cols)
+
+
+def n_unique(cols: TryIter[str], *more_cols: str) -> Expr:
+    return _agg_expr(Expr.n_unique, cols, more_cols)
+
+
+def first(cols: TryIter[str], *more_cols: str) -> Expr:
+    return _agg_expr(Expr.first, cols, more_cols)
+
+
+def last(cols: TryIter[str], *more_cols: str) -> Expr:
+    return _agg_expr(Expr.last, cols, more_cols)
+
+
+def cum_count(cols: TryIter[str], *more_cols: str, reverse: bool = False) -> Expr:
+    return _agg_expr(lambda expr: expr.cum_count(reverse=reverse), cols, more_cols)
+
+
+def cum_sum(cols: TryIter[str], *more_cols: str) -> Expr:
+    return _agg_expr(Expr.cum_sum, cols, more_cols)
+
+
 def mean(cols: TryIter[str], *more_cols: str) -> Expr:
     return _agg_expr(Expr.mean, cols, more_cols)
 
@@ -255,6 +299,14 @@ def min(cols: TryIter[str], *more_cols: str) -> Expr:
 
 def max(cols: TryIter[str], *more_cols: str) -> Expr:
     return _agg_expr(Expr.max, cols, more_cols)
+
+
+def std(column: str, *, ddof: int = 1) -> Expr:
+    return col(column).std(ddof)
+
+
+def var(column: str, *, ddof: int = 1) -> Expr:
+    return col(column).var(ddof)
 
 
 def _agg_expr(
