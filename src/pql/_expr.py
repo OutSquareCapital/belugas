@@ -52,9 +52,6 @@ _FILL_STRATEGY: dict[FillNullStrategy, Callable[[Expr], Expr]] = {
 }
 
 
-"""Computation strategies for `fill_null` when ."""
-
-
 @dataclass(slots=True, repr=False)
 class Expr(Fns):
     """A wrapper around sqlglot.exp.Expr that provides operator overloading and SQL function methods."""
