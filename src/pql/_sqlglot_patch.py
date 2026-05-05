@@ -107,10 +107,29 @@ def _missing_from_glot() -> FuncRegistery:
     }
 
 
-DUCKDB_FUNCTIONS: FuncRegistery = {
-    **DuckDBParser.FUNCTIONS,  # pyright: ignore[reportUnknownMemberType]$
+DUCKDB_FUNCTIONS: FuncRegistery = DuckDBParser.FUNCTIONS | {  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]$
     **_patched_from_global(),
     **_patched_from_duckdb(),
     **_missing_from_glot(),
 }
+
 DuckDBParser.FUNCTIONS = DUCKDB_FUNCTIONS
+
+
+def _add_to_meta(
+    *exprs: type[exp.Expr], dtype: exp.DType
+) -> dict[type[exp.Expr], dict[str, exp.DType]]:
+    return Iter(exprs).map(lambda e: (e, {"returns": dtype})).collect(dict)
+
+
+DuckDB.EXPRESSION_METADATA |= {  # pyright: ignore[reportUnknownMemberType]
+    # Ranking/window functions are not typed in DuckDB's metadata, so Window(this=...) can
+    # propagate UNKNOWN through downstream schema inference.
+    **_add_to_meta(
+        exp.DenseRank, exp.Ntile, exp.Rank, exp.RowNumber, dtype=exp.DType.BIGINT
+    ),
+    **_add_to_meta(exp.CumeDist, exp.PercentRank, dtype=exp.DType.DOUBLE),
+    exp.ArrayDistinct: {
+        "annotator": lambda self, e: self._annotate_by_args(e, "this")  # pyright: ignore[reportUnknownMemberType, reportUnknownLambdaType]
+    },
+}
