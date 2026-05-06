@@ -50,6 +50,16 @@ PL_DF = pl.DataFrame(_get_data())
 REL = duckdb.from_arrow(PL_DF)
 
 
+def test_protocols() -> None:
+    df = pl.DataFrame([[1, 2], [3, 4]])
+
+    assert isinstance(df, t.IntoPlDataFrame)
+    assert isinstance(df.lazy(), t.IntoPlLazyFrame)
+    assert isinstance(df.to_pandas(), t.IntoArrowStream)
+    assert isinstance(df.to_numpy(), t.NPArrayLike)
+    assert isinstance(df.to_arrow(), t.IntoArrowStream)
+
+
 def test_from_query() -> None:
     df = PL_DF  # pyright: ignore[reportUnusedVariable]  # noqa: F841
     qry = sqlglot.select("*").from_("df")
@@ -78,9 +88,11 @@ def test_from_table() -> None:
     assert_eq(pql.from_table("test_table").collect(), PL_DF)
 
 
-def test_from_pl_lazyframe() -> None:
+def test_from_polars() -> None:
     assert_eq(pql.LazyFrame(PL_DF.lazy()).collect(), PL_DF)
-    assert_eq(pql.from_df(PL_DF.lazy()).collect(), PL_DF)
+    assert_eq(pql.LazyFrame(PL_DF).collect(), PL_DF)
+    assert_eq(pql.from_polars(PL_DF.lazy()).collect(), PL_DF)
+    assert_eq(pql.from_polars(PL_DF).collect(), PL_DF)
 
 
 def test_from_pd_dataframe(data: TestData) -> None:
@@ -89,13 +101,13 @@ def test_from_pd_dataframe(data: TestData) -> None:
     pd_df = pd.DataFrame(data)
 
     assert_eq(pql.LazyFrame(pd_df).collect(), PL_DF)
-    assert_eq(pql.from_df(pd_df).collect(), PL_DF)
+    assert_eq(pql.from_arrow(pd_df).collect(), PL_DF)
     assert_eq(pql.from_pandas(pd_df).collect(), PL_DF)
 
 
 def test_from_pl_dataframe() -> None:
     assert_eq(pql.LazyFrame(PL_DF).collect(), PL_DF)
-    assert_eq(pql.from_df(PL_DF).collect(), PL_DF)
+    assert_eq(pql.from_arrow(PL_DF).collect(), PL_DF)
 
 
 def test_from_dict(data: TestData) -> None:

@@ -740,7 +740,6 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "duckdb" },
-    { name = "narwhals" },
     { name = "pyochain" },
     { name = "sqlglot", extra = ["c"] },
 ]
@@ -769,7 +768,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "duckdb", specifier = ">=1.5.2" },
-    { name = "narwhals", specifier = ">=2.16.0" },
     { name = "pyochain", specifier = ">=0.9.2" },
     { name = "sqlglot", extras = ["c"], specifier = ">=30.7.0" },
 ]

@@ -22,7 +22,6 @@ if TYPE_CHECKING:
         PyTypeIds as DuckPyTypeIds,
         StrIntoPyType as DuckStrIntoPyType,
     )
-    from narwhals.typing import IntoFrame
     from pyochain import Dict, Result, Seq
 
     from ._core import ExprHandler
@@ -37,53 +36,87 @@ class FrameLike(Protocol):
     """Credits to `narwhals` for the Protocols definitions."""
 
     @property
-    def columns(self) -> Any: ...  # noqa: ANN401, D102  # pyright: ignore[reportAny, reportExplicitAny]
-    def join(self, *args: Any, **kwargs: Any) -> Any: ...  # pyright: ignore[reportExplicitAny, reportAny]  # noqa: ANN401, D102
+    def columns(self) -> Any: ...  # pyright: ignore[reportAny, reportExplicitAny]
+    def join(self, *args: Any, **kwargs: Any) -> Any: ...  # pyright: ignore[reportExplicitAny, reportAny]
 
 
 @runtime_checkable
-class IntoArrow(FrameLike, Protocol):
+class IntoArrowStream(FrameLike, Protocol):
     """Protocol for objects that can be converted into an Arrow table."""
 
-    def __arrow_c_stream__(self, requested_schema: object | None = None) -> Any: ...  # noqa: ANN401, D105, PLW3201  # pyright: ignore[reportExplicitAny, reportAny]
+    def __arrow_c_stream__(self, requested_schema: object | None = None) -> Any: ...  # pyright: ignore[reportExplicitAny, reportAny]
+
+
+@runtime_checkable
+class IntoArrowArray(FrameLike, Protocol):
+    """Protocol for objects that can be converted into an Arrow table."""
+
+    def __arrow_c_array__(self, requested_schema: object | None = None) -> Any: ...  # pyright: ignore[reportExplicitAny, reportAny]
+
+
+class _PolarsFrame(FrameLike, Protocol):
+    """Base Protocol for Polars DataFrame and LazyFrame."""
+
+    def lazy(self, *args: Any, **kwargs: Any) -> FrameLike: ...  # pyright: ignore[reportExplicitAny, reportAny]
+
+
+@runtime_checkable
+class IntoPlLazyFrame(_PolarsFrame, Protocol):
+    """Protocol for `polars::LazyFrame`."""
+
+    def collect_batches(
+        self,
+        *args: Any,  # pyright: ignore[reportExplicitAny, reportAny]
+        **kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
+    ) -> Iterator[IntoArrowStream]: ...
+    def collect(self, *args: Any, **kwargs: Any) -> FrameLike: ...  # pyright: ignore[reportExplicitAny, reportAny]
+
+
+@runtime_checkable
+class IntoPlDataFrame(_PolarsFrame, IntoArrowStream, Protocol):
+    """Protocol for `polars::DataFrame`."""
+
+
+type IntoArrow = IntoArrowStream | IntoArrowArray
+type IntoPolars = IntoPlLazyFrame | IntoPlDataFrame
 
 
 class NPProtocol(Protocol):
     """Base Protocol for numpy objects."""
 
     @property
-    def dtype(self) -> Any: ...  # noqa: ANN401, D102  # pyright: ignore[reportExplicitAny, reportAny]
+    def dtype(self) -> Any: ...  # pyright: ignore[reportExplicitAny, reportAny]
     @property
-    def ndim(self) -> int: ...  # noqa: D102
-    def __array__(self, *args: Any, **kwargs: Any) -> Any: ...  # noqa: ANN401, D105, PLW3201  # pyright: ignore[reportExplicitAny, reportAny]
-    def __array_wrap__(self, *args: Any, **kwargs: Any) -> Any: ...  # noqa: ANN401, D105, PLW3201  # pyright: ignore[reportExplicitAny, reportAny]
+    def ndim(self) -> int: ...
+    def __array__(self, *args: Any, **kwargs: Any) -> Any: ...  # pyright: ignore[reportExplicitAny, reportAny]
+    def __array_wrap__(self, *args: Any, **kwargs: Any) -> Any: ...  # pyright: ignore[reportExplicitAny, reportAny]
     @property
-    def __array_interface__(self) -> dict[str, Any]: ...  # noqa: D105, PLW3201  # pyright: ignore[reportExplicitAny]
+    def __array_interface__(self) -> dict[str, Any]: ...  # pyright: ignore[reportExplicitAny]
     @property
-    def __array_priority__(self) -> float: ...  # noqa: D105, PLW3201
+    def __array_priority__(self) -> float: ...
 
 
 class NPScalarTypeLike(NPProtocol, Protocol):  # noqa: D101
     @property
-    def itemsize(self) -> int: ...  # noqa: D102
+    def itemsize(self) -> int: ...
 
 
 @runtime_checkable
 class NPArrayLike[S: tuple[Any, ...], D](NPProtocol, Protocol):
     """Protocol for `numpy` ndarrays."""
 
-    def __len__(self) -> int: ...  # noqa: D105
-    def __contains__(self, value: object, /) -> bool: ...  # noqa: D105
-    def __iter__(self) -> Iterator[D]: ...  # noqa: D105
-    def __array_finalize__(self, *args: Any, **kwargs: Any) -> None: ...  # noqa: ANN401, D105, PLW3201  # pyright: ignore[reportExplicitAny, reportAny]
-    def __getitem__(self, *args: Any, **kwargs: Any) -> Any: ...  # noqa: ANN401, D105  # pyright: ignore[reportExplicitAny, reportAny]
-    def __setitem__(self, *args: Any, **kwargs: Any) -> None: ...  # noqa: ANN401, D105  # pyright: ignore[reportExplicitAny, reportAny]
+    def __len__(self) -> int: ...
+    def __contains__(self, value: object, /) -> bool: ...
+    def __iter__(self) -> Iterator[D]: ...
+    def __array_finalize__(self, *args: Any, **kwargs: Any) -> None: ...  # pyright: ignore[reportExplicitAny, reportAny]
+    def __getitem__(self, *args: Any, **kwargs: Any) -> Any: ...  # pyright: ignore[reportExplicitAny, reportAny]
+    def __setitem__(self, *args: Any, **kwargs: Any) -> None: ...  # pyright: ignore[reportExplicitAny, reportAny]
     @property
-    def shape(self) -> S: ...  # noqa: D102
+    def shape(self) -> S: ...
     @property
-    def size(self) -> int: ...  # noqa: D102
+    def size(self) -> int: ...
     @property
-    def T(self) -> Self: ...  # noqa: D102, N802
+    def T(self) -> Self: ...  # noqa: N802
 
 
 type AnyArray = NPArrayLike[Any, Any]  # pyright: ignore[reportExplicitAny]
@@ -105,7 +138,7 @@ type SeqIntoVals = Sequence[Mapping[str, PythonLiteral]] | NestedSeq | LitSeq | 
 
 type IntoValues = Mapping[str, LitSeq] | SeqIntoVals
 """Types that can be converted into a `values` relation (either an expression, a mapping, or a sequence)."""
-type IntoRel = IntoFrame | IntoValues | ScanSource | IntoArrow
+type IntoRel = IntoValues | ScanSource | IntoArrow | IntoPolars
 """"Types that can be converted into a relation (either a frame or values)."""
 type IntoExprColumn = str | ExprLike
 """Inputs that can convert into a `col` expression."""

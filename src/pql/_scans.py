@@ -12,7 +12,15 @@ from pyochain import Dict, Iter, Seq
 from sqlglot import exp
 
 from ._funcs import unnest
-from .typing import FrameLike, IntoArrow, LitSeq, NestedSeq, NPArrayLike
+from .typing import (
+    IntoArrowArray,
+    IntoArrowStream,
+    IntoPlDataFrame,
+    IntoPlLazyFrame,
+    LitSeq,
+    NestedSeq,
+    NPArrayLike,
+)
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -31,12 +39,13 @@ if TYPE_CHECKING:
         ParquetCompression,
         StrIntoPyType,
     )
-    from narwhals.typing import IntoFrame
 
     from ._frame import LazyFrame
     from .typing import (
         AnyArray,
+        IntoArrow,
         IntoDict,
+        IntoPolars,
         IntoRel,
         Orientation,
         PathOrBuffer,
@@ -56,10 +65,6 @@ def from_table(table: str) -> LazyFrame:
 
 def from_table_function(function: str) -> LazyFrame:
     return ScanSource.from_table_function(function).into_frame()
-
-
-def from_df(df: IntoFrame) -> LazyFrame:
-    return ScanSource.from_df(df).into_frame()
 
 
 def from_numpy(arr: AnyArray, orient: Orientation = "col") -> LazyFrame:
@@ -84,6 +89,12 @@ def from_pandas(
     return ScanSource.from_relation(
         duckdb.from_df(df, connection=connection)
     ).into_frame()
+
+
+def from_polars(
+    df: IntoPolars, connection: DuckDBPyConnection | None = None
+) -> LazyFrame:
+    return ScanSource.from_polars(df, connection=connection).into_frame()
 
 
 def from_arrow(
@@ -343,10 +354,10 @@ class ScanSource:
                 return cls.from_dict(source)
             case NPArrayLike():
                 return cls.from_numpy(source, orient=orient)
-            case IntoArrow():
+            case IntoPlDataFrame() | IntoPlLazyFrame():
+                return cls.from_polars(source)
+            case IntoArrowStream() | IntoArrowArray():
                 return cls.from_arrow(source)
-            case FrameLike():
-                return cls.from_df(source)
             case Sequence():
                 return cls.from_records(source, orient=orient)
 
@@ -399,17 +410,6 @@ class ScanSource:
                 names_nb: int = arr.shape[axis]  # pyright: ignore[reportAny]
                 cols = Iter(range(names_nb)).map(_named).collect()
                 return cls.from_relation(_named_array(cols))
-
-    @classmethod
-    def from_df(cls, data: IntoFrame) -> Self:
-        import narwhals as nw
-
-        match nw.from_native(data):
-            case nw.DataFrame() as df:
-                rel = df.lazy(backend="duckdb").to_native()  # pyright: ignore[reportAny]
-            case nw.LazyFrame() as lf:
-                rel = duckdb.from_arrow(lf.collect())
-        return cls.from_relation(rel)
 
     @classmethod
     def from_records(cls, data: SeqIntoVals, orient: Orientation = "col") -> Self:
@@ -497,6 +497,18 @@ class ScanSource:
         cls, df: IntoArrow, connection: DuckDBPyConnection | None = None
     ) -> Self:
         return cls.from_relation(duckdb.from_arrow(df, connection=connection))
+
+    @classmethod
+    def from_polars(
+        cls, df: IntoPolars, connection: DuckDBPyConnection | None = None
+    ) -> Self:
+        match df:
+            case IntoPlLazyFrame():
+                frame = df.collect_batches()
+            case IntoPlDataFrame():
+                frame = df
+        # NOTE: Polars is badly typed ATM. The Iterator returned by `collect_batches` has indeed the `__arrow_c_stream__` method.
+        return cls.from_arrow(frame, connection=connection)  # pyright: ignore[reportArgumentType]
 
 
 def _named(j: object) -> str:

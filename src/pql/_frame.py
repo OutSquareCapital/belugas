@@ -87,7 +87,7 @@ class LazyFrame(CoreHandler[exp.Query]):
     _sources: Dict[str, ScanSource]
     _schema: Schema
 
-    def __init__(self, data: IntoRel, orient: Orientation = "col") -> None:
+    def __init__(self, data: IntoRel | Self, orient: Orientation = "col") -> None:
         match data:
             case LazyFrame():
                 self._inner = data._inner
