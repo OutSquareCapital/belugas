@@ -57,7 +57,7 @@ class IntoArrowArray(FrameLike, Protocol):
 class _PolarsFrame(FrameLike, Protocol):
     """Base Protocol for Polars DataFrame and LazyFrame."""
 
-    def lazy(self, *args: Any, **kwargs: Any) -> FrameLike: ...  # pyright: ignore[reportExplicitAny, reportAny]
+    def lazy(self, *args: Any, **kwargs: Any) -> IntoPlLazyFrame: ...  # pyright: ignore[reportExplicitAny, reportAny]
 
 
 @runtime_checkable
@@ -69,7 +69,7 @@ class IntoPlLazyFrame(_PolarsFrame, Protocol):
         *args: Any,  # pyright: ignore[reportExplicitAny, reportAny]
         **kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
     ) -> Iterator[IntoArrowStream]: ...
-    def collect(self, *args: Any, **kwargs: Any) -> FrameLike: ...  # pyright: ignore[reportExplicitAny, reportAny]
+    def collect(self, *args: Any, **kwargs: Any) -> IntoPlDataFrame: ...  # pyright: ignore[reportExplicitAny, reportAny]
 
 
 @runtime_checkable

@@ -502,13 +502,20 @@ class ScanSource:
     def from_polars(
         cls, df: IntoPolars, connection: DuckDBPyConnection | None = None
     ) -> Self:
-        match df:
-            case IntoPlLazyFrame():
-                frame = df.collect_batches()
-            case IntoPlDataFrame():
-                frame = df
-        # NOTE: Polars is badly typed ATM. The Iterator returned by `collect_batches` has indeed the `__arrow_c_stream__` method.
-        return cls.from_arrow(frame, connection=connection)  # pyright: ignore[reportArgumentType]
+        """Create a ScanSource from a Polars DataFrame or LazyFrame.
+
+        Note:
+            Two big improvements here would be to:
+
+            1)  Exploit `polars::LazyFrame::collect_batches` to avoid materializing the entire DataFrame in memory at once.
+                This would require managing the lifecycle of the Iterator. If we do it naively, it will just freeze once the Iterator is empty.
+
+            2)  Exploit `sqlglot` and the sql capabilities of polars to push down the AST into polars directly.
+
+        Returns:
+            Self
+        """
+        return cls.from_arrow(df.lazy().collect(), connection=connection)
 
 
 def _named(j: object) -> str:
