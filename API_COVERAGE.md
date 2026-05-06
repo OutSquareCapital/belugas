@@ -9,7 +9,7 @@ Each summary cell is relative to Polars.
 
 | Class               | Coverage                                                                                     | Implemented | Matched | Missing | Mismatched | Extra |
 | ------------------- | -------------------------------------------------------------------------------------------- | ----------- | ------- | ------- | ---------- | ----- |
-| LazyFrame           | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (38.8%) | 80          | 31      | 24      | 25         | 7     |
+| LazyFrame           | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (38.8%) | 80          | 31      | 25      | 24         | 7     |
 | Expr                | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (39.3%) | 214         | 84      | 86      | 44         | 203   |
 | LazyGroupBy         | <span style="color: #27ae60;">██████</span><span style="color: #bdc3c7;">░░░░</span> (62.5%) | 16          | 10      | 4       | 2          | 0     |
 | ExprStrNameSpace    | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (31.2%) | 48          | 15      | 10      | 23         | 84    |
@@ -25,7 +25,7 @@ Each summary cell is relative to Polars.
 
 ## LazyFrame
 
-### [x] Missing Methods (24)
+### [x] Missing Methods (25)
 
 - `collect_async`
   - **Polars**: (gevent: bool, engine: EngineType, optimizations: QueryOptFlags) -> Awaitable[DataFrame] | _GeventDataFrameResult[DataFrame]
@@ -71,12 +71,14 @@ Each summary cell is relative to Polars.
   - **Polars**: (target: Table, mode: Literal['append', 'overwrite'], catalog: IcebergCatalogConfig | None, storage_options: StorageOptionsDict | None) -> DataFrame
 - `sink_ipc`
   - **Polars**: (path: str | Path | IO[bytes] | PartitionBy, compression: IpcCompression | None, compat_level: CompatLevel | None, record_batch_size: int | None, maintain_order: bool, storage_options: StorageOptionsDict | None, credential_provider: CredentialProviderFunction | Literal['auto'] | None, retries: int | None, sync_on_close: SyncOnCloseMethod | None, mkdir: bool, lazy: bool, engine: EngineType, optimizations: QueryOptFlags, _record_batch_statistics: bool) -> LazyFrame | None
+- `sink_ndjson`
+  - **Polars**: (path: str | Path | IO[bytes] | IO[str] | PartitionBy, compression: Literal['uncompressed', 'gzip', 'zstd'], compression_level: int | None, check_extension: bool, maintain_order: bool, storage_options: StorageOptionsDict | None, credential_provider: CredentialProviderFunction | Literal['auto'] | None, retries: int | None, sync_on_close: SyncOnCloseMethod | None, mkdir: bool, lazy: bool, engine: EngineType, optimizations: QueryOptFlags) -> LazyFrame | None
 - `sql`
   - **Polars**: (query: str, table_name: str) -> LazyFrame
 - `update`
   - **Polars**: (other: LazyFrame, on: str | Sequence[str] | None, how: Literal['left', 'inner', 'full'], left_on: str | Sequence[str] | None, right_on: str | Sequence[str] | None, include_nulls: bool, maintain_order: MaintainOrderJoin | None) -> LazyFrame
 
-### [!] Signature Mismatches (25)
+### [!] Signature Mismatches (24)
 
 - `cast`
   - **Polars**: (`dtypes: Mapping[ColumnNameOrSelector | PolarsDataType, PolarsDataType | PythonDataType] | PolarsDataType | pl.DataTypeExpr | Schema`, `strict: bool`) -> LazyFrame
@@ -133,14 +135,11 @@ Each summary cell is relative to Polars.
   - **Polars**: (`limit: int | None`, `ascii_tables: bool | None`, `decimal_separator: str | None`, `thousands_separator: str | bool | None`, `float_precision: int | None`, `fmt_float: FloatFmt | None`, `fmt_str_lengths: int | None`, `fmt_table_cell_list_len: int | None`, `tbl_cell_alignment: Alignment | None`, `tbl_cell_numeric_alignment: Alignment | None`, `tbl_cols: int | None`, `tbl_column_data_type_inline: bool | None`, `tbl_dataframe_shape_below: bool | None`, `tbl_formatting: TableFormatNames | None`, `tbl_hide_column_data_types: bool | None`, `tbl_hide_column_names: bool | None`, `tbl_hide_dtype_separator: bool | None`, `tbl_hide_dataframe_shape: bool | None`, `tbl_width_chars: int | None`, `trim_decimal_zeros: bool | None`) -> None
   - **pql**: (`max_width: SupportsInt | None`, `max_rows: SupportsInt | None`, `max_col_width: SupportsInt | None`, `null_value: str | None`, `render_mode: RenderModeLiteral | None`) -> None
 - `sink_csv`
-  - **Polars**: (`path: str | Path | IO[bytes] | IO[str] | PartitionBy`, `include_bom: bool`, `compression: Literal['uncompressed', 'gzip', 'zstd']`, `compression_level: int | None`, `check_extension: bool`, include_header: bool, separator: str, `line_terminator: str`, `quote_char: str`, `batch_size: int`, `datetime_format: str | None`, `date_format: str | None`, `time_format: str | None`, `float_scientific: bool | None`, `float_precision: int | None`, `decimal_comma: bool`, `null_value: str | None`, `quote_style: CsvQuoteStyle | None`, `maintain_order: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `sync_on_close: SyncOnCloseMethod | None`, `mkdir: bool`, `lazy: bool`, `engine: EngineType`, `optimizations: QueryOptFlags`) -> LazyFrame | None
-  - **pql**: (path: str | Path, separator: str, include_header: bool) -> None
-- `sink_ndjson`
-  - **Polars**: (`path: str | Path | IO[bytes] | IO[str] | PartitionBy`, `compression: Literal['uncompressed', 'gzip', 'zstd']`, `compression_level: int | None`, `check_extension: bool`, `maintain_order: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `sync_on_close: SyncOnCloseMethod | None`, `mkdir: bool`, `lazy: bool`, `engine: EngineType`, `optimizations: QueryOptFlags`) -> LazyFrame | None
-  - **pql**: (path: str | Path) -> None
+  - **Polars**: (`path: str | Path | IO[bytes] | IO[str] | PartitionBy`, `include_bom: bool`, `compression: Literal['uncompressed', 'gzip', 'zstd']`, `compression_level: int | None`, `check_extension: bool`, include_header: bool, separator: str, `line_terminator: str`, `quote_char: str`, `batch_size: int`, `datetime_format: str | None`, date_format: str | None, `time_format: str | None`, `float_scientific: bool | None`, `float_precision: int | None`, `decimal_comma: bool`, `null_value: str | None`, `quote_style: CsvQuoteStyle | None`, `maintain_order: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `sync_on_close: SyncOnCloseMethod | None`, `mkdir: bool`, `lazy: bool`, `engine: EngineType`, `optimizations: QueryOptFlags`) -> LazyFrame | None
+  - **pql**: (path: str | Path, separator: str, include_header: bool, `na_rep: str | None`, `quotechar: str | None`, `escapechar: str | None`, date_format: str | None, `timestamp_format: str | None`, `quoting: str | int | None`, `encoding: str | None`, `compression: CsvCompression | None`, `overwrite: bool | None`, `per_thread_output: bool | None`, `use_tmp_file: bool | None`, `partition_by: list[str] | None`, `write_partition_columns: bool | None`) -> None
 - `sink_parquet`
-  - **Polars**: (`path: str | Path | IO[bytes] | PartitionBy`, `compression: str`, `compression_level: int | None`, `statistics: bool | str | dict[str, bool]`, `row_group_size: int | None`, `data_page_size: int | None`, `maintain_order: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `sync_on_close: SyncOnCloseMethod | None`, `metadata: ParquetMetadata | None`, `arrow_schema: ArrowSchemaExportable | None`, `mkdir: bool`, `lazy: bool`, `engine: EngineType`, `optimizations: QueryOptFlags`, `_sinked_paths_callback: SinkedPathsCallback | None`) -> LazyFrame | None
-  - **pql**: (path: str | Path, `compression: ParquetCompression`) -> None
+  - **Polars**: (`path: str | Path | IO[bytes] | PartitionBy`, `compression: str`, `compression_level: int | None`, `statistics: bool | str | dict[str, bool]`, row_group_size: int | None, `data_page_size: int | None`, `maintain_order: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `sync_on_close: SyncOnCloseMethod | None`, `metadata: ParquetMetadata | None`, `arrow_schema: ArrowSchemaExportable | None`, `mkdir: bool`, `lazy: bool`, `engine: EngineType`, `optimizations: QueryOptFlags`, `_sinked_paths_callback: SinkedPathsCallback | None`) -> LazyFrame | None
+  - **pql**: (path: str | Path, `compression: ParquetCompression | None`, `field_ids: ParquetFieldsOptions | None`, `row_group_size_bytes: str | int | None`, row_group_size: int | None, `overwrite: bool | None`, `per_thread_output: bool | None`, `use_tmp_file: bool | None`, `partition_by: list[str] | None`, `write_partition_columns: bool | None`, `append: bool | None`, `filename_pattern: str | None`, `file_size_bytes: str | int | None`) -> None
 - `unique`
   - **Polars**: (`subset: IntoExpr | Collection[IntoExpr] | None`, keep: UniqueKeepStrategy, `maintain_order: bool`) -> LazyFrame
   - **pql**: (`subset: TryIter[str] | None`, keep: UniqueKeepStrategy, `order_by: TrySeq[str]`) -> Self
@@ -1531,7 +1530,7 @@ Each summary cell is relative to Polars.
   - **pql**: (`_inner: T`, `meta: ExprMeta`) -> None
 - `LazyFrame`
   - **Polars**: (`data: FrameInitTypes | None`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `strict: bool`, `orient: Orientation | None`, `infer_schema_length: int | None`, `nan_to_null: bool`, `height: int | None`) -> None
-  - **pql**: (`data: IntoRel`, orient: Orientation) -> None
+  - **pql**: (`data: IntoRel | Self`, orient: Orientation) -> None
 - `List`
   - **Polars**: (`inner: PolarsDataType | PythonDataType`) -> None
   - **pql**: (`inner: DataType`) -> None
@@ -1631,7 +1630,7 @@ Each summary cell is relative to Polars.
 - `TimeTZ`
 - `UUID`
 - `Union`
-- `from_df`
+- `from_polars`
 - `from_query`
 - `from_table`
 - `from_table_function`
