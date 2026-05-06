@@ -139,11 +139,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
             .chain(self._sources.items())
             .collect(Dict)
         )
-        return ast.transform(_replacer, subs=subs).pipe(
-            self._make,  # pyright: ignore[reportArgumentType]
-            new_sources,
-            schema,
-        )
+        return ast.transform(_replacer, subs=subs).pipe(self._make, new_sources, schema)  # pyright: ignore[reportArgumentType]
 
     def _materialize(self) -> DuckDBPyRelation:
         return self._inner.pipe(ScanSource.from_query, **self._sources).relation
@@ -263,7 +259,12 @@ class LazyFrame(CoreHandler[exp.Selectable]):
             .reduce(Expr.and_)
             .inner
         )
-        return _slct_all().from_("src").where(condition).pipe(self._from_ast, src=self)
+        return (
+            _slct_all()
+            .from_("src")
+            .where(condition)
+            .pipe(self._from_ast, src=self, schema=Some(self._schema))
+        )
 
     def group_by(
         self,
@@ -354,7 +355,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
                 lambda expr, desc, nls: expr.set_order(desc=desc, nulls_last=nls).inner
             )
             .into(lambda order_exprs: _slct_all().from_("src").order_by(*order_exprs))
-            .pipe(self._from_ast, src=self)
+            .pipe(self._from_ast, src=self, schema=Some(self._schema))
         )
 
     def limit(self, n: int) -> Self:
@@ -366,7 +367,12 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         Returns:
             Self: A new LazyFrame with the limited rows.
         """
-        return _slct_all().from_("src").limit(n).pipe(self._from_ast, src=self)
+        return (
+            _slct_all()
+            .from_("src")
+            .limit(n)
+            .pipe(self._from_ast, src=self, schema=Some(self._schema))
+        )
 
     def head(self, n: int = 5) -> Self:
         """Get the first n rows.
@@ -448,7 +454,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
 
         return (
             _qry(Option(length), offset)
-            .map(lambda ast: self._from_ast(ast, src=self))
+            .map(lambda ast: self._from_ast(ast, src=self, schema=Some(self._schema)))
             .unwrap()
         )
 
