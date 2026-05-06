@@ -1,4 +1,5 @@
 from functools import partial
+from pathlib import Path
 from typing import Any
 
 import duckdb
@@ -13,7 +14,10 @@ import pql
 import pql.typing as t
 
 assert_eq = partial(assert_frame_equal, check_dtypes=False, check_row_order=False)
-
+DATA = Path("tests", "data", "foo")
+CSV = DATA.with_suffix(".csv")
+JSON = DATA.with_suffix(".json")
+PARQUET = DATA.with_suffix(".parquet")
 type TestData = dict[str, Any]  # pyright: ignore[reportExplicitAny]
 
 
@@ -22,47 +26,76 @@ def data() -> TestData:
     return _get_data()
 
 
-def test_from_query(data: TestData) -> None:
-    df = pl.DataFrame(data)
-    qry = """--sql
-    SELECT *
-    FROM df
-    """
-    pql_df = pql.from_query(sqlglot.parse_one(qry), df=df).collect()
-    pl_df = duckdb.from_query(qry).pl()
+def _get_data() -> TestData:
+    return {
+        "id": [1, 2, 3, 4, 5],
+        "name": ["Alice", "Bob", "Charlie", "David", "Eve"],
+        "sex": ["F", "M", "M", "M", "F"],
+        "age": [25, 30, 35, 28, 22],
+        "salary": [50000.0, 60000.0, 75000.0, 55000.0, 45000.0],
+        "department": [
+            "Engineering",
+            "Sales",
+            "Engineering",
+            "Sales",
+            "Engineering",
+        ],
+        "is_active": [True, True, False, True, True],
+        "value": [10.0, None, 30.0, None, 50.0],
+        "category": ["A", "B", None, "A", "B"],
+    }
+
+
+PL_DF = pl.DataFrame(_get_data())
+REL = duckdb.from_arrow(PL_DF)
+
+
+def test_from_query() -> None:
+    df = PL_DF  # pyright: ignore[reportUnusedVariable]  # noqa: F841
+    qry = sqlglot.select("*").from_("df")
+    pql_df = pql.from_query(qry, df=PL_DF).collect()
+    pl_df = duckdb.from_query(qry.sql(dialect="duckdb")).pl()
     assert_eq(pql_df, pl_df)
 
 
-def test_from_duckdb_relation(data: TestData) -> None:
-    rel = duckdb.from_arrow(pl.DataFrame(data))
-    assert_eq(pql.LazyFrame(rel).collect(), rel.pl())
+def test_from_duckdb_relation() -> None:
+    assert_eq(pql.LazyFrame(REL).collect(), REL.pl())
+
+
+def test_from_arrow() -> None:
+    assert_eq(pql.from_arrow(PL_DF).collect(), REL.pl())
 
 
 def test_from_table_function() -> None:
-    rel = duckdb.table_function("duckdb_functions")
-    assert_eq(pql.from_table_function("duckdb_functions").collect(), rel.pl())
+    assert_eq(
+        pql.from_table_function("duckdb_functions").collect(),
+        duckdb.table_function("duckdb_functions").pl(),
+    )
 
 
-def test_from_table(data: TestData) -> None:
-    duckdb.from_arrow(pl.DataFrame(data)).create("test_table")
-    assert_eq(pql.from_table("test_table").collect(), pl.DataFrame(data))
+def test_from_table() -> None:
+    REL.create("test_table")
+    assert_eq(pql.from_table("test_table").collect(), PL_DF)
 
 
-def test_from_pl_lazyframe(data: TestData) -> None:
-    assert_eq(pql.LazyFrame(pl.LazyFrame(data)).collect(), pl.DataFrame(data))
-    assert_eq(pql.from_df(pl.LazyFrame(data)).collect(), pl.DataFrame(data))
+def test_from_pl_lazyframe() -> None:
+    assert_eq(pql.LazyFrame(PL_DF.lazy()).collect(), PL_DF)
+    assert_eq(pql.from_df(PL_DF.lazy()).collect(), PL_DF)
 
 
 def test_from_pd_dataframe(data: TestData) -> None:
     import pandas as pd
 
-    assert_eq(pql.LazyFrame(pd.DataFrame(data)).collect(), pl.DataFrame(data))
-    assert_eq(pql.from_df(pd.DataFrame(data)).collect(), pl.DataFrame(data))
+    pd_df = pd.DataFrame(data)
+
+    assert_eq(pql.LazyFrame(pd_df).collect(), PL_DF)
+    assert_eq(pql.from_df(pd_df).collect(), PL_DF)
+    assert_eq(pql.from_pandas(pd_df).collect(), PL_DF)
 
 
-def test_from_pl_dataframe(data: TestData) -> None:
-    assert_eq(pql.LazyFrame(pl.DataFrame(data)).collect(), pl.DataFrame(data))
-    assert_eq(pql.from_df(pl.DataFrame(data)).collect(), pl.DataFrame(data))
+def test_from_pl_dataframe() -> None:
+    assert_eq(pql.LazyFrame(PL_DF).collect(), PL_DF)
+    assert_eq(pql.from_df(PL_DF).collect(), PL_DF)
 
 
 def test_from_dict(data: TestData) -> None:
@@ -124,26 +157,6 @@ def test_from_seq_of_dicts() -> None:
     assert_eq(pql.from_dicts(dicts).collect(), pl.from_dicts(dicts))
 
 
-def _get_data() -> TestData:
-    return {
-        "id": [1, 2, 3, 4, 5],
-        "name": ["Alice", "Bob", "Charlie", "David", "Eve"],
-        "sex": ["F", "M", "M", "M", "F"],
-        "age": [25, 30, 35, 28, 22],
-        "salary": [50000.0, 60000.0, 75000.0, 55000.0, 45000.0],
-        "department": [
-            "Engineering",
-            "Sales",
-            "Engineering",
-            "Sales",
-            "Engineering",
-        ],
-        "is_active": [True, True, False, True, True],
-        "value": [10.0, None, 30.0, None, 50.0],
-        "category": ["A", "B", None, "A", "B"],
-    }
-
-
 def test_from_seq_of_seqs() -> None:
     seqs = Iter(range(10)).map(lambda _: tuple(range(5))).collect()
     assert_eq(pql.LazyFrame(seqs).collect(), pl.DataFrame(seqs))
@@ -173,3 +186,21 @@ def test_from_seq_of_str_vals() -> None:
     vals = ("x", "y", "z")
     assert_eq(pql.LazyFrame(vals).collect(), pl.DataFrame(vals))
     assert_eq(pql.from_records(vals).collect(), pl.from_records(vals))
+
+
+def test_from_csv() -> None:
+    pql_df = pql.scan_csv(CSV).collect()
+    pl_df = duckdb.from_csv_auto(CSV).pl()
+    assert_eq(pql_df, pl_df)
+
+
+def test_from_json() -> None:
+    pql_df = pql.scan_json(JSON).collect()
+    pl_df = duckdb.read_json(JSON).pl()
+    assert_eq(pql_df, pl_df)
+
+
+def test_from_parquet() -> None:
+    pql_df = pql.scan_parquet(PARQUET).collect()
+    pl_df = duckdb.read_parquet(str(PARQUET)).pl()
+    assert_eq(pql_df, pl_df)

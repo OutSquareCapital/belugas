@@ -18,7 +18,7 @@ Each summary cell is relative to Polars.
 | ExprNameNameSpace   | <span style="color: #27ae60;">██████</span><span style="color: #bdc3c7;">░░░░</span> (60.0%) | 10          | 6       | 3       | 1          | 1     |
 | ExprArrNameSpace    | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (45.2%) | 31          | 14      | 5       | 12         | 44    |
 | ExprDtNameSpace     | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (46.7%) | 45          | 21      | 18      | 6          | 52    |
-| ModuleFunctions     | <span style="color: #e74c3c;">█</span><span style="color: #bdc3c7;">░░░░░░░░░</span> (16.0%) | 169         | 27      | 110     | 32         | 13    |
+| ModuleFunctions     | <span style="color: #e74c3c;">█</span><span style="color: #bdc3c7;">░░░░░░░░░</span> (16.0%) | 169         | 27      | 106     | 36         | 14    |
 | selectors           | <span style="color: #f39c12;">█████</span><span style="color: #bdc3c7;">░░░░░</span> (54.3%) | 35          | 19      | 12      | 4          | 0     |
 | DataType            | <span style="color: #f39c12;">█████</span><span style="color: #bdc3c7;">░░░░░</span> (53.3%) | 15          | 8       | 6       | 1          | 2     |
 | Schema              | <span style="color: #e74c3c;"></span><span style="color: #bdc3c7;">░░░░░░░░░░</span> (0.0%)  | 17          | 0       | 17      | 0          | 0     |
@@ -1294,7 +1294,7 @@ Each summary cell is relative to Polars.
 
 ## ModuleFunctions
 
-### [x] Missing Methods (110)
+### [x] Missing Methods (106)
 
 - `BaseExtension`
   - **Polars**: (name: str, storage: PolarsDataType, metadata: str | None) -> None
@@ -1384,14 +1384,10 @@ Each summary cell is relative to Polars.
   - **Polars**: (acc: IntoExpr, function: Callable[[Series, Series], Series], exprs: Sequence[Expr | str] | Expr, returns_scalar: bool, return_dtype: DataTypeExpr | PolarsDataType | None) -> Expr
 - `format`
   - **Polars**: (f_string: str, *args: IntoExpr) -> Expr
-- `from_arrow`
-  - **Polars**: (data: RecordBatch | Iterable[pa.RecordBatch | pa.Table] | ArrowArrayExportable | ArrowStreamExportable, schema: SchemaDefinition | None, schema_overrides: SchemaDict | None, rechunk: bool) -> DataFrame | Series
 - `from_dataframe`
   - **Polars**: (df: SupportsInterchange | ArrowArrayExportable | ArrowStreamExportable, allow_copy: bool | None, rechunk: bool) -> DataFrame
 - `from_epoch`
   - **Polars**: (column: str | Expr | Series | Sequence[int | float], time_unit: EpochTimeUnit) -> Expr | Series
-- `from_pandas`
-  - **Polars**: (data: Series[Any] | pd.Index[Any] | pd.DatetimeIndex, schema_overrides: SchemaDict | None, rechunk: bool, nan_to_null: bool, include_index: bool) -> DataFrame | Series
 - `from_repr`
   - **Polars**: (data: str) -> DataFrame | Series
 - `from_torch`
@@ -1472,8 +1468,6 @@ Each summary cell is relative to Polars.
   - **Polars**: (a: str | Expr, b: str | Expr, window_size: int, min_samples: int | None, ddof: int) -> Expr
 - `row_index`
   - **Polars**: (name: str) -> Expr
-- `scan_csv`
-  - **Polars**: (source: str | Path | IO[str] | IO[bytes] | bytes | list[str] | list[Path] | list[IO[str]] | list[IO[bytes]] | list[bytes], has_header: bool, separator: str, comment_prefix: str | None, quote_char: str | None, skip_rows: int, skip_lines: int, schema: SchemaDict | None, schema_overrides: SchemaDict | Sequence[PolarsDataType] | None, null_values: str | Sequence[str] | dict[str, str] | None, missing_utf8_is_empty_string: bool, ignore_errors: bool, cache: bool | None, with_column_names: Callable[[list[str]], list[str]] | None, infer_schema: bool, infer_schema_length: int | None, n_rows: int | None, encoding: CsvEncoding, low_memory: bool, rechunk: bool, skip_rows_after_header: int, row_index_name: str | None, row_index_offset: int, try_parse_dates: bool, eol_char: str, new_columns: Sequence[str] | None, raise_if_empty: bool, truncate_ragged_lines: bool, decimal_comma: bool, glob: bool, storage_options: StorageOptionsDict | None, credential_provider: CredentialProviderFunction | Literal['auto'] | None, retries: int | None, file_cache_ttl: int | None, include_file_paths: str | None, missing_columns: Literal['insert', 'raise'] | None) -> LazyFrame
 - `scan_delta`
   - **Polars**: (source: str | Path | DeltaTable, version: int | str | datetime | None, storage_options: StorageOptionsDict | None, credential_provider: CredentialProviderFunction | Literal['auto'] | None, delta_table_options: dict[str, Any] | None, use_pyarrow: bool, pyarrow_options: dict[str, Any] | None, rechunk: bool | None) -> LazyFrame
 - `scan_iceberg`
@@ -1484,8 +1478,6 @@ Each summary cell is relative to Polars.
   - **Polars**: (source: str | Path | IO[str] | IO[bytes] | bytes | list[str] | list[Path] | list[IO[str]] | list[IO[bytes]], name: str, n_rows: int | None, row_index_name: str | None, row_index_offset: int, glob: bool, storage_options: StorageOptionsDict | None, credential_provider: CredentialProviderFunction | Literal['auto'] | None, include_file_paths: str | None) -> LazyFrame
 - `scan_ndjson`
   - **Polars**: (source: str | Path | IO[str] | IO[bytes] | bytes | list[str] | list[Path] | list[IO[str]] | list[IO[bytes]], schema: SchemaDefinition | None, schema_overrides: SchemaDefinition | None, infer_schema_length: int | None, batch_size: int | None, n_rows: int | None, low_memory: bool, rechunk: bool, row_index_name: str | None, row_index_offset: int, ignore_errors: bool, storage_options: StorageOptionsDict | None, credential_provider: CredentialProviderFunction | Literal['auto'] | None, retries: int | None, file_cache_ttl: int | None, include_file_paths: str | None) -> LazyFrame
-- `scan_parquet`
-  - **Polars**: (source: FileSource, n_rows: int | None, row_index_name: str | None, row_index_offset: int, parallel: ParallelStrategy, use_statistics: bool, hive_partitioning: bool | None, glob: bool, hidden_file_prefix: str | Sequence[str] | None, schema: SchemaDict | None, hive_schema: SchemaDict | None, try_parse_hive_dates: bool, rechunk: bool, low_memory: bool, cache: bool, storage_options: StorageOptionsDict | None, credential_provider: CredentialProviderFunction | Literal['auto'] | None, retries: int | None, include_file_paths: str | None, missing_columns: Literal['insert', 'raise'], allow_missing_columns: bool | None, extra_columns: Literal['ignore', 'raise'], cast_options: ScanCastOptions | None,_column_mapping: ColumnMapping | None,_default_values: DefaultFieldValues | None,_deletion_files: DeletionFiles | None,_table_statistics: DataFrame | None,_row_count: tuple[int, int] | None) -> LazyFrame
 - `scan_pyarrow_dataset`
   - **Polars**: (source: Dataset, allow_pyarrow_filter: bool, batch_size: int | None) -> LazyFrame
 - `select`
@@ -1517,7 +1509,7 @@ Each summary cell is relative to Polars.
 - `zeros`
   - **Polars**: (n: int | Expr, dtype: PolarsDataType, eager: bool) -> Expr | Series
 
-### [!] Signature Mismatches (32)
+### [!] Signature Mismatches (36)
 
 - `Array`
   - **Polars**: (`inner: PolarsDataType | PythonDataType`, `shape: int | tuple[int, ...] | None`, `width: int | None`) -> None
@@ -1570,6 +1562,9 @@ Each summary cell is relative to Polars.
 - `first`
   - **Polars**: (`*columns: str`) -> Expr
   - **pql**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+- `from_arrow`
+  - **Polars**: (`data: RecordBatch | Iterable[pa.RecordBatch | pa.Table] | ArrowArrayExportable | ArrowStreamExportable`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `rechunk: bool`) -> DataFrame | Series
+  - **pql**: (`df: IntoArrow`, `connection: DuckDBPyConnection | None`) -> LazyFrame
 - `from_dict`
   - **Polars**: (`data: Mapping[str, Sequence[object] | Mapping[str, Sequence[object]] | Series]`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `strict: bool`) -> DataFrame
   - **pql**: (`mapping: IntoDict[str, PythonLiteral]`) -> LazyFrame
@@ -1579,6 +1574,9 @@ Each summary cell is relative to Polars.
 - `from_numpy`
   - **Polars**: (`data: ndarray[Any, Any]`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `orient: Orientation | None`) -> DataFrame
   - **pql**: (`arr: AnyArray`, orient: Orientation) -> LazyFrame
+- `from_pandas`
+  - **Polars**: (`data: Series[Any] | pd.Index[Any] | pd.DatetimeIndex`, `schema_overrides: SchemaDict | None`, `rechunk: bool`, `nan_to_null: bool`, `include_index: bool`) -> DataFrame | Series
+  - **pql**: (`df: DataFrame`, `connection: DuckDBPyConnection | None`) -> LazyFrame
 - `from_records`
   - **Polars**: (`data: Sequence[Any]`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `strict: bool`, `orient: Orientation | None`, `infer_schema_length: int | None`) -> DataFrame
   - **pql**: (`data: SeqIntoVals`, orient: Orientation) -> LazyFrame
@@ -1606,6 +1604,12 @@ Each summary cell is relative to Polars.
 - `n_unique`
   - **Polars**: (`*columns: str`) -> Expr
   - **pql**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+- `scan_csv`
+  - **Polars**: (`source: str | Path | IO[str] | IO[bytes] | bytes | list[str] | list[Path] | list[IO[str]] | list[IO[bytes]] | list[bytes]`, `has_header: bool`, `separator: str`, `comment_prefix: str | None`, `quote_char: str | None`, `skip_rows: int`, `skip_lines: int`, `schema: SchemaDict | None`, `schema_overrides: SchemaDict | Sequence[PolarsDataType] | None`, `null_values: str | Sequence[str] | dict[str, str] | None`, `missing_utf8_is_empty_string: bool`, ignore_errors: bool, `cache: bool | None`, `with_column_names: Callable[[list[str]], list[str]] | None`, `infer_schema: bool`, `infer_schema_length: int | None`, `n_rows: int | None`, encoding: CsvEncoding, `low_memory: bool`, `rechunk: bool`, `skip_rows_after_header: int`, `row_index_name: str | None`, `row_index_offset: int`, `try_parse_dates: bool`, `eol_char: str`, `new_columns: Sequence[str] | None`, `raise_if_empty: bool`, `truncate_ragged_lines: bool`, `decimal_comma: bool`, `glob: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `file_cache_ttl: int | None`, `include_file_paths: str | None`, `missing_columns: Literal['insert', 'raise'] | None`) -> LazyFrame
+  - **pql**: (`path_or_buffer: PathOrBuffer`, `header: bool | int | None`, `compression: CsvCompression | None`, `sep: str | None`, `delimiter: str | None`, `files_to_sniff: int | None`, `comment: str | None`, `thousands: str | None`, `dtype: IntoFields | None`, `na_values: str | list[str] | None`, `skiprows: int | None`, `quotechar: str | None`, `escapechar: str | None`, `encoding: CsvEncoding | None`, `parallel: bool | None`, `date_format: str | None`, `timestamp_format: str | None`, `sample_size: int | None`, `auto_detect: bool | int | None`, `all_varchar: bool | None`, `normalize_names: bool | None`, `null_padding: bool | None`, `names: list[str] | None`, `lineterminator: CSVLineTerminator | None`, `columns: ColumnsTypes | None`, `auto_type_candidates: list[StrIntoPyType] | None`, `max_line_size: int | None`, `ignore_errors: bool | None`, `store_rejects: bool | None`, `rejects_table: str | None`, `rejects_scan: str | None`, `rejects_limit: int | None`, `force_not_null: list[str] | None`, `buffer_size: int | None`, `decimal: str | None`, `allow_quoted_nulls: bool | None`, `filename: bool | str | None`, `hive_partitioning: bool | None`, `union_by_name: bool | None`, `hive_types: HiveTypes | None`, `hive_types_autocast: bool | None`, `strict_mode: bool | None`, `connection: DuckDBPyConnection | None`) -> LazyFrame
+- `scan_parquet`
+  - **Polars**: (`source: FileSource`, `n_rows: int | None`, `row_index_name: str | None`, `row_index_offset: int`, `parallel: ParallelStrategy`, `use_statistics: bool`, `hive_partitioning: bool | None`, `glob: bool`, `hidden_file_prefix: str | Sequence[str] | None`, `schema: SchemaDict | None`, `hive_schema: SchemaDict | None`, `try_parse_hive_dates: bool`, `rechunk: bool`, `low_memory: bool`, `cache: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `include_file_paths: str | None`, `missing_columns: Literal['insert', 'raise']`, `allow_missing_columns: bool | None`, `extra_columns: Literal['ignore', 'raise']`, `cast_options: ScanCastOptions | None`, `_column_mapping: ColumnMapping | None`, `_default_values: DefaultFieldValues | None`, `_deletion_files: DeletionFiles | None`, `_table_statistics: DataFrame | None`, `_row_count: tuple[int, int] | None`) -> LazyFrame
+  - **pql**: (`file_glob: Path | str | Iterable[str | Path]`, `binary_as_string: bool`, `file_row_number: bool`, `filename: bool`, hive_partitioning: bool, `union_by_name: bool`, `compression: ParquetCompression | None`, `connection: DuckDBPyConnection | None`) -> LazyFrame
 - `sum`
   - **Polars**: (`*names: str`) -> Expr
   - **pql**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
@@ -1616,7 +1620,7 @@ Each summary cell is relative to Polars.
   - **Polars**: (*predicates: IntoExprColumn | Iterable[IntoExprColumn] | bool, `**constraints: Any`) -> When
   - **pql**: (`predicates: TryIter[IntoExpr]`, *more_predicates: IntoExpr) -> When
 
-### [+] Extra Methods (pql-only) (13)
+### [+] Extra Methods (pql-only) (14)
 
 - `BitString`
 - `DatetimeTZ`
@@ -1631,6 +1635,7 @@ Each summary cell is relative to Polars.
 - `from_query`
 - `from_table`
 - `from_table_function`
+- `scan_json`
 
 ## selectors
 

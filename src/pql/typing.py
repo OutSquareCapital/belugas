@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Literal, Protocol, Self, runtime_checkable
+from typing import IO, TYPE_CHECKING, Any, Literal, Protocol, Self, runtime_checkable
 
-from pyochain import Dict, Result, Seq
 from sqlglot import exp
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator, Mapping, Sequence
+    from os import PathLike
+    from pathlib import Path
+
     from _duckdb._typing import (  # pyright: ignore[reportMissingModuleSource]
         BlobLiteral as DuckBlobLit,
         IntoExpr as DuckIntoExpr,
@@ -21,6 +23,7 @@ if TYPE_CHECKING:
         StrIntoPyType as DuckStrIntoPyType,
     )
     from narwhals.typing import IntoFrame
+    from pyochain import Dict, Result, Seq
 
     from ._core import ExprHandler
     from ._expr import Expr
@@ -36,6 +39,13 @@ class FrameLike(Protocol):
     @property
     def columns(self) -> Any: ...  # noqa: ANN401, D102  # pyright: ignore[reportAny, reportExplicitAny]
     def join(self, *args: Any, **kwargs: Any) -> Any: ...  # pyright: ignore[reportExplicitAny, reportAny]  # noqa: ANN401, D102
+
+
+@runtime_checkable
+class IntoArrow(FrameLike, Protocol):
+    """Protocol for objects that can be converted into an Arrow table."""
+
+    def __arrow_c_stream__(self, requested_schema: object | None = None) -> Any: ...  # noqa: ANN401, D105, PLW3201  # pyright: ignore[reportExplicitAny, reportAny]
 
 
 class NPProtocol(Protocol):
@@ -95,7 +105,7 @@ type SeqIntoVals = Sequence[Mapping[str, PythonLiteral]] | NestedSeq | LitSeq | 
 
 type IntoValues = Mapping[str, LitSeq] | SeqIntoVals
 """Types that can be converted into a `values` relation (either an expression, a mapping, or a sequence)."""
-type IntoRel = IntoFrame | IntoValues | ScanSource
+type IntoRel = IntoFrame | IntoValues | ScanSource | IntoArrow
 """"Types that can be converted into a relation (either a frame or values)."""
 type IntoExprColumn = str | ExprLike
 """Inputs that can convert into a `col` expression."""
@@ -162,6 +172,9 @@ type JoinKeysRes[T: Seq[str] | str] = Result[JoinKeys[T], ValueError]
 type GroupByClause = Literal["ROLLUP", "CUBE"]
 type Schema = Dict[str, exp.DataType]
 """Types that can be used to define a schema (mapping of column names to data types)."""
+type PathOrBuffer = str | bytes | PathLike[str] | PathLike[bytes] | IO[bytes] | IO[str]
+"""Types that can be used to specify a file path or buffer for reading/writing data."""
+type FileGlob = Path | str | Iterable[str] | Iterable[Path]
 # theme marker START
 Themes = Literal[
     "abap",

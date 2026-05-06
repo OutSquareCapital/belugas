@@ -34,14 +34,19 @@ from ._funcs import (
     var,
 )
 from ._scans import (
+    from_arrow,
     from_df,
     from_dict,
     from_dicts,
     from_numpy,
+    from_pandas,
     from_query,
     from_records,
     from_table,
     from_table_function,
+    scan_csv,
+    scan_json,
+    scan_parquet,
 )
 from ._when import when
 from .datatypes import (
@@ -131,10 +136,12 @@ __all__ = [
     "cum_sum",
     "element",
     "first",
+    "from_arrow",
     "from_df",
     "from_dict",
     "from_dicts",
     "from_numpy",
+    "from_pandas",
     "from_query",
     "from_records",
     "from_table",
@@ -151,6 +158,9 @@ __all__ = [
     "min",
     "min_horizontal",
     "n_unique",
+    "scan_csv",
+    "scan_json",
+    "scan_parquet",
     "selectors",
     "std",
     "sum",

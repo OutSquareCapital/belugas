@@ -3,17 +3,34 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from operator import itemgetter as get
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Self, cast
 
 import duckdb
-from duckdb import DuckDBPyRelation
+from duckdb import DuckDBPyConnection, DuckDBPyRelation
 from pyochain import Dict, Iter, Seq
 from sqlglot import exp
 
 from ._funcs import unnest
-from .typing import FrameLike, LitSeq, NestedSeq, NPArrayLike
+from .typing import FrameLike, IntoArrow, LitSeq, NestedSeq, NPArrayLike
 
 if TYPE_CHECKING:
+    import pandas as pd
+    from _duckdb._enums import (  # pyright: ignore[reportMissingModuleSource]
+        CSVLineTerminator,
+    )
+    from _duckdb._typing import (  # pyright: ignore[reportMissingModuleSource]
+        ColumnsTypes,
+        CsvCompression,
+        CsvEncoding,
+        HiveTypes,
+        IntoFields,
+        JsonCompression,
+        JsonFormat,
+        JsonRecordOptions,
+        ParquetCompression,
+        StrIntoPyType,
+    )
     from narwhals.typing import IntoFrame
 
     from ._frame import LazyFrame
@@ -22,6 +39,7 @@ if TYPE_CHECKING:
         IntoDict,
         IntoRel,
         Orientation,
+        PathOrBuffer,
         PythonLiteral,
         Schema,
         SeqIntoVals,
@@ -58,6 +76,206 @@ def from_dicts(data: Sequence[Mapping[str, PythonLiteral]]) -> LazyFrame:
 
 def from_records(data: SeqIntoVals, orient: Orientation = "col") -> LazyFrame:
     return ScanSource.from_records(data, orient=orient).into_frame()
+
+
+def from_pandas(
+    df: pd.DataFrame, connection: DuckDBPyConnection | None = None
+) -> LazyFrame:
+    return ScanSource.from_relation(
+        duckdb.from_df(df, connection=connection)
+    ).into_frame()
+
+
+def from_arrow(
+    df: IntoArrow, connection: DuckDBPyConnection | None = None
+) -> LazyFrame:
+    return ScanSource.from_arrow(df, connection=connection).into_frame()
+
+
+def scan_parquet(  # noqa: PLR0913
+    file_glob: Path | str | Iterable[str | Path],
+    /,
+    *,
+    binary_as_string: bool = False,
+    file_row_number: bool = False,
+    filename: bool = False,
+    hive_partitioning: bool = False,
+    union_by_name: bool = False,
+    compression: ParquetCompression | None = None,
+    connection: DuckDBPyConnection | None = None,
+) -> LazyFrame:
+    match file_glob:
+        case Path():
+            path = str(file_glob)
+        case str():
+            path = file_glob
+        case Iterable():
+            path = (
+                Iter(file_glob)
+                .map(lambda x: x if isinstance(x, str) else str(x))
+                .collect()
+            )
+    rel = _get_conn(connection).from_parquet(
+        path,
+        binary_as_string,
+        file_row_number=file_row_number,
+        filename=filename,
+        hive_partitioning=hive_partitioning,
+        union_by_name=union_by_name,
+        compression=compression,
+    )
+
+    return ScanSource.from_relation(rel).into_frame()
+
+
+def scan_csv(  # noqa: PLR0913
+    path_or_buffer: PathOrBuffer,
+    *,
+    header: bool | int | None = None,
+    compression: CsvCompression | None = None,
+    sep: str | None = None,
+    delimiter: str | None = None,
+    files_to_sniff: int | None = None,
+    comment: str | None = None,
+    thousands: str | None = None,
+    dtype: IntoFields | None = None,
+    na_values: str | list[str] | None = None,
+    skiprows: int | None = None,
+    quotechar: str | None = None,
+    escapechar: str | None = None,
+    encoding: CsvEncoding | None = None,
+    parallel: bool | None = None,
+    date_format: str | None = None,
+    timestamp_format: str | None = None,
+    sample_size: int | None = None,
+    auto_detect: bool | int | None = None,
+    all_varchar: bool | None = None,
+    normalize_names: bool | None = None,
+    null_padding: bool | None = None,
+    names: list[str] | None = None,
+    lineterminator: CSVLineTerminator | None = None,
+    columns: ColumnsTypes | None = None,
+    auto_type_candidates: list[StrIntoPyType] | None = None,
+    max_line_size: int | None = None,
+    ignore_errors: bool | None = None,
+    store_rejects: bool | None = None,
+    rejects_table: str | None = None,
+    rejects_scan: str | None = None,
+    rejects_limit: int | None = None,
+    force_not_null: list[str] | None = None,
+    buffer_size: int | None = None,
+    decimal: str | None = None,
+    allow_quoted_nulls: bool | None = None,
+    filename: bool | str | None = None,
+    hive_partitioning: bool | None = None,
+    union_by_name: bool | None = None,
+    hive_types: HiveTypes | None = None,
+    hive_types_autocast: bool | None = None,
+    strict_mode: bool | None = None,
+    connection: DuckDBPyConnection | None = None,
+) -> LazyFrame:
+    rel = _get_conn(connection).from_csv_auto(
+        path_or_buffer,
+        header=header,
+        compression=compression,
+        sep=sep,
+        delimiter=delimiter,
+        files_to_sniff=files_to_sniff,
+        comment=comment,
+        thousands=thousands,
+        dtype=dtype,
+        na_values=na_values,
+        skiprows=skiprows,
+        quotechar=quotechar,
+        escapechar=escapechar,
+        encoding=encoding,
+        parallel=parallel,
+        date_format=date_format,
+        timestamp_format=timestamp_format,
+        sample_size=sample_size,
+        auto_detect=auto_detect,
+        all_varchar=all_varchar,
+        normalize_names=normalize_names,
+        null_padding=null_padding,
+        names=names,
+        lineterminator=lineterminator,
+        columns=columns,
+        auto_type_candidates=auto_type_candidates,
+        max_line_size=max_line_size,
+        ignore_errors=ignore_errors,
+        store_rejects=store_rejects,
+        rejects_table=rejects_table,
+        rejects_scan=rejects_scan,
+        rejects_limit=rejects_limit,
+        force_not_null=force_not_null,
+        buffer_size=buffer_size,
+        decimal=decimal,
+        allow_quoted_nulls=allow_quoted_nulls,
+        filename=filename,
+        hive_partitioning=hive_partitioning,
+        union_by_name=union_by_name,
+        hive_types=hive_types,
+        hive_types_autocast=hive_types_autocast,
+        strict_mode=strict_mode,
+    )
+    return ScanSource.from_relation(rel).into_frame()
+
+
+def scan_json(  # noqa: PLR0913
+    path_or_buffer: PathOrBuffer,
+    *,
+    columns: ColumnsTypes | None = None,
+    sample_size: int | None = None,
+    maximum_depth: int | None = None,
+    records: JsonRecordOptions | None = None,
+    fmt: JsonFormat | None = None,
+    date_format: str | None = None,
+    timestamp_format: str | None = None,
+    compression: JsonCompression | None = None,
+    maximum_object_size: int | None = None,
+    ignore_errors: bool | None = None,
+    convert_strings_to_integers: bool | None = None,
+    field_appearance_threshold: float | None = None,
+    map_inference_threshold: int | None = None,
+    maximum_sample_files: int | None = None,
+    filename: bool | str | None = None,
+    hive_partitioning: bool | None = None,
+    union_by_name: bool | None = None,
+    hive_types: HiveTypes | None = None,
+    hive_types_autocast: bool | None = None,
+    connection: DuckDBPyConnection | None = None,
+) -> LazyFrame:
+    rel = _get_conn(connection).read_json(
+        path_or_buffer,
+        columns=columns,
+        sample_size=sample_size,
+        maximum_depth=maximum_depth,
+        records=records,
+        format=fmt,
+        date_format=date_format,
+        timestamp_format=timestamp_format,
+        compression=compression,
+        maximum_object_size=maximum_object_size,
+        ignore_errors=ignore_errors,
+        convert_strings_to_integers=convert_strings_to_integers,
+        field_appearance_threshold=field_appearance_threshold,
+        map_inference_threshold=map_inference_threshold,
+        maximum_sample_files=maximum_sample_files,
+        filename=filename,
+        hive_partitioning=hive_partitioning,
+        union_by_name=union_by_name,
+        hive_types=hive_types,
+        hive_types_autocast=hive_types_autocast,
+    )
+    return ScanSource.from_relation(rel).into_frame()
+
+
+def _get_conn(connection: DuckDBPyConnection | None) -> DuckDBPyConnection:
+    match connection:
+        case DuckDBPyConnection():
+            return connection
+        case None:
+            return duckdb.default_connection()
 
 
 COL0 = "column_0"
@@ -125,6 +343,8 @@ class ScanSource:
                 return cls.from_dict(source)
             case NPArrayLike():
                 return cls.from_numpy(source, orient=orient)
+            case IntoArrow():
+                return cls.from_arrow(source)
             case FrameLike():
                 return cls.from_df(source)
             case Sequence():
@@ -271,6 +491,12 @@ class ScanSource:
         )
 
         return cls(relation, schema)
+
+    @classmethod
+    def from_arrow(
+        cls, df: IntoArrow, connection: DuckDBPyConnection | None = None
+    ) -> Self:
+        return cls.from_relation(duckdb.from_arrow(df, connection=connection))
 
 
 def _named(j: object) -> str:
