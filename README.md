@@ -1,6 +1,10 @@
 
 # belouga
 
+<p align="center">
+    <img src="docs/Bélouga.jpg" alt="Belouga" width="260" />
+</p>
+
 `belouga` is a lazy dataframe library for DuckDB with a Polars-like API.
 
 It compiles expression trees to DuckDB SQL via `sqlglot`, which are then converted to SQL queries and passed to DuckDB for execution.
