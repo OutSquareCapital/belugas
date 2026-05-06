@@ -55,19 +55,3 @@ def test_sink_csv(sample_df: pl.DataFrame) -> None:
     finally:
         if tmp_path.exists():
             tmp_path.unlink()
-
-
-def test_sink_ndjson(sample_df: pl.DataFrame) -> None:
-    with NamedTemporaryFile(
-        encoding="utf-8", suffix=".ndjson", delete=False, mode="w"
-    ) as tmp:
-        tmp_path = Path(tmp.name)
-    try:
-        lf = pql.LazyFrame(sample_df)
-        lf.sink_ndjson(tmp_path)
-        assert tmp_path.exists()
-        read_back = pl.read_ndjson(tmp_path)
-        assert_eq(read_back, sample_df, check_dtypes=False)
-    finally:
-        if tmp_path.exists():
-            tmp_path.unlink()

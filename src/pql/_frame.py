@@ -44,6 +44,10 @@ if TYPE_CHECKING:
         ExplainTypeLiteral,
         RenderModeLiteral,
     )
+    from _duckdb._typing import (  # pyright: ignore[reportMissingModuleSource]
+        CsvCompression,
+        ParquetFieldsOptions,
+    )
     from duckdb import DuckDBPyRelation
     from pyochain.traits import PyoKeysView
 
@@ -1329,21 +1333,79 @@ class LazyFrame(CoreHandler[exp.Selectable]):
             case _:
                 return self._iter_slct(lambda c: c.cast(dtypes.raw))
 
-    def sink_parquet(
-        self, path: str | Path, *, compression: ParquetCompression = "zstd"
+    def sink_parquet(  # noqa: PLR0913
+        self,
+        path: str | Path,
+        *,
+        compression: ParquetCompression | None = None,
+        field_ids: ParquetFieldsOptions | None = None,
+        row_group_size_bytes: str | int | None = None,
+        row_group_size: int | None = None,
+        overwrite: bool | None = None,
+        per_thread_output: bool | None = None,
+        use_tmp_file: bool | None = None,
+        partition_by: list[str] | None = None,
+        write_partition_columns: bool | None = None,
+        append: bool | None = None,
+        filename_pattern: str | None = None,
+        file_size_bytes: str | int | None = None,
     ) -> None:
         """Write to Parquet file."""
-        self._materialize().write_parquet(str(path), compression=compression)
+        self._materialize().write_parquet(
+            str(path),
+            compression=compression,
+            field_ids=field_ids,
+            row_group_size_bytes=row_group_size_bytes,
+            row_group_size=row_group_size,
+            overwrite=overwrite,
+            per_thread_output=per_thread_output,
+            use_tmp_file=use_tmp_file,
+            partition_by=partition_by,
+            write_partition_columns=write_partition_columns,
+            append=append,
+            filename_pattern=filename_pattern,
+            file_size_bytes=file_size_bytes,
+        )
 
-    def sink_csv(
-        self, path: str | Path, *, separator: str = ",", include_header: bool = True
+    def sink_csv(  # noqa: PLR0913
+        self,
+        path: str | Path,
+        *,
+        separator: str = ",",
+        include_header: bool = True,
+        na_rep: str | None = None,
+        quotechar: str | None = None,
+        escapechar: str | None = None,
+        date_format: str | None = None,
+        timestamp_format: str | None = None,
+        quoting: str | int | None = None,
+        encoding: str | None = None,
+        compression: CsvCompression | None = None,
+        overwrite: bool | None = None,
+        per_thread_output: bool | None = None,
+        use_tmp_file: bool | None = None,
+        partition_by: list[str] | None = None,
+        write_partition_columns: bool | None = None,
     ) -> None:
         """Write to CSV file."""
-        self._materialize().write_csv(str(path), sep=separator, header=include_header)
-
-    def sink_ndjson(self, path: str | Path) -> None:
-        """Write to newline-delimited JSON file."""
-        self.lazy().sink_ndjson(path)
+        self._materialize().write_csv(
+            str(path),
+            sep=separator,
+            header=include_header,
+            na_rep=na_rep,
+            quotechar=quotechar,
+            escapechar=escapechar,
+            date_format=date_format,
+            timestamp_format=timestamp_format,
+            quoting=quoting,
+            encoding=encoding,
+            compression=compression,
+            overwrite=overwrite,
+            per_thread_output=per_thread_output,
+            use_tmp_file=use_tmp_file,
+            partition_by=partition_by,
+            write_partition_columns=write_partition_columns,
+        )
 
     def reverse(self) -> Self:
         """Reverse the order of rows.
