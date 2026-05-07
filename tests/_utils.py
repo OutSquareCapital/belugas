@@ -6,13 +6,11 @@ import polars as pl
 from polars.testing import assert_frame_equal
 from pyochain import Iter, Seq
 from pyochain.traits import PyoIterable
-from rich.traceback import install
 
 import belouga as bl
 
 from ._data import sample_bl, sample_lf
 
-_ = install(show_locals=True)
 type PlFn = Callable[..., pl.Expr]
 type PqlFn = Callable[..., bl.Expr]
 

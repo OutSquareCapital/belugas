@@ -522,8 +522,6 @@ class Expr(Fns):
         limit: int | None = None,
     ) -> Self:
         def _get_strat() -> Result[Expr | Self, ValueError]:  # noqa: PLR0911
-            from ._funcs import coalesce
-
             match (Option(value), Option(strategy), Option(limit)):
                 case (Some(_), Some(_), _):
                     msg = "cannot specify both `value` and `strategy`"
@@ -542,7 +540,7 @@ class Expr(Fns):
                             exprs: Iter[Expr] = iterator.map(self.shift)
                         case _:
                             exprs = iterator.map(lambda offset: self.shift(-offset))
-                    return Ok(exprs.insert(self).reduce(coalesce))
+                    return Ok(exprs.insert(self).reduce(self.coalesce))
                 case (_, _, Some(_)):
                     msg = "can only specify `limit` when strategy is set to 'backward' or 'forward'"
                     return Err(ValueError(msg))
