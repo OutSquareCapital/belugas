@@ -33,7 +33,10 @@ class ArrayBuilder:
         return self._row
 
     def count_cell(self) -> Self:
-        return self._add(str(self._count_with()))
+        return self._add(str(self._count_compared()))
+
+    def belouga_count_cell(self) -> Self:
+        return self._add(str(self._count_belouga()))
 
     def status_cell(self, status: Status) -> Self:
         return self._add(str(self._count_for_status(status)))
@@ -51,7 +54,7 @@ class ArrayBuilder:
         return self
 
     def _coverage_percent(self) -> float:
-        total = self._count_with()
+        total = self._count_reference()
         matched = self._count_for_status(Status.MATCH)
         match total:
             case 0:
@@ -74,11 +77,31 @@ class ArrayBuilder:
             .length()
         )
 
-    def _count_with(self) -> int:
+    def _count_reference(self) -> int:
         return (
             self.results
             .iter()
             .filter(lambda result: result.infos.has_reference())
+            .length()
+        )
+
+    def _count_compared(self) -> int:
+        return (
+            self.results
+            .iter()
+            .filter(
+                lambda result: (
+                    result.infos.has_reference() and result.infos.belouga_info.is_some()
+                )
+            )
+            .length()
+        )
+
+    def _count_belouga(self) -> int:
+        return (
+            self.results
+            .iter()
+            .filter(lambda result: result.infos.belouga_info.is_some())
             .length()
         )
 

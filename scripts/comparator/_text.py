@@ -41,6 +41,7 @@ class ComparisonReport:
             ArrayBuilder(self.results)
             .with_name(self.name)
             .coverage_cell()
+            .belouga_count_cell()
             .count_cell()
             .status_cell(Status.MATCH)
             .status_cell(Status.MISSING)
@@ -160,11 +161,12 @@ def _summary_header() -> Seq[str]:
     return Seq((
         "Class",
         "Coverage",
-        "Implemented",
+        "Belouga Total",
+        "Compared",
         "Matched",
         "Missing",
         "Mismatched",
-        "Extra",
+        "Belouga only",
     ))
 
 

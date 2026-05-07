@@ -1,27 +1,27 @@
 
 # belouga vs Polars API Comparison Report
 
-This report shows the API coverage of belouga compared to other libraries.
+This report shows the API coverage of belouga compared to polars.
 
 ## Summary
 
 Each summary cell is relative to Polars.
 
-| Class               | Coverage                                                                                     | Implemented | Matched | Missing | Mismatched | Extra |
-| ------------------- | -------------------------------------------------------------------------------------------- | ----------- | ------- | ------- | ---------- | ----- |
-| LazyFrame           | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (38.8%) | 80          | 31      | 25      | 24         | 7     |
-| Expr                | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (39.3%) | 214         | 84      | 86      | 44         | 203   |
-| LazyGroupBy         | <span style="color: #27ae60;">██████</span><span style="color: #bdc3c7;">░░░░</span> (62.5%) | 16          | 10      | 4       | 2          | 0     |
-| ExprStrNameSpace    | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (31.2%) | 48          | 15      | 10      | 23         | 84    |
-| ExprListNameSpace   | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (41.9%) | 43          | 18      | 15      | 10         | 63    |
-| ExprStructNameSpace | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (40.0%) | 5           | 2       | 2       | 1          | 13    |
-| ExprNameNameSpace   | <span style="color: #27ae60;">██████</span><span style="color: #bdc3c7;">░░░░</span> (60.0%) | 10          | 6       | 3       | 1          | 1     |
-| ExprArrNameSpace    | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (45.2%) | 31          | 14      | 5       | 12         | 44    |
-| ExprDtNameSpace     | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (46.7%) | 45          | 21      | 18      | 6          | 52    |
-| ModuleFunctions     | <span style="color: #e74c3c;">█</span><span style="color: #bdc3c7;">░░░░░░░░░</span> (16.0%) | 169         | 27      | 106     | 36         | 14    |
-| selectors           | <span style="color: #f39c12;">█████</span><span style="color: #bdc3c7;">░░░░░</span> (54.3%) | 35          | 19      | 12      | 4          | 0     |
-| DataType            | <span style="color: #f39c12;">█████</span><span style="color: #bdc3c7;">░░░░░</span> (53.3%) | 15          | 8       | 6       | 1          | 2     |
-| Schema              | <span style="color: #e74c3c;"></span><span style="color: #bdc3c7;">░░░░░░░░░░</span> (0.0%)  | 17          | 0       | 17      | 0          | 0     |
+| Class               | Coverage                                                                                     | Belouga Total | Compared | Matched | Missing | Mismatched | Belouga only |
+| ------------------- | -------------------------------------------------------------------------------------------- | ------------- | -------- | ------- | ------- | ---------- | ------------ |
+| LazyFrame           | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (38.8%) | 62            | 55       | 31      | 25      | 24         | 7            |
+| Expr                | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (39.3%) | 331           | 128      | 84      | 86      | 44         | 203          |
+| LazyGroupBy         | <span style="color: #27ae60;">██████</span><span style="color: #bdc3c7;">░░░░</span> (62.5%) | 12            | 12       | 10      | 4       | 2          | 0            |
+| ExprStrNameSpace    | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (31.2%) | 122           | 38       | 15      | 10      | 23         | 84           |
+| ExprListNameSpace   | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (41.9%) | 91            | 28       | 18      | 15      | 10         | 63           |
+| ExprStructNameSpace | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (40.0%) | 16            | 3        | 2       | 2       | 1          | 13           |
+| ExprNameNameSpace   | <span style="color: #27ae60;">██████</span><span style="color: #bdc3c7;">░░░░</span> (60.0%) | 8             | 7        | 6       | 3       | 1          | 1            |
+| ExprArrNameSpace    | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (45.2%) | 70            | 26       | 14      | 5       | 12         | 44           |
+| ExprDtNameSpace     | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (46.7%) | 79            | 27       | 21      | 18      | 6          | 52           |
+| ModuleFunctions     | <span style="color: #e74c3c;">█</span><span style="color: #bdc3c7;">░░░░░░░░░</span> (16.0%) | 77            | 63       | 27      | 106     | 36         | 14           |
+| selectors           | <span style="color: #f39c12;">█████</span><span style="color: #bdc3c7;">░░░░░</span> (54.3%) | 23            | 23       | 19      | 12      | 4          | 0            |
+| DataType            | <span style="color: #f39c12;">█████</span><span style="color: #bdc3c7;">░░░░░</span> (53.3%) | 11            | 9        | 8       | 6       | 1          | 2            |
+| Schema              | <span style="color: #e74c3c;"></span><span style="color: #bdc3c7;">░░░░░░░░░░</span> (0.0%)  | 0             | 0        | 0       | 17      | 0          | 0            |
 
 ## LazyFrame
 
