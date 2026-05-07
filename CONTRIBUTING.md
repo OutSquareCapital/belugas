@@ -33,11 +33,13 @@ uv run ruff check . --fix --unsafe-fixes; uv run ruff format .; uv run basedpyri
 Note that the repo rules are VERY pedantic. We use all rules for basedpyright and Ruff (including experimental ones), only desactivating a few ones.
 
 Sometimes ignoring rules can be necessary for valid reasons.
+
 In that case, motivate the decision in a review comment, and prefer `basedpyright: ignore <reason>` over `type: ignore <reason>`, as the former can be checked for staleness.
 
 ## Code style
 
 The code style can be surprizing for pure python users, as ALL iterations are handled with [`pyochain`](https://outsquarecapital.github.io/pyochain/).
+
 If you are not familiar with it, take some time to get used to the style and patterns, by consulting the pyochain documentation linked above, or read this excellent series of articles from [jetbrains](https://blog.jetbrains.com/rust/2024/03/12/rust-iterators-beyond-the-basics-part-i-building-blocks/).
 
 The same applies for nullable values and error handling, which are also handled with pyochain patterns, with the [`Option`](https://doc.rust-lang.org/rust-by-example/std/option.html) and [`Result`](https://doc.rust-lang.org/rust-by-example/std/result.html) constructs.
@@ -48,6 +50,7 @@ So we expect in entry points values such as `int | None`, but we handle them int
 Note that those must ALWAYS use `Option[T]` instead of `T | None`.
 
 As for errors, we always unwrap them before returning to the end user.
+
 However we carry the `Result` type internally for as long as necessary, because it allows us to handle errors in a more robust way, without losing context, and without having to litter the code with try/except blocks, with implicit failure paths.
 
 ## Architecture
@@ -66,9 +69,12 @@ Module-level helpers such as `col`, `lit`, `when`, aggregations, and horizontal 
 
 ### Core query pipeline
 
-`src/belugas/_core.py` contains the shared wrappers and coercion helpers used everywhere: `CoreHandler`, `ExprHandler`, `NameSpaceHandler`, `into_expr`, `into_expr_list`, `anon`, `anon_agg`, and `func`. This is the boundary where Python values are normalized into `sqlglot` expressions and where the fluent API keeps a consistent internal shape.
+`src/belugas/_core.py` contains the shared wrappers and coercion helpers used everywhere: `CoreHandler`, `ExprHandler`, `NameSpaceHandler`, `into_expr`, `into_expr_list`, `anon`, `anon_agg`, and `func`.
+
+This is the boundary where Python values are normalized into `sqlglot` expressions and where the fluent API keeps a consistent internal shape.
 
 `LazyFrame` is the relational builder.
+
 It wraps a `sqlglot` selectable, tracks sources and schema, and implements the main query operations such as `select`, `with_columns`, `filter`, `group_by`, `join`, `pivot`, `sort`, `collect`, and `lazy`.
 
 Grouped operations are split into `src/belugas/_groupby.py`, and join normalization lives in `src/belugas/_joins.py`.
@@ -83,13 +89,24 @@ Namespaces such as `.str`, `.list`, `.struct`, `.dt`, `.arr`, `.json`, `.re`, `.
 
 ### Execution boundary and supporting modules
 
-`src/belugas/_scans.py` contains `ScanSource`, the bridge between query ASTs and executable DuckDB relations. It normalizes supported inputs such as DuckDB relations, Python mappings and sequences, NumPy arrays, pandas and Polars objects, SQL queries, tables, and table functions, then materializes queries through `ScanSource.from_query(...)`.
+`src/belugas/_scans.py` contains `ScanSource`, the bridge between query ASTs and executable DuckDB relations.
 
-The rest of the handwritten support code is organized by concern: `src/belugas/_when.py` for conditional builders, `src/belugas/_window.py` for window logic, `src/belugas/_parser.py` for SQL parsing and query inspection, `src/belugas/_sqlglot_patch.py` for DuckDB-specific `sqlglot` extensions, `src/belugas/selectors.py` for selectors, `src/belugas/datatypes.py` for public datatypes, and `src/belugas/utils.py` plus `src/belugas/typing.py` for internal support types and generated SQL-display assets.
+It normalizes supported inputs such as DuckDB relations, Python mappings and sequences, NumPy arrays, pandas and Polars objects, SQL queries, tables, and table functions, then materializes queries through `ScanSource.from_query(...)`.
+
+The rest of the handwritten support code is organized by concern:
+
+- `src/belugas/_when.py` for conditional builders
+- `src/belugas/_window.py` for window logic
+- `src/belugas/_parser.py` for SQL parsing and query inspection
+- `src/belugas/_sqlglot_patch.py` for DuckDB-specific `sqlglot` extensions
+- `src/belugas/selectors.py` for selectors
+- `src/belugas/datatypes.py` for public datatypes
+- `src/belugas/utils.py` plus `src/belugas/typing.py` for internal support types and generated SQL-display assets.
 
 ### Generated files
 
 `src/belugas/_fns.py` and `src/belugas/meta.py` (and a few lines from `src/belugas/typing.py`) are generated outputs.
+
 If one of them needs to change, update the generator logic in `scripts/` and regenerate instead of editing the generated file by hand.
 
 ## Scripts
@@ -108,5 +125,10 @@ More infos with the following command:
 uv run -m scripts --help
 ```
 
-The main generated outputs are [DuckDB function wrappers and namespace mixins](src/belugas/_fns.py), [DuckDB meta table-function helpers](src/belugas/meta.py), and [the SQL display theme literal](src/belugas/typing.py).
+The main generated outputs are:
+
+- [DuckDB function wrappers and namespace mixins](src/belugas/_fns.py)
+- [DuckDB meta table-function helpers](src/belugas/meta.py)
+- [The SQL display theme literal](src/belugas/typing.py)
+
 If you never generated the function wrappers before, run `fns-to-parquet` once to build the cached metadata, then `gen-fns`.
