@@ -55,6 +55,20 @@ _build_hex = _bind_dialect(parser.build_hex)
 
 
 def _patched_from_global() -> FuncRegistery:
+    r"""Those functions need to be patched because they expect a `dialect` argument that is not passed.
+
+    ```shell
+    FAILED tests/test_exprs.py::test_uint_only_simple - TypeError: build_logarithm() missing required argument 'dialect' (pos 2)
+    FAILED tests/test_str_namespace.py::test_to_titlecase - TypeError: __call__() missing required argument 'dialect' (pos 2)
+    FAILED tests/test_str_namespace.py::test_zfill[4] - TypeError: __call__() missing required argument 'dialect' (pos 2)
+    FAILED tests/test_str_namespace.py::test_zfill[5] - TypeError: __call__() missing required argument 'dialect' (pos 2)
+    FAILED tests/test_str_namespace.py::test_zfill[10] - TypeError: __call__() missing required argument 'dialect' (pos 2)
+    FAILED tests/test_str_namespace.py::test_encode[hex] - TypeError: build_hex() missing required argument 'dialect' (pos 2)
+    ```
+
+    Returns:
+        FuncRegistery: The patched functions.
+    """
     return {
         "HEX": _build_hex,
         "TO_HEX": _build_hex,
@@ -70,6 +84,22 @@ def _patched_from_global() -> FuncRegistery:
 
 
 def _patched_from_duckdb() -> FuncRegistery:
+    r"""Those functions need to be patched because they expect a `dialect` argument that is not passed.
+
+    ```shell
+    FAILED tests/test_str_namespace.py::test_to_titlecase - TypeError: build_regexp_extract.<locals>._builder() missing 1 required positional argument: 'dialect'
+    FAILED tests/test_str_namespace.py::test_extract_all - TypeError: build_regexp_extract.<locals>._builder() missing 1 required positional argument: 'dialect'
+    FAILED tests/test_str_namespace.py::test_extract - TypeError: build_regexp_extract.<locals>._builder() missing 1 required positional argument: 'dialect'
+    FAILED tests/test_str_namespace.py::test_find - TypeError: build_regexp_extract.<locals>._builder() missing 1 required positional argument: 'dialect'
+    FAILED tests/test_str_namespace.py::test_json_path_match[json_path0] - TypeError: __call__() missing required argument 'dialect' (pos 2)
+    FAILED tests/test_str_namespace.py::test_json_path_match[json_path1] - TypeError: __call__() missing required argument 'dialect' (pos 2)
+    FAILED tests/test_str_namespace.py::test_count_matches[False-a] - TypeError: build_regexp_extract.<locals>._builder() missing 1 required positional argument: 'dialect'
+    FAILED tests/test_str_namespace.py::test_count_matches[False-\\d+] - TypeError: build_regexp_extract.<locals>._builder() missing 1 required positional argument: 'dialect'
+    ```
+
+    Returns:
+        FuncRegistery: The patched functions.
+    """
     return {
         "JSON_EXTRACT_PATH": _extract_json_with_path(exp.JSONExtract),
         "JSON_EXTRACT_STRING": _extract_json_with_path(exp.JSONExtractScalar),
