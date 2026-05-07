@@ -5,9 +5,9 @@ import pytest
 from pyochain import Dict, ResultUnwrapError
 from sqlglot import exp
 
-import belouga as bl
-import belouga._meta as m  # noqa: PLC2701
-import belouga.typing as t
+import belugas as bl
+import belugas._meta as m  # noqa: PLC2701
+import belugas.typing as t
 
 from ._utils import assert_lf_eq
 

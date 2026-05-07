@@ -10,7 +10,7 @@ from enum import StrEnum, auto
 import duckdb
 from pyochain import Dict, Iter, Option, Seq, Set, Vec
 
-import belouga as bl
+import belugas as bl
 
 
 class KwordEnum(StrEnum):

@@ -7,7 +7,7 @@ from polars.testing import assert_frame_equal
 from pyochain import Iter, Seq
 from pyochain.traits import PyoIterable
 
-import belouga as bl
+import belugas as bl
 
 from ._data import sample_bl, sample_lf
 

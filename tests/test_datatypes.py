@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import duckdb
 import pytest
 
-import belouga as bl
+import belugas as bl
 
 if TYPE_CHECKING:
     from pyochain import Dict

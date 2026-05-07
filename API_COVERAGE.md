@@ -1,7 +1,7 @@
 
-# belouga vs Polars API Comparison Report
+# belugas vs Polars API Comparison Report
 
-This report shows the API coverage of belouga compared to polars.
+This report shows the API coverage of belugas compared to polars.
 
 ## Summary
 
@@ -82,78 +82,78 @@ Each summary cell is relative to Polars.
 
 - `cast`
   - **Polars**: (`dtypes: Mapping[ColumnNameOrSelector | PolarsDataType, PolarsDataType | PythonDataType] | PolarsDataType | pl.DataTypeExpr | Schema`, `strict: bool`) -> LazyFrame
-  - **belouga**: (`dtypes: Mapping[str, dt.DataType] | dt.DataType`) -> Self
+  - **belugas**: (`dtypes: Mapping[str, dt.DataType] | dt.DataType`) -> Self
 - `collect`
   - **Polars**: (`type_coercion: bool`, `predicate_pushdown: bool`, `projection_pushdown: bool`, `simplify_expression: bool`, `slice_pushdown: bool`, `comm_subplan_elim: bool`, `comm_subexpr_elim: bool`, `cluster_with_columns: bool`, `collapse_joins: bool`, `no_optimization: bool`, `engine: EngineType`, `background: bool`, `optimizations: QueryOptFlags`, `**_kwargs: Any`) -> DataFrame | InProcessQuery
-  - **belouga**: () -> DataFrame
+  - **belugas**: () -> DataFrame
 - `describe`
   - **Polars**: (`percentiles: Sequence[float] | float | None`, `interpolation: QuantileMethod`) -> DataFrame
-  - **belouga**: () -> Self
+  - **belugas**: () -> Self
 - `drop`
   - **Polars**: (*columns: ColumnNameOrSelector | Iterable[ColumnNameOrSelector], `strict: bool`) -> LazyFrame
-  - **belouga**: (columns: TryIter[IntoExprColumn], *more_columns: IntoExprColumn) -> Self
+  - **belugas**: (columns: TryIter[IntoExprColumn], *more_columns: IntoExprColumn) -> Self
 - `drop_nans`
   - **Polars**: (`subset: ColumnNameOrSelector | Collection[ColumnNameOrSelector] | None`) -> LazyFrame
-  - **belouga**: (`subset: TryIter[str]`) -> Self
+  - **belugas**: (`subset: TryIter[str]`) -> Self
 - `drop_nulls`
   - **Polars**: (`subset: ColumnNameOrSelector | Collection[ColumnNameOrSelector] | None`) -> LazyFrame
-  - **belouga**: (`subset: TryIter[str]`) -> Self
+  - **belugas**: (`subset: TryIter[str]`) -> Self
 - `explain`
   - **Polars**: (`format: ExplainFormat`, `optimized: bool`, `type_coercion: bool`, `predicate_pushdown: bool`, `projection_pushdown: bool`, `simplify_expression: bool`, `slice_pushdown: bool`, `comm_subplan_elim: bool`, `comm_subexpr_elim: bool`, `cluster_with_columns: bool`, `collapse_joins: bool`, `streaming: bool`, `engine: EngineType`, `tree_format: bool | None`, `optimizations: QueryOptFlags`) -> str
-  - **belouga**: (`kind: ExplainType | ExplainTypeLiteral`) -> str
+  - **belugas**: (`kind: ExplainType | ExplainTypeLiteral`) -> str
 - `explode`
   - **Polars**: (columns: ColumnNameOrSelector | Iterable[ColumnNameOrSelector], *more_columns: ColumnNameOrSelector, `empty_as_null: bool`, `keep_nulls: bool`) -> LazyFrame
-  - **belouga**: (columns: TryIter[IntoExprColumn], *more_columns: IntoExprColumn) -> Self
+  - **belugas**: (columns: TryIter[IntoExprColumn], *more_columns: IntoExprColumn) -> Self
 - `fill_null`
   - **Polars**: (`value: Any | Expr | None`, strategy: FillNullStrategy | None, limit: int | None, `matches_supertype: bool`) -> LazyFrame
-  - **belouga**: (value: IntoExpr, strategy: FillNullStrategy | None, limit: int | None) -> Self
+  - **belugas**: (value: IntoExpr, strategy: FillNullStrategy | None, limit: int | None) -> Self
 - `filter`
   - **Polars**: (`*predicates: IntoExprColumn | Iterable[IntoExprColumn] | bool | list[bool]`, **constraints: Any) -> LazyFrame
-  - **belouga**: (predicates: TryIter[IntoExprColumn], *more_predicates: IntoExprColumn, **constraints: IntoExpr) -> Self
+  - **belugas**: (predicates: TryIter[IntoExprColumn], *more_predicates: IntoExprColumn, **constraints: IntoExpr) -> Self
 - `group_by`
   - **Polars**: (`*by: IntoExpr | Iterable[IntoExpr]`, `maintain_order: bool`, `**named_by: IntoExpr`) -> LazyGroupBy
-  - **belouga**: (`keys: TryIter[IntoExpr]`, *more_keys: IntoExpr, `drop_null_keys: bool`, `strategy: GroupByClause | None`) -> LazyGroupBy
+  - **belugas**: (`keys: TryIter[IntoExpr]`, *more_keys: IntoExpr, `drop_null_keys: bool`, `strategy: GroupByClause | None`) -> LazyGroupBy
 - `join`
   - **Polars**: (other: LazyFrame, `on: str | Expr | Sequence[str | Expr] | None`, how: JoinStrategy, `left_on: str | Expr | Sequence[str | Expr] | None`, `right_on: str | Expr | Sequence[str | Expr] | None`, suffix: str, `validate: JoinValidation`, `nulls_equal: bool`, `coalesce: bool | None`, `maintain_order: MaintainOrderJoin | None`, allow_parallel: bool, force_parallel: bool) -> LazyFrame
-  - **belouga**: (other: Self, `on: TryIter[str]`, how: JoinStrategy, `left_on: TryIter[str]`, `right_on: TryIter[str]`, suffix: str) -> Self
+  - **belugas**: (other: Self, `on: TryIter[str]`, how: JoinStrategy, `left_on: TryIter[str]`, `right_on: TryIter[str]`, suffix: str) -> Self
 - `join_asof`
   - **Polars**: (other: LazyFrame, `left_on: str | None | Expr`, `right_on: str | None | Expr`, `on: str | None | Expr`, `by_left: str | Sequence[str] | None`, `by_right: str | Sequence[str] | None`, `by: str | Sequence[str] | None`, strategy: AsofJoinStrategy, suffix: str, `tolerance: str | int | float | timedelta | None`, allow_parallel: bool, force_parallel: bool, `coalesce: bool`, `allow_exact_matches: bool`, `check_sortedness: bool`) -> LazyFrame
-  - **belouga**: (other: Self, left_on: str | None, right_on: str | None, on: str | None, `by_left: TryIter[str]`, `by_right: TryIter[str]`, `by: TryIter[str]`, strategy: AsofJoinStrategy, suffix: str) -> Self
+  - **belugas**: (other: Self, left_on: str | None, right_on: str | None, on: str | None, `by_left: TryIter[str]`, `by_right: TryIter[str]`, `by: TryIter[str]`, strategy: AsofJoinStrategy, suffix: str) -> Self
 - `pivot`
   - **Polars**: (`on: ColumnNameOrSelector | Sequence[ColumnNameOrSelector]`, `on_columns: Sequence[Any] | pl.Series | pl.DataFrame`, `index: ColumnNameOrSelector | Sequence[ColumnNameOrSelector] | None`, `values: ColumnNameOrSelector | Sequence[ColumnNameOrSelector] | None`, `aggregate_function: PivotAgg | Expr | None`, maintain_order: bool, separator: str, `column_naming: Literal['auto', 'combine']`) -> LazyFrame
-  - **belouga**: (`on: TryIter[str]`, on_columns: Sequence[PythonLiteral], `index: TryIter[str]`, `values: TryIter[str]`, aggregate_function: PivotAgg, maintain_order: bool, separator: str) -> Self
+  - **belugas**: (`on: TryIter[str]`, on_columns: Sequence[PythonLiteral], `index: TryIter[str]`, `values: TryIter[str]`, aggregate_function: PivotAgg, maintain_order: bool, separator: str) -> Self
 - `quantile`
   - **Polars**: (`quantile: float | Expr`, interpolation: QuantileMethod) -> LazyFrame
-  - **belouga**: (quantile: float) -> Self
+  - **belugas**: (quantile: float) -> Self
 - `rename`
   - **Polars**: (`mapping: Mapping[str, str] | Callable[[str], str]`, `strict: bool`) -> LazyFrame
-  - **belouga**: (mapping: Mapping[str, str]) -> Self
+  - **belugas**: (mapping: Mapping[str, str]) -> Self
 - `shift`
   - **Polars**: (`n: int | IntoExprColumn`, `fill_value: IntoExpr | None`) -> LazyFrame
-  - **belouga**: (n: int, fill_value: IntoExpr) -> Self
+  - **belugas**: (n: int, fill_value: IntoExpr) -> Self
 - `show`
   - **Polars**: (`limit: int | None`, `ascii_tables: bool | None`, `decimal_separator: str | None`, `thousands_separator: str | bool | None`, `float_precision: int | None`, `fmt_float: FloatFmt | None`, `fmt_str_lengths: int | None`, `fmt_table_cell_list_len: int | None`, `tbl_cell_alignment: Alignment | None`, `tbl_cell_numeric_alignment: Alignment | None`, `tbl_cols: int | None`, `tbl_column_data_type_inline: bool | None`, `tbl_dataframe_shape_below: bool | None`, `tbl_formatting: TableFormatNames | None`, `tbl_hide_column_data_types: bool | None`, `tbl_hide_column_names: bool | None`, `tbl_hide_dtype_separator: bool | None`, `tbl_hide_dataframe_shape: bool | None`, `tbl_width_chars: int | None`, `trim_decimal_zeros: bool | None`) -> None
-  - **belouga**: (`max_width: SupportsInt | None`, `max_rows: SupportsInt | None`, `max_col_width: SupportsInt | None`, `null_value: str | None`, `render_mode: RenderModeLiteral | None`) -> None
+  - **belugas**: (`max_width: SupportsInt | None`, `max_rows: SupportsInt | None`, `max_col_width: SupportsInt | None`, `null_value: str | None`, `render_mode: RenderModeLiteral | None`) -> None
 - `sink_csv`
   - **Polars**: (`path: str | Path | IO[bytes] | IO[str] | PartitionBy`, `include_bom: bool`, `compression: Literal['uncompressed', 'gzip', 'zstd']`, `compression_level: int | None`, `check_extension: bool`, include_header: bool, separator: str, `line_terminator: str`, `quote_char: str`, `batch_size: int`, `datetime_format: str | None`, date_format: str | None, `time_format: str | None`, `float_scientific: bool | None`, `float_precision: int | None`, `decimal_comma: bool`, `null_value: str | None`, `quote_style: CsvQuoteStyle | None`, `maintain_order: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `sync_on_close: SyncOnCloseMethod | None`, `mkdir: bool`, `lazy: bool`, `engine: EngineType`, `optimizations: QueryOptFlags`) -> LazyFrame | None
-  - **belouga**: (path: str | Path, separator: str, include_header: bool, `na_rep: str | None`, `quotechar: str | None`, `escapechar: str | None`, date_format: str | None, `timestamp_format: str | None`, `quoting: str | int | None`, `encoding: str | None`, `compression: CsvCompression | None`, `overwrite: bool | None`, `per_thread_output: bool | None`, `use_tmp_file: bool | None`, `partition_by: list[str] | None`, `write_partition_columns: bool | None`) -> None
+  - **belugas**: (path: str | Path, separator: str, include_header: bool, `na_rep: str | None`, `quotechar: str | None`, `escapechar: str | None`, date_format: str | None, `timestamp_format: str | None`, `quoting: str | int | None`, `encoding: str | None`, `compression: CsvCompression | None`, `overwrite: bool | None`, `per_thread_output: bool | None`, `use_tmp_file: bool | None`, `partition_by: list[str] | None`, `write_partition_columns: bool | None`) -> None
 - `sink_parquet`
   - **Polars**: (`path: str | Path | IO[bytes] | PartitionBy`, `compression: str`, `compression_level: int | None`, `statistics: bool | str | dict[str, bool]`, row_group_size: int | None, `data_page_size: int | None`, `maintain_order: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `sync_on_close: SyncOnCloseMethod | None`, `metadata: ParquetMetadata | None`, `arrow_schema: ArrowSchemaExportable | None`, `mkdir: bool`, `lazy: bool`, `engine: EngineType`, `optimizations: QueryOptFlags`, `_sinked_paths_callback: SinkedPathsCallback | None`) -> LazyFrame | None
-  - **belouga**: (path: str | Path, `compression: ParquetCompression | None`, `field_ids: ParquetFieldsOptions | None`, `row_group_size_bytes: str | int | None`, row_group_size: int | None, `overwrite: bool | None`, `per_thread_output: bool | None`, `use_tmp_file: bool | None`, `partition_by: list[str] | None`, `write_partition_columns: bool | None`, `append: bool | None`, `filename_pattern: str | None`, `file_size_bytes: str | int | None`) -> None
+  - **belugas**: (path: str | Path, `compression: ParquetCompression | None`, `field_ids: ParquetFieldsOptions | None`, `row_group_size_bytes: str | int | None`, row_group_size: int | None, `overwrite: bool | None`, `per_thread_output: bool | None`, `use_tmp_file: bool | None`, `partition_by: list[str] | None`, `write_partition_columns: bool | None`, `append: bool | None`, `filename_pattern: str | None`, `file_size_bytes: str | int | None`) -> None
 - `unique`
   - **Polars**: (`subset: IntoExpr | Collection[IntoExpr] | None`, keep: UniqueKeepStrategy, `maintain_order: bool`) -> LazyFrame
-  - **belouga**: (`subset: TryIter[str] | None`, keep: UniqueKeepStrategy, `order_by: TrySeq[str]`) -> Self
+  - **belugas**: (`subset: TryIter[str] | None`, keep: UniqueKeepStrategy, `order_by: TrySeq[str]`) -> Self
 - `unnest`
   - **Polars**: (`columns: ColumnNameOrSelector | Collection[ColumnNameOrSelector] | None`, *more_columns: ColumnNameOrSelector, `separator: str | None`) -> LazyFrame
-  - **belouga**: (`columns: TryIter[IntoExprColumn]`, *more_columns: IntoExprColumn) -> Self
+  - **belugas**: (`columns: TryIter[IntoExprColumn]`, *more_columns: IntoExprColumn) -> Self
 - `unpivot`
   - **Polars**: (`on: ColumnNameOrSelector | Sequence[ColumnNameOrSelector] | None`, `index: ColumnNameOrSelector | Sequence[ColumnNameOrSelector] | None`, `variable_name: str | None`, `value_name: str | None`, `streamable: bool`) -> LazyFrame
-  - **belouga**: (`on: TryIter[str]`, `index: TryIter[str]`, variable_name: str, value_name: str, `order_by: TryIter[str]`) -> Self
+  - **belugas**: (`on: TryIter[str]`, `index: TryIter[str]`, variable_name: str, value_name: str, `order_by: TryIter[str]`) -> Self
 - `with_row_index`
   - **Polars**: (name: str, `offset: int`) -> LazyFrame
-  - **belouga**: (name: str, `order_by: TryIter[str]`) -> Self
+  - **belugas**: (name: str, `order_by: TryIter[str]`) -> Self
 
-### [+] Extra Methods (belouga-only) (7)
+### [+] Extra Methods (belugas-only) (7)
 
 - `fetch_all`
 - `group_by_all`
@@ -344,138 +344,138 @@ Each summary cell is relative to Polars.
 
 - `alias`
   - **Polars**: (`name: str_`) -> Expr
-  - **belouga**: (`name: str`) -> Self
+  - **belugas**: (`name: str`) -> Self
 - `all`
   - **Polars**: (`ignore_nulls: bool`) -> Expr
-  - **belouga**: () -> Self
+  - **belugas**: () -> Self
 - `and_`
   - **Polars**: (`*others: Any`) -> Expr
-  - **belouga**: (`other: IntoExpr`) -> Self
+  - **belugas**: (`other: IntoExpr`) -> Self
 - `any`
   - **Polars**: (`ignore_nulls: bool`) -> Expr
-  - **belouga**: () -> Self
+  - **belugas**: () -> Self
 - `arg_max`
   - **Polars**: () -> Expr
-  - **belouga**: (`val: IntoExpr`, `col2: IntoExprColumn | int | None`) -> Self
+  - **belugas**: (`val: IntoExpr`, `col2: IntoExprColumn | int | None`) -> Self
 - `arg_min`
   - **Polars**: () -> Expr
-  - **belouga**: (`val: IntoExpr`, `col2: IntoExprColumn | int | None`) -> Self
+  - **belugas**: (`val: IntoExpr`, `col2: IntoExprColumn | int | None`) -> Self
 - `cast`
   - **Polars**: (`dtype: DataTypeExpr | type[Any]`, `strict: bool`, `wrap_numerical: bool`) -> Expr
-  - **belouga**: (`dtype: IntoDataType`) -> Self
+  - **belugas**: (`dtype: IntoDataType`) -> Self
 - `clip`
   - **Polars**: (`lower_bound: NumericLiteral | TemporalLiteral | IntoExprColumn | None`, `upper_bound: NumericLiteral | TemporalLiteral | IntoExprColumn | None`) -> Expr
-  - **belouga**: (`lower_bound: IntoExpr`, `upper_bound: IntoExpr`) -> Self
+  - **belugas**: (`lower_bound: IntoExpr`, `upper_bound: IntoExpr`) -> Self
 - `diff`
   - **Polars**: (`n: int | IntoExpr`, `null_behavior: NullBehavior`) -> Expr
-  - **belouga**: () -> Self
+  - **belugas**: () -> Self
 - `dot`
   - **Polars**: (`other: Expr | str_`) -> Expr
-  - **belouga**: (`other: IntoExpr`) -> Self
+  - **belugas**: (`other: IntoExpr`) -> Self
 - `fill_nan`
   - **Polars**: (`value: int | float | Expr | None`) -> Expr
-  - **belouga**: (`value: float | IntoExprColumn | None`) -> Self
+  - **belugas**: (`value: float | IntoExprColumn | None`) -> Self
 - `fill_null`
   - **Polars**: (`value: Any | Expr | None`, strategy: FillNullStrategy | None, limit: int | None) -> Expr
-  - **belouga**: (value: IntoExpr, strategy: FillNullStrategy | None, limit: int | None) -> Self
+  - **belugas**: (value: IntoExpr, strategy: FillNullStrategy | None, limit: int | None) -> Self
 - `first`
   - **Polars**: (`ignore_nulls: bool`) -> Expr
-  - **belouga**: () -> Self
+  - **belugas**: () -> Self
 - `forward_fill`
   - **Polars**: (`limit: int | None`) -> Expr
-  - **belouga**: () -> Self
+  - **belugas**: () -> Self
 - `from_json`
   - **Polars**: (`value: str_`) -> Expr
-  - **belouga**: (`col1: IntoExprColumn`) -> Self
+  - **belugas**: (`col1: IntoExprColumn`) -> Self
 - `hash`
   - **Polars**: (seed: int, `seed_1: int | None`, `seed_2: int | None`, `seed_3: int | None`) -> Expr
-  - **belouga**: (seed: int) -> Self
+  - **belugas**: (seed: int) -> Self
 - `implode`
   - **Polars**: (`maintain_order: bool`) -> Expr
-  - **belouga**: () -> Self
+  - **belugas**: () -> Self
 - `is_in`
   - **Polars**: (`other: Expr | Collection[Any] | Series`, `nulls_equal: bool`) -> Expr
-  - **belouga**: (`args: TryIter[IntoExpr]`, *more_args: IntoExpr) -> Self
+  - **belugas**: (`args: TryIter[IntoExpr]`, *more_args: IntoExpr) -> Self
 - `last`
   - **Polars**: (`ignore_nulls: bool`) -> Expr
-  - **belouga**: () -> Self
+  - **belugas**: () -> Self
 - `log`
   - **Polars**: (`base: float | IntoExpr`) -> Expr
-  - **belouga**: (`x: IntoExprColumn | float | None`) -> Self
+  - **belugas**: (`x: IntoExprColumn | float | None`) -> Self
 - `max`
   - **Polars**: () -> Expr
-  - **belouga**: (`col1: IntoExprColumn | int | None`) -> Self
+  - **belugas**: (`col1: IntoExprColumn | int | None`) -> Self
 - `max_by`
   - **Polars**: (by: IntoExpr) -> Expr
-  - **belouga**: (by: IntoExpr, `col2: IntoExprColumn | int | None`) -> Self
+  - **belugas**: (by: IntoExpr, `col2: IntoExprColumn | int | None`) -> Self
 - `min`
   - **Polars**: () -> Expr
-  - **belouga**: (`col1: IntoExprColumn | int | None`) -> Self
+  - **belugas**: (`col1: IntoExprColumn | int | None`) -> Self
 - `min_by`
   - **Polars**: (by: IntoExpr) -> Expr
-  - **belouga**: (by: IntoExpr, `col2: IntoExprColumn | int | None`) -> Self
+  - **belugas**: (by: IntoExpr, `col2: IntoExprColumn | int | None`) -> Self
 - `mod`
   - **Polars**: (`other: Any`) -> Expr
-  - **belouga**: (`col1: IntoExprColumn | Decimal | float`) -> Self
+  - **belugas**: (`col1: IntoExprColumn | Decimal | float`) -> Self
 - `mode`
   - **Polars**: (`maintain_order: bool`) -> Expr
-  - **belouga**: () -> Self
+  - **belugas**: () -> Self
 - `or_`
   - **Polars**: (`*others: Any`) -> Expr
-  - **belouga**: (`other: IntoExpr`) -> Self
+  - **belugas**: (`other: IntoExpr`) -> Self
 - `over`
   - **Polars**: (`partition_by: IntoExpr | Iterable[IntoExpr] | None`, *more_exprs: IntoExpr, `order_by: IntoExpr | Iterable[IntoExpr] | None`, descending: bool, nulls_last: bool, `mapping_strategy: WindowMappingStrategy`) -> Expr
-  - **belouga**: (partition_by: TryIter[IntoExpr], *more_exprs: IntoExpr, order_by: TryIter[IntoExpr], descending: bool, nulls_last: bool) -> Self
+  - **belugas**: (partition_by: TryIter[IntoExpr], *more_exprs: IntoExpr, order_by: TryIter[IntoExpr], descending: bool, nulls_last: bool) -> Self
 - `pct_change`
   - **Polars**: (`n: int | IntoExprColumn`) -> Expr
-  - **belouga**: (n: int) -> Self
+  - **belugas**: (n: int) -> Self
 - `pow`
   - **Polars**: (`exponent: IntoExprColumn | int | float`) -> Expr
-  - **belouga**: (`y: IntoExprColumn | float`) -> Self
+  - **belugas**: (`y: IntoExprColumn | float`) -> Self
 - `quantile`
   - **Polars**: (`quantile: float | list_[float] | Expr`, interpolation: QuantileMethod) -> Expr
-  - **belouga**: (quantile: float, interpolation: bool) -> Self
+  - **belugas**: (quantile: float, interpolation: bool) -> Self
 - `rank`
   - **Polars**: (method: RankMethod, descending: bool, `seed: int | None`) -> Expr
-  - **belouga**: (method: RankMethod, descending: bool) -> Self
+  - **belugas**: (method: RankMethod, descending: bool) -> Self
 - `repeat_by`
   - **Polars**: (`by: Series | Expr | str_ | int`) -> Expr
-  - **belouga**: (`by: IntoExprColumn | int`) -> Self
+  - **belugas**: (`by: IntoExprColumn | int`) -> Self
 - `replace`
   - **Polars**: (`old: IntoExpr | Sequence[Any] | Mapping[Any, Any]`, `new: IntoExpr | Sequence[Any] | NoDefault`, `default: IntoExpr | NoDefault`, `return_dtype: PolarsDataType | None`) -> Expr
-  - **belouga**: (old: IntoExpr, new: IntoExpr) -> Self
+  - **belugas**: (old: IntoExpr, new: IntoExpr) -> Self
 - `rolling_max`
   - **Polars**: (window_size: int, `weights: list_[float] | None`, min_samples: int | None, center: bool) -> Expr
-  - **belouga**: (window_size: int, min_samples: int | None, center: bool) -> Self
+  - **belugas**: (window_size: int, min_samples: int | None, center: bool) -> Self
 - `rolling_mean`
   - **Polars**: (window_size: int, `weights: list_[float] | None`, min_samples: int | None, center: bool) -> Expr
-  - **belouga**: (window_size: int, min_samples: int | None, center: bool) -> Self
+  - **belugas**: (window_size: int, min_samples: int | None, center: bool) -> Self
 - `rolling_median`
   - **Polars**: (window_size: int, `weights: list_[float] | None`, min_samples: int | None, center: bool) -> Expr
-  - **belouga**: (window_size: int, min_samples: int | None, center: bool) -> Self
+  - **belugas**: (window_size: int, min_samples: int | None, center: bool) -> Self
 - `rolling_min`
   - **Polars**: (window_size: int, `weights: list_[float] | None`, min_samples: int | None, center: bool) -> Expr
-  - **belouga**: (window_size: int, min_samples: int | None, center: bool) -> Self
+  - **belugas**: (window_size: int, min_samples: int | None, center: bool) -> Self
 - `rolling_std`
   - **Polars**: (window_size: int, `weights: list_[float] | None`, min_samples: int | None, center: bool, ddof: int) -> Expr
-  - **belouga**: (window_size: int, min_samples: int | None, center: bool, ddof: int) -> Self
+  - **belugas**: (window_size: int, min_samples: int | None, center: bool, ddof: int) -> Self
 - `rolling_sum`
   - **Polars**: (window_size: int, `weights: list_[float] | None`, min_samples: int | None, center: bool) -> Expr
-  - **belouga**: (window_size: int, min_samples: int | None, center: bool) -> Self
+  - **belugas**: (window_size: int, min_samples: int | None, center: bool) -> Self
 - `rolling_var`
   - **Polars**: (window_size: int, `weights: list_[float] | None`, min_samples: int | None, center: bool, ddof: int) -> Expr
-  - **belouga**: (window_size: int, min_samples: int | None, center: bool, ddof: int) -> Self
+  - **belugas**: (window_size: int, min_samples: int | None, center: bool, ddof: int) -> Self
 - `shift`
   - **Polars**: (`n: int | IntoExprColumn`, `fill_value: IntoExpr | None`) -> Expr
-  - **belouga**: (n: int) -> Self
+  - **belugas**: (n: int) -> Self
 - `unique`
   - **Polars**: (`maintain_order: bool`) -> Expr
-  - **belouga**: () -> Self
+  - **belugas**: () -> Self
 - `xor`
   - **Polars**: (`other: Any`) -> Expr
-  - **belouga**: (`right: IntoExprColumn | bytes | bytearray | memoryview | int`) -> Self
+  - **belugas**: (`right: IntoExprColumn | bytes | bytearray | memoryview | int`) -> Self
 
-### [+] Extra Methods (belouga-only) (203)
+### [+] Extra Methods (belugas-only) (203)
 
 - `acos`
 - `acosh`
@@ -698,10 +698,10 @@ Each summary cell is relative to Polars.
 
 - `first`
   - **Polars**: (`ignore_nulls: bool`) -> LazyFrame
-  - **belouga**: () -> LazyFrame
+  - **belugas**: () -> LazyFrame
 - `last`
   - **Polars**: (`ignore_nulls: bool`) -> LazyFrame
-  - **belouga**: () -> LazyFrame
+  - **belugas**: () -> LazyFrame
 
 ## ExprStrNameSpace
 
@@ -732,75 +732,75 @@ Each summary cell is relative to Polars.
 
 - `concat`
   - **Polars**: (`delimiter: str | None`, `ignore_nulls: bool`) -> Expr
-  - **belouga**: (`*args: IntoExpr`) -> Expr
+  - **belugas**: (`*args: IntoExpr`) -> Expr
 - `contains`
   - **Polars**: (`pattern: str | Expr`, `literal: bool`, `strict: bool`) -> Expr
-  - **belouga**: (`search_string: IntoExprColumn`) -> T
+  - **belugas**: (`search_string: IntoExprColumn`) -> T
 - `count_matches`
   - **Polars**: (`pattern: str | Expr`, literal: bool) -> Expr
-  - **belouga**: (`pattern: IntoExprColumn`, literal: bool) -> Expr
+  - **belugas**: (`pattern: IntoExprColumn`, literal: bool) -> Expr
 - `ends_with`
   - **Polars**: (`suffix: str | Expr`) -> Expr
-  - **belouga**: (`search_string: IntoExprColumn`) -> T
+  - **belugas**: (`search_string: IntoExprColumn`) -> T
 - `extract_all`
   - **Polars**: (`pattern: str | Expr`) -> Expr
-  - **belouga**: (`pattern: IntoExprColumn`) -> Expr
+  - **belugas**: (`pattern: IntoExprColumn`) -> Expr
 - `find`
   - **Polars**: (`pattern: str | Expr`, literal: bool, `strict: bool`) -> Expr
-  - **belouga**: (`pattern: IntoExprColumn`, literal: bool) -> Expr
+  - **belugas**: (`pattern: IntoExprColumn`, literal: bool) -> Expr
 - `head`
   - **Polars**: (`n: int | IntoExprColumn`) -> Expr
-  - **belouga**: (n: int) -> Expr
+  - **belugas**: (n: int) -> Expr
 - `normalize`
   - **Polars**: (`form: UnicodeForm`) -> Expr
-  - **belouga**: () -> Expr
+  - **belugas**: () -> Expr
 - `pad_end`
   - **Polars**: (`length: int | IntoExprColumn`, fill_char: str) -> Expr
-  - **belouga**: (length: int, `fill_char: IntoExprColumn`) -> Expr
+  - **belugas**: (length: int, `fill_char: IntoExprColumn`) -> Expr
 - `pad_start`
   - **Polars**: (`length: int | IntoExprColumn`, fill_char: str) -> Expr
-  - **belouga**: (length: int, `fill_char: IntoExprColumn`) -> Expr
+  - **belugas**: (length: int, `fill_char: IntoExprColumn`) -> Expr
 - `replace`
   - **Polars**: (`pattern: str | Expr`, `value: str | Expr`, `literal: bool`, `n: int`) -> Expr
-  - **belouga**: (`source: IntoExprColumn`, `target: IntoExprColumn`) -> T
+  - **belugas**: (`source: IntoExprColumn`, `target: IntoExprColumn`) -> T
 - `replace_all`
   - **Polars**: (`pattern: str | Expr`, `value: str | Expr`, literal: bool) -> Expr
-  - **belouga**: (`pattern: IntoExprColumn`, `value: IntoExprColumn`, literal: bool) -> Expr
+  - **belugas**: (`pattern: IntoExprColumn`, `value: IntoExprColumn`, literal: bool) -> Expr
 - `slice`
   - **Polars**: (`offset: int | IntoExprColumn`, `length: int | IntoExprColumn | None`) -> Expr
-  - **belouga**: (offset: int, length: int | None) -> Expr
+  - **belugas**: (offset: int, length: int | None) -> Expr
 - `split`
   - **Polars**: (`by: IntoExpr`, `inclusive: bool`, `literal: bool`, `strict: bool`) -> Expr
-  - **belouga**: (`separator: IntoExprColumn`) -> T
+  - **belugas**: (`separator: IntoExprColumn`) -> T
 - `starts_with`
   - **Polars**: (`prefix: str | Expr`) -> Expr
-  - **belouga**: (`search_string: IntoExprColumn`) -> T
+  - **belugas**: (`search_string: IntoExprColumn`) -> T
 - `strip_chars`
   - **Polars**: (`characters: IntoExpr`) -> Expr
-  - **belouga**: (`characters: IntoExprColumn | None`) -> Expr
+  - **belugas**: (`characters: IntoExprColumn | None`) -> Expr
 - `strip_chars_end`
   - **Polars**: (`characters: IntoExpr`) -> Expr
-  - **belouga**: (`characters: IntoExprColumn | None`) -> Expr
+  - **belugas**: (`characters: IntoExprColumn | None`) -> Expr
 - `strip_chars_start`
   - **Polars**: (`characters: IntoExpr`) -> Expr
-  - **belouga**: (`characters: IntoExprColumn | None`) -> Expr
+  - **belugas**: (`characters: IntoExprColumn | None`) -> Expr
 - `strptime`
   - **Polars**: (`dtype: PolarsTemporalType`, `format: str | None`, `strict: bool`, `exact: bool`, `cache: bool`, `ambiguous: Ambiguous | Expr`) -> Expr
-  - **belouga**: (`format_arg: IntoExprColumn | SeqLiteral[str]`) -> T
+  - **belugas**: (`format_arg: IntoExprColumn | SeqLiteral[str]`) -> T
 - `tail`
   - **Polars**: (`n: int | IntoExprColumn`) -> Expr
-  - **belouga**: (n: int) -> Expr
+  - **belugas**: (n: int) -> Expr
 - `to_date`
   - **Polars**: (format: str | None, `strict: bool`, `exact: bool`, `cache: bool`) -> Expr
-  - **belouga**: (`format: IntoExprColumn | None`) -> Expr
+  - **belugas**: (`format: IntoExprColumn | None`) -> Expr
 - `to_datetime`
   - **Polars**: (format: str | None, `time_unit: TimeUnit | None`, `time_zone: str | None`, `strict: bool`, `exact: bool`, `cache: bool`, `ambiguous: Ambiguous | Expr`) -> Expr
-  - **belouga**: (`format: IntoExprColumn | None`) -> Expr
+  - **belugas**: (`format: IntoExprColumn | None`) -> Expr
 - `to_time`
   - **Polars**: (format: str | None, `strict: bool`, `cache: bool`) -> Expr
-  - **belouga**: (`format: IntoExprColumn | None`) -> Expr
+  - **belugas**: (`format: IntoExprColumn | None`) -> Expr
 
-### [+] Extra Methods (belouga-only) (84)
+### [+] Extra Methods (belugas-only) (84)
 
 - `agg`
 - `ascii`
@@ -926,36 +926,36 @@ Each summary cell is relative to Polars.
 
 - `all`
   - **Polars**: (`ignore_nulls: bool`) -> Expr
-  - **belouga**: () -> Expr
+  - **belugas**: () -> Expr
 - `any`
   - **Polars**: (`ignore_nulls: bool`) -> Expr
-  - **belouga**: () -> Expr
+  - **belugas**: () -> Expr
 - `concat`
   - **Polars**: (`other: list[Expr | str] | Expr | str | Series | list[Any]`) -> Expr
-  - **belouga**: (`*args: IntoExpr`) -> T
+  - **belugas**: (`*args: IntoExpr`) -> T
 - `contains`
   - **Polars**: (`item: IntoExpr`, `nulls_equal: bool`) -> Expr
-  - **belouga**: (`element: IntoExpr`) -> T
+  - **belugas**: (`element: IntoExpr`) -> T
 - `count_matches`
   - **Polars**: (`element: IntoExpr`) -> Expr
-  - **belouga**: (`elem: IntoExpr`) -> Expr
+  - **belugas**: (`elem: IntoExpr`) -> Expr
 - `explode`
   - **Polars**: (`empty_as_null: bool`, `keep_nulls: bool`) -> Expr
-  - **belouga**: () -> Expr
+  - **belugas**: () -> Expr
 - `filter`
   - **Polars**: (`predicate: Expr`) -> Expr
-  - **belouga**: (`lambda_arg: IntoExprColumn`) -> Expr
+  - **belugas**: (`lambda_arg: IntoExprColumn`) -> Expr
 - `get`
   - **Polars**: (`index: int | Expr | str`, `null_on_oob: bool`) -> Expr
-  - **belouga**: (index: int) -> Expr
+  - **belugas**: (index: int) -> Expr
 - `slice`
   - **Polars**: (`offset: int | str | Expr`, `length: int | str | Expr | None`) -> Expr
-  - **belouga**: (`begin: IntoExpr`, `end: IntoExpr`, `step: IntoExprColumn | int | None`) -> T
+  - **belugas**: (`begin: IntoExpr`, `end: IntoExpr`, `step: IntoExprColumn | int | None`) -> T
 - `unique`
   - **Polars**: (`maintain_order: bool`) -> Expr
-  - **belouga**: () -> Expr
+  - **belugas**: () -> Expr
 
-### [+] Extra Methods (belouga-only) (63)
+### [+] Extra Methods (belugas-only) (63)
 
 - `aggr`
 - `aggregate`
@@ -1034,9 +1034,9 @@ Each summary cell is relative to Polars.
 
 - `field`
   - **Polars**: (`name: str | list[str]`, *more_names: str) -> Expr
-  - **belouga**: (name: str) -> Expr
+  - **belugas**: (name: str) -> Expr
 
-### [+] Extra Methods (belouga-only) (13)
+### [+] Extra Methods (belugas-only) (13)
 
 - `concat`
 - `contains`
@@ -1067,9 +1067,9 @@ Each summary cell is relative to Polars.
 
 - `map`
   - **Polars**: (`function: Callable[[str], str]`) -> Expr
-  - **belouga**: (`function: Aliaser`) -> Expr
+  - **belugas**: (`function: Aliaser`) -> Expr
 
-### [+] Extra Methods (belouga-only) (1)
+### [+] Extra Methods (belugas-only) (1)
 
 - `inner`
 
@@ -1092,42 +1092,42 @@ Each summary cell is relative to Polars.
 
 - `agg`
   - **Polars**: (`expr: Expr`) -> Expr
-  - **belouga**: () -> T
+  - **belugas**: () -> T
 - `all`
   - **Polars**: (`ignore_nulls: bool`) -> Expr
-  - **belouga**: () -> Expr
+  - **belugas**: () -> Expr
 - `any`
   - **Polars**: (`ignore_nulls: bool`) -> Expr
-  - **belouga**: () -> Expr
+  - **belugas**: () -> Expr
 - `contains`
   - **Polars**: (`item: IntoExpr`, `nulls_equal: bool`) -> Expr
-  - **belouga**: (`element: IntoExpr`) -> T
+  - **belugas**: (`element: IntoExpr`) -> T
 - `count_matches`
   - **Polars**: (`element: IntoExpr`) -> Expr
-  - **belouga**: (`elem: IntoExpr`) -> Expr
+  - **belugas**: (`elem: IntoExpr`) -> Expr
 - `eval`
   - **Polars**: (expr: Expr, `as_list: bool`) -> Expr
-  - **belouga**: (expr: Expr) -> Expr
+  - **belugas**: (expr: Expr) -> Expr
 - `explode`
   - **Polars**: (`empty_as_null: bool`, `keep_nulls: bool`) -> Expr
-  - **belouga**: () -> Expr
+  - **belugas**: () -> Expr
 - `get`
   - **Polars**: (`index: int | IntoExprColumn`, `null_on_oob: bool`) -> Expr
-  - **belouga**: (index: int) -> Expr
+  - **belugas**: (index: int) -> Expr
 - `head`
   - **Polars**: (n: int | str | Expr, `as_array: bool`) -> Expr
-  - **belouga**: (n: int | str | Expr) -> Expr
+  - **belugas**: (n: int | str | Expr) -> Expr
 - `slice`
   - **Polars**: (`offset: int | str | Expr`, `length: int | str | Expr | None`, `as_array: bool`) -> Expr
-  - **belouga**: (`begin: IntoExpr`, `end: IntoExpr`, `step: IntoExprColumn | int | None`) -> T
+  - **belugas**: (`begin: IntoExpr`, `end: IntoExpr`, `step: IntoExprColumn | int | None`) -> T
 - `tail`
   - **Polars**: (n: int | str | Expr, `as_array: bool`) -> Expr
-  - **belouga**: (n: int | str | Expr) -> Expr
+  - **belugas**: (n: int | str | Expr) -> Expr
 - `unique`
   - **Polars**: (`maintain_order: bool`) -> Expr
-  - **belouga**: () -> Expr
+  - **belugas**: () -> Expr
 
-### [+] Extra Methods (belouga-only) (44)
+### [+] Extra Methods (belugas-only) (44)
 
 - `aggr`
 - `aggregate`
@@ -1219,24 +1219,24 @@ Each summary cell is relative to Polars.
 
 - `epoch`
   - **Polars**: (`time_unit: EpochTimeUnit`) -> Expr
-  - **belouga**: () -> T
+  - **belugas**: () -> T
 - `offset_by`
   - **Polars**: (`by: str | Expr`) -> Expr
-  - **belouga**: (`by: IntoExpr`) -> Expr
+  - **belugas**: (`by: IntoExpr`) -> Expr
 - `round`
   - **Polars**: (`every: timedelta | IntoExprColumn`) -> Expr
-  - **belouga**: (every: str) -> Expr
+  - **belugas**: (every: str) -> Expr
 - `second`
   - **Polars**: (`fractional: bool`) -> Expr
-  - **belouga**: () -> T
+  - **belugas**: () -> T
 - `to_string`
   - **Polars**: (`format: str | None`) -> Expr
-  - **belouga**: (`format: IntoExprColumn`) -> Expr
+  - **belugas**: (`format: IntoExprColumn`) -> Expr
 - `truncate`
   - **Polars**: (`every: timedelta | Expr`) -> Expr
-  - **belouga**: (`every: str`) -> Expr
+  - **belugas**: (`every: str`) -> Expr
 
-### [+] Extra Methods (belouga-only) (52)
+### [+] Extra Methods (belugas-only) (52)
 
 - `add`
 - `dayname`
@@ -1512,114 +1512,114 @@ Each summary cell is relative to Polars.
 
 - `Array`
   - **Polars**: (`inner: PolarsDataType | PythonDataType`, `shape: int | tuple[int, ...] | None`, `width: int | None`) -> None
-  - **belouga**: (`inner: DataType`, `size: int`) -> None
+  - **belugas**: (`inner: DataType`, `size: int`) -> None
 - `Datetime`
   - **Polars**: (`time_unit: TimeUnit`, `time_zone: str | tzinfo | None`) -> None
-  - **belouga**: (`time_unit: EpochTimeUnit`) -> None
+  - **belugas**: (`time_unit: EpochTimeUnit`) -> None
 - `Decimal`
   - **Polars**: (`precision: int | None`, scale: int) -> None
-  - **belouga**: (precision: int, scale: int) -> None
+  - **belugas**: (precision: int, scale: int) -> None
 - `Duration`
   - **Polars**: (`time_unit: TimeUnit`) -> None
-  - **belouga**: () -> None
+  - **belugas**: () -> None
 - `Enum`
   - **Polars**: (`categories: Series | Iterable[str] | type[enum.Enum]`) -> None
-  - **belouga**: (`categories: Iterable[str] | type[PyEnum]`) -> None
+  - **belugas**: (`categories: Iterable[str] | type[PyEnum]`) -> None
 - `Expr`
   - **Polars**: ()
-  - **belouga**: (`_inner: T`, `meta: ExprMeta`) -> None
+  - **belugas**: (`_inner: T`, `meta: ExprMeta`) -> None
 - `LazyFrame`
   - **Polars**: (`data: FrameInitTypes | None`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `strict: bool`, `orient: Orientation | None`, `infer_schema_length: int | None`, `nan_to_null: bool`, `height: int | None`) -> None
-  - **belouga**: (`data: IntoRel | Self`, orient: Orientation) -> None
+  - **belugas**: (`data: IntoRel | Self`, orient: Orientation) -> None
 - `List`
   - **Polars**: (`inner: PolarsDataType | PythonDataType`) -> None
-  - **belouga**: (`inner: DataType`) -> None
+  - **belugas**: (`inner: DataType`) -> None
 - `Struct`
   - **Polars**: (`fields: Sequence[Field] | SchemaDict`) -> None
-  - **belouga**: (`fields: IntoDict[str, DataType]`) -> None
+  - **belugas**: (`fields: IntoDict[str, DataType]`) -> None
 - `all`
   - **Polars**: (`*names: str`, `ignore_nulls: bool`) -> Expr
-  - **belouga**: (`exclude: TryIter[IntoExprColumn]`) -> Expr
+  - **belugas**: (`exclude: TryIter[IntoExprColumn]`) -> Expr
 - `approx_n_unique`
   - **Polars**: (`*columns: str`) -> Expr
-  - **belouga**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+  - **belugas**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `arctan2`
   - **Polars**: (`y: str | Expr`, `x: str | Expr`) -> Expr
-  - **belouga**: (`y: IntoExprColumn | float`, `x: IntoExprColumn | float`) -> Expr
+  - **belugas**: (`y: IntoExprColumn | float`, `x: IntoExprColumn | float`) -> Expr
 - `coalesce`
   - **Polars**: (exprs: IntoExpr | Iterable[IntoExpr], *more_exprs: IntoExpr, `eager: bool`) -> Expr | Series
-  - **belouga**: (exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> Expr
+  - **belugas**: (exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> Expr
 - `count`
   - **Polars**: (`*columns: str`) -> Expr
-  - **belouga**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+  - **belugas**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `cum_count`
   - **Polars**: (`*columns: str`, reverse: bool) -> Expr
-  - **belouga**: (`cols: TryIter[str]`, *more_cols: str, reverse: bool) -> Expr
+  - **belugas**: (`cols: TryIter[str]`, *more_cols: str, reverse: bool) -> Expr
 - `cum_sum`
   - **Polars**: (`*names: str`) -> Expr
-  - **belouga**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+  - **belugas**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `first`
   - **Polars**: (`*columns: str`) -> Expr
-  - **belouga**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+  - **belugas**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `from_arrow`
   - **Polars**: (`data: RecordBatch | Iterable[pa.RecordBatch | pa.Table] | ArrowArrayExportable | ArrowStreamExportable`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `rechunk: bool`) -> DataFrame | Series
-  - **belouga**: (`df: IntoArrow`, `connection: DuckDBPyConnection | None`) -> LazyFrame
+  - **belugas**: (`df: IntoArrow`, `connection: DuckDBPyConnection | None`) -> LazyFrame
 - `from_dict`
   - **Polars**: (`data: Mapping[str, Sequence[object] | Mapping[str, Sequence[object]] | Series]`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `strict: bool`) -> DataFrame
-  - **belouga**: (`mapping: IntoDict[str, PythonLiteral]`) -> LazyFrame
+  - **belugas**: (`mapping: IntoDict[str, PythonLiteral]`) -> LazyFrame
 - `from_dicts`
   - **Polars**: (`data: Iterable[Mapping[str, Any]]`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `strict: bool`, `infer_schema_length: int | None`) -> DataFrame
-  - **belouga**: (data: Sequence[Mapping[str, PythonLiteral]]) -> LazyFrame
+  - **belugas**: (data: Sequence[Mapping[str, PythonLiteral]]) -> LazyFrame
 - `from_numpy`
   - **Polars**: (`data: ndarray[Any, Any]`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `orient: Orientation | None`) -> DataFrame
-  - **belouga**: (`arr: AnyArray`, orient: Orientation) -> LazyFrame
+  - **belugas**: (`arr: AnyArray`, orient: Orientation) -> LazyFrame
 - `from_pandas`
   - **Polars**: (`data: Series[Any] | pd.Index[Any] | pd.DatetimeIndex`, `schema_overrides: SchemaDict | None`, `rechunk: bool`, `nan_to_null: bool`, `include_index: bool`) -> DataFrame | Series
-  - **belouga**: (`df: DataFrame`, `connection: DuckDBPyConnection | None`) -> LazyFrame
+  - **belugas**: (`df: DataFrame`, `connection: DuckDBPyConnection | None`) -> LazyFrame
 - `from_records`
   - **Polars**: (`data: Sequence[Any]`, `schema: SchemaDefinition | None`, `schema_overrides: SchemaDict | None`, `strict: bool`, `orient: Orientation | None`, `infer_schema_length: int | None`) -> DataFrame
-  - **belouga**: (`data: SeqIntoVals`, orient: Orientation) -> LazyFrame
+  - **belugas**: (`data: SeqIntoVals`, orient: Orientation) -> LazyFrame
 - `last`
   - **Polars**: (`*columns: str`) -> Expr
-  - **belouga**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+  - **belugas**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `lit`
   - **Polars**: (value: Any, `dtype: PolarsDataType | DataTypeExpr | None`, `allow_object: bool`) -> Expr
-  - **belouga**: (value: PythonLiteral) -> Expr
+  - **belugas**: (value: PythonLiteral) -> Expr
 - `max`
   - **Polars**: (`*names: str`) -> Expr
-  - **belouga**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+  - **belugas**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `mean`
   - **Polars**: (`*columns: str`) -> Expr
-  - **belouga**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+  - **belugas**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `mean_horizontal`
   - **Polars**: (*exprs: IntoExpr | Iterable[IntoExpr], `ignore_nulls: bool`) -> Expr
-  - **belouga**: (exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> Expr
+  - **belugas**: (exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> Expr
 - `median`
   - **Polars**: (`*columns: str`) -> Expr
-  - **belouga**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+  - **belugas**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `min`
   - **Polars**: (`*names: str`) -> Expr
-  - **belouga**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+  - **belugas**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `n_unique`
   - **Polars**: (`*columns: str`) -> Expr
-  - **belouga**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+  - **belugas**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `scan_csv`
   - **Polars**: (`source: str | Path | IO[str] | IO[bytes] | bytes | list[str] | list[Path] | list[IO[str]] | list[IO[bytes]] | list[bytes]`, `has_header: bool`, `separator: str`, `comment_prefix: str | None`, `quote_char: str | None`, `skip_rows: int`, `skip_lines: int`, `schema: SchemaDict | None`, `schema_overrides: SchemaDict | Sequence[PolarsDataType] | None`, `null_values: str | Sequence[str] | dict[str, str] | None`, `missing_utf8_is_empty_string: bool`, ignore_errors: bool, `cache: bool | None`, `with_column_names: Callable[[list[str]], list[str]] | None`, `infer_schema: bool`, `infer_schema_length: int | None`, `n_rows: int | None`, encoding: CsvEncoding, `low_memory: bool`, `rechunk: bool`, `skip_rows_after_header: int`, `row_index_name: str | None`, `row_index_offset: int`, `try_parse_dates: bool`, `eol_char: str`, `new_columns: Sequence[str] | None`, `raise_if_empty: bool`, `truncate_ragged_lines: bool`, `decimal_comma: bool`, `glob: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `file_cache_ttl: int | None`, `include_file_paths: str | None`, `missing_columns: Literal['insert', 'raise'] | None`) -> LazyFrame
-  - **belouga**: (`path_or_buffer: PathOrBuffer`, `header: bool | int | None`, `compression: CsvCompression | None`, `sep: str | None`, `delimiter: str | None`, `files_to_sniff: int | None`, `comment: str | None`, `thousands: str | None`, `dtype: IntoFields | None`, `na_values: str | list[str] | None`, `skiprows: int | None`, `quotechar: str | None`, `escapechar: str | None`, `encoding: CsvEncoding | None`, `parallel: bool | None`, `date_format: str | None`, `timestamp_format: str | None`, `sample_size: int | None`, `auto_detect: bool | int | None`, `all_varchar: bool | None`, `normalize_names: bool | None`, `null_padding: bool | None`, `names: list[str] | None`, `lineterminator: CSVLineTerminator | None`, `columns: ColumnsTypes | None`, `auto_type_candidates: list[StrIntoPyType] | None`, `max_line_size: int | None`, `ignore_errors: bool | None`, `store_rejects: bool | None`, `rejects_table: str | None`, `rejects_scan: str | None`, `rejects_limit: int | None`, `force_not_null: list[str] | None`, `buffer_size: int | None`, `decimal: str | None`, `allow_quoted_nulls: bool | None`, `filename: bool | str | None`, `hive_partitioning: bool | None`, `union_by_name: bool | None`, `hive_types: HiveTypes | None`, `hive_types_autocast: bool | None`, `strict_mode: bool | None`, `connection: DuckDBPyConnection | None`) -> LazyFrame
+  - **belugas**: (`path_or_buffer: PathOrBuffer`, `header: bool | int | None`, `compression: CsvCompression | None`, `sep: str | None`, `delimiter: str | None`, `files_to_sniff: int | None`, `comment: str | None`, `thousands: str | None`, `dtype: IntoFields | None`, `na_values: str | list[str] | None`, `skiprows: int | None`, `quotechar: str | None`, `escapechar: str | None`, `encoding: CsvEncoding | None`, `parallel: bool | None`, `date_format: str | None`, `timestamp_format: str | None`, `sample_size: int | None`, `auto_detect: bool | int | None`, `all_varchar: bool | None`, `normalize_names: bool | None`, `null_padding: bool | None`, `names: list[str] | None`, `lineterminator: CSVLineTerminator | None`, `columns: ColumnsTypes | None`, `auto_type_candidates: list[StrIntoPyType] | None`, `max_line_size: int | None`, `ignore_errors: bool | None`, `store_rejects: bool | None`, `rejects_table: str | None`, `rejects_scan: str | None`, `rejects_limit: int | None`, `force_not_null: list[str] | None`, `buffer_size: int | None`, `decimal: str | None`, `allow_quoted_nulls: bool | None`, `filename: bool | str | None`, `hive_partitioning: bool | None`, `union_by_name: bool | None`, `hive_types: HiveTypes | None`, `hive_types_autocast: bool | None`, `strict_mode: bool | None`, `connection: DuckDBPyConnection | None`) -> LazyFrame
 - `scan_parquet`
   - **Polars**: (`source: FileSource`, `n_rows: int | None`, `row_index_name: str | None`, `row_index_offset: int`, `parallel: ParallelStrategy`, `use_statistics: bool`, `hive_partitioning: bool | None`, `glob: bool`, `hidden_file_prefix: str | Sequence[str] | None`, `schema: SchemaDict | None`, `hive_schema: SchemaDict | None`, `try_parse_hive_dates: bool`, `rechunk: bool`, `low_memory: bool`, `cache: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `include_file_paths: str | None`, `missing_columns: Literal['insert', 'raise']`, `allow_missing_columns: bool | None`, `extra_columns: Literal['ignore', 'raise']`, `cast_options: ScanCastOptions | None`, `_column_mapping: ColumnMapping | None`, `_default_values: DefaultFieldValues | None`, `_deletion_files: DeletionFiles | None`, `_table_statistics: DataFrame | None`, `_row_count: tuple[int, int] | None`) -> LazyFrame
-  - **belouga**: (`file_glob: Path | str | Iterable[str | Path]`, `binary_as_string: bool`, `file_row_number: bool`, `filename: bool`, hive_partitioning: bool, `union_by_name: bool`, `compression: ParquetCompression | None`, `connection: DuckDBPyConnection | None`) -> LazyFrame
+  - **belugas**: (`file_glob: Path | str | Iterable[str | Path]`, `binary_as_string: bool`, `file_row_number: bool`, `filename: bool`, hive_partitioning: bool, `union_by_name: bool`, `compression: ParquetCompression | None`, `connection: DuckDBPyConnection | None`) -> LazyFrame
 - `sum`
   - **Polars**: (`*names: str`) -> Expr
-  - **belouga**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
+  - **belugas**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
 - `sum_horizontal`
   - **Polars**: (*exprs: IntoExpr | Iterable[IntoExpr], `ignore_nulls: bool`) -> Expr
-  - **belouga**: (exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> Expr
+  - **belugas**: (exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> Expr
 - `when`
   - **Polars**: (*predicates: IntoExprColumn | Iterable[IntoExprColumn] | bool, `**constraints: Any`) -> When
-  - **belouga**: (`predicates: TryIter[IntoExpr]`, *more_predicates: IntoExpr) -> When
+  - **belugas**: (`predicates: TryIter[IntoExpr]`, *more_predicates: IntoExpr) -> When
 
-### [+] Extra Methods (belouga-only) (14)
+### [+] Extra Methods (belugas-only) (14)
 
 - `BitString`
 - `DatetimeTZ`
@@ -1669,16 +1669,16 @@ Each summary cell is relative to Polars.
 
 - `by_dtype`
   - **Polars**: (`*dtypes: PolarsDataType | PythonDataType | Iterable[PolarsDataType] | Iterable[PythonDataType]`) -> Selector
-  - **belouga**: (`*dtypes: type[dt.DataType]`) -> Selector
+  - **belugas**: (`*dtypes: type[dt.DataType]`) -> Selector
 - `by_name`
   - **Polars**: (`*names: str | Collection[str]`, `require_all: bool`) -> Selector
-  - **belouga**: (*names: str) -> Selector
+  - **belugas**: (*names: str) -> Selector
 - `duration`
   - **Polars**: (`time_unit: TimeUnit | Collection[TimeUnit] | None`) -> Selector
-  - **belouga**: () -> Selector
+  - **belugas**: () -> Selector
 - `string`
   - **Polars**: (`include_categorical: bool`) -> Selector
-  - **belouga**: () -> Selector
+  - **belugas**: () -> Selector
 
 ## DataType
 
@@ -1701,9 +1701,9 @@ Each summary cell is relative to Polars.
 
 - `is_`
   - **Polars**: (`other: PolarsDataType`) -> bool
-  - **belouga**: (`other: T`) -> TypeIs[T]
+  - **belugas**: (`other: T`) -> TypeIs[T]
 
-### [+] Extra Methods (belouga-only) (2)
+### [+] Extra Methods (belugas-only) (2)
 
 - `from_duckdb`
 - `from_sql`

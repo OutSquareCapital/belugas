@@ -1,12 +1,12 @@
-"""Compare belouga API coverage against Polars."""
+"""Compare belugas API coverage against Polars."""
 
 import polars as pl
 from polars.lazyframe.group_by import LazyGroupBy as plLazyGroupBy
 from pyochain import Iter
 
-import belouga as bl
-from belouga import typing as t
-from belouga._groupby import LazyGroupBy as blLazyGroupBy  # noqa: PLC2701
+import belugas as bl
+from belugas import typing as t
+from belugas._groupby import LazyGroupBy as blLazyGroupBy  # noqa: PLC2701
 
 from .._utils import Pql
 from ._rules import IGNORED_MEMBERS

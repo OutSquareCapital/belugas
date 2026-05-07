@@ -8,8 +8,8 @@ import polars.selectors as cs_pl
 import pytest
 from pyochain import Seq
 
-import belouga as bl
-from belouga import selectors as cs
+import belugas as bl
+from belugas import selectors as cs
 
 from ._data import sample_bl, sample_lf
 from ._utils import assert_eq, assert_lf_eq, into_ids

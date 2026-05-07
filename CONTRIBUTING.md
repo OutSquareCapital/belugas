@@ -1,13 +1,13 @@
 
-# Contributing to `belouga`
+# Contributing to `belugas`
 
-Thank you for your interest in contributing to `belouga`!
+Thank you for your interest in contributing to `belugas`!
 
 Contributions are always welcome, whether it's a bug fix, a new feature, or just improving the documentation.
 
 ## Testing
 
-The project heavily compares `belouga` behavior against reference Polars chains where parity is expected.
+The project heavily compares `belugas` behavior against reference Polars chains where parity is expected.
 
 We want to periodically check the coverage. To do so, run:
 
@@ -17,7 +17,7 @@ uv run pytest tests/ --cov=src/ --cov-report=term-missing
 
 ## Architecture
 
-`belouga` exposes a Polars-like lazy API on top of DuckDB, with `sqlglot` used as the SQL AST layer.
+`belugas` exposes a Polars-like lazy API on top of DuckDB, with `sqlglot` used as the SQL AST layer.
 
 The two main public objects are `LazyFrame` and `Expr`, but the project is organized in a few distinct layers.
 
@@ -25,17 +25,17 @@ The two main public objects are `LazyFrame` and `Expr`, but the project is organ
 
 The public surface lives mostly in:
 
-- `src/belouga/_frame.py` for `LazyFrame`
-- `src/belouga/_expr.py` for `Expr`
-- `src/belouga/_funcs.py` for module-level expression helpers such as `col`, `lit`, `when`, `coalesce`, and aggregations
-- `src/belouga/_scans.py` for constructors such as `from_df`, `from_dict`, `from_query`, `from_table`, and `from_table_function`
-- `src/belouga/__init__.py` for package-level re-exports
+- `src/belugas/_frame.py` for `LazyFrame`
+- `src/belugas/_expr.py` for `Expr`
+- `src/belugas/_funcs.py` for module-level expression helpers such as `col`, `lit`, `when`, `coalesce`, and aggregations
+- `src/belugas/_scans.py` for constructors such as `from_df`, `from_dict`, `from_query`, `from_table`, and `from_table_function`
+- `src/belugas/__init__.py` for package-level re-exports
 
 This is the user-facing layer and should remain Polars-like in ergonomics.
 
 ### Core wrappers and SQL building
 
-`src/belouga/_core.py` contains the low-level wrappers shared across the project:
+`src/belugas/_core.py` contains the low-level wrappers shared across the project:
 
 - `CoreHandler[T]` is the generic wrapper base used by the main fluent objects
 - `ExprHandler` specializes `CoreHandler` for `sqlglot.exp.Expr`
@@ -46,17 +46,17 @@ This layer is responsible for normalizing Python values into `sqlglot` nodes and
 
 ### Expression layer
 
-`Expr` lives in `src/belouga/_expr.py`.
+`Expr` lives in `src/belugas/_expr.py`.
 
-It wraps a `sqlglot.exp.Expr` and extends the generated `Fns` mixin from `src/belouga/_fns.py`, which provides DuckDB function wrappers.
+It wraps a `sqlglot.exp.Expr` and extends the generated `Fns` mixin from `src/belugas/_fns.py`, which provides DuckDB function wrappers.
 
-`Expr` also carries `ExprMeta` from `src/belouga/_meta.py`. This metadata is important for aliasing, naming resolution, selectors support, and context-sensitive behavior when the expression is used inside a frame operation.
+`Expr` also carries `ExprMeta` from `src/belugas/_meta.py`. This metadata is important for aliasing, naming resolution, selectors support, and context-sensitive behavior when the expression is used inside a frame operation.
 
-The namespace entry points exposed on `Expr` are implemented in `src/belouga/namespaces.py`, including `.str`, `.list`, `.struct`, `.dt`, `.arr`, `.json`, `.re`, `.map`, `.enum`, `.geo`, and `.name`.
+The namespace entry points exposed on `Expr` are implemented in `src/belugas/namespaces.py`, including `.str`, `.list`, `.struct`, `.dt`, `.arr`, `.json`, `.re`, `.map`, `.enum`, `.geo`, and `.name`.
 
 ### Frame and query layer
 
-`LazyFrame` lives in `src/belouga/_frame.py` and is the main query builder.
+`LazyFrame` lives in `src/belugas/_frame.py` and is the main query builder.
 
 It inherits from `CoreHandler[sqlglot.exp.Query]` and stores:
 
@@ -70,7 +70,7 @@ Most relational operations are implemented here, including `select`, `with_colum
 
 ### Relation and input normalization
 
-`src/belouga/_scans.py` contains `ScanSource`, which is the bridge between the query AST world and executable DuckDB relations.
+`src/belugas/_scans.py` contains `ScanSource`, which is the bridge between the query AST world and executable DuckDB relations.
 
 `ScanSource` wraps a `duckdb.DuckDBPyRelation` together with schema metadata and is responsible for normalizing the different supported inputs:
 
@@ -86,20 +86,20 @@ Most relational operations are implemented here, including `select`, `with_colum
 
 Some important supporting modules are:
 
-- `src/belouga/_when.py` for the fluent `when(...).then(...).otherwise(...)` builder
-- `src/belouga/_window.py` for window specification and rolling/window logic
-- `src/belouga/_groupby.py` for grouped-frame operations
-- `src/belouga/_joins.py` for join key normalization and join construction helpers
-- `src/belouga/_parser.py` for parsing SQL strings into query objects
-- `src/belouga/selectors.py` for selectors
-- `src/belouga/datatypes.py` for the public datatype objects and conversions
+- `src/belugas/_when.py` for the fluent `when(...).then(...).otherwise(...)` builder
+- `src/belugas/_window.py` for window specification and rolling/window logic
+- `src/belugas/_groupby.py` for grouped-frame operations
+- `src/belugas/_joins.py` for join key normalization and join construction helpers
+- `src/belugas/_parser.py` for parsing SQL strings into query objects
+- `src/belugas/selectors.py` for selectors
+- `src/belugas/datatypes.py` for the public datatype objects and conversions
 
 ### Generated code
 
 Two important files are generated and should not be edited by hand:
 
-- `src/belouga/_fns.py` for DuckDB function wrappers and generated namespace mixins
-- `src/belouga/meta.py` for DuckDB meta table-function helpers
+- `src/belugas/_fns.py` for DuckDB function wrappers and generated namespace mixins
+- `src/belugas/meta.py` for DuckDB meta table-function helpers
 
 If a generated API needs to change, update the generator logic in `scripts/` and regenerate the file instead of patching the generated output directly.
 
@@ -116,7 +116,7 @@ uv run -m scripts --help
 
 ### Comparator
 
-The **compare** command creates the [coverage](API_COVERAGE.md) report used to compare the `belouga`, `polars`, and `narwhals` APIs.
+The **compare** command creates the [coverage](API_COVERAGE.md) report used to compare the `belugas`, `polars`, and `narwhals` APIs.
 
 ### Generators
 
@@ -124,9 +124,9 @@ The generators are driven from `scripts/` and produce source files used by the p
 
 The main outputs are:
 
-- [DuckDB function wrappers and namespace mixins](src/belouga/_fns.py)
-- [DuckDB meta table-function helpers](src/belouga/meta.py)
-- [The SQL display theme literal](src/belouga/typing.py)
+- [DuckDB function wrappers and namespace mixins](src/belugas/_fns.py)
+- [DuckDB meta table-function helpers](src/belugas/meta.py)
+- [The SQL display theme literal](src/belugas/typing.py)
 
 **Note** that if you never generated the DuckDB function wrappers before, you need to run `fns-to-parquet` once to build the cached metadata file, and then `gen-fns` to generate the wrappers.
 
@@ -140,7 +140,7 @@ The main outputs are:
 
 ### Summary
 
-`belouga.LazyFrame.lazy()` produces a Polars `LazyFrame` backed by a **`PYTHON SCAN`** (via `duckdb/polars_io.py`).
+`belugas.LazyFrame.lazy()` produces a Polars `LazyFrame` backed by a **`PYTHON SCAN`** (via `duckdb/polars_io.py`).
 Certain Polars operations that internally generate a `dynamic_predicate` optimization node cause a **panic** when collected.
 
 **Affected operations:** `.sort().limit()`, `.sort().head()`, `.top_k()`, `.bottom_k()`

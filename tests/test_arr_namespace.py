@@ -3,7 +3,7 @@ from collections.abc import Callable
 import polars as pl
 import pytest
 
-import belouga as bl
+import belugas as bl
 
 from ._utils import assert_eq, assert_lf_eq
 

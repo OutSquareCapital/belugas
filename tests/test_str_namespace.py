@@ -3,8 +3,8 @@ import pytest
 from polars.testing import assert_frame_equal
 from pyochain import Iter
 
-import belouga as bl
-from belouga.typing import TransferEncoding
+import belugas as bl
+from belugas.typing import TransferEncoding
 
 type TestArgs = tuple[bl.Expr | str, pl.Expr | str]
 

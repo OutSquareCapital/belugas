@@ -1,7 +1,7 @@
 [project]
     dependencies    = ["duckdb>=1.5.2", "pyochain>=0.9.2", "sqlglot[c]>=30.7.0"]
     description     = "Polars syntax for SQL"
-    name            = "belouga"
+    name            = "belugas"
     readme          = "README.md"
     requires-python = ">=3.13"
     version         = "0.1.0"
@@ -66,7 +66,7 @@
     [tool.ruff.lint.pydocstyle]
         convention = "google"
     [tool.ruff.lint.per-file-ignores]
-        "src/belouga/_fns.py" = [
+        "src/belugas/_fns.py" = [
             "A002",
             "ANN401",
             "FBT001",
@@ -74,14 +74,14 @@
             "PLR0913",
             "PLW1641",
         ]
-        "src/belouga/meta.py" = ["FBT001"]
-        "src/belouga/typing.py" = ["ANN401", "D102", "D105", "PLW3201"]
+        "src/belugas/meta.py" = ["FBT001"]
+        "src/belugas/typing.py" = ["ANN401", "D102", "D105", "PLW3201"]
         "t.py" = ["ANN201", "D100", "D101", "D103"]
         "tests/*" = ["D100", "D101", "D102", "D103", "D104", "DTZ001", "FBT001"]
     [tool.ruff.lint.isort]
         combine-as-imports = true
 [tool.coverage.run]
-    omit = ["src/belouga/_types.py"]
+    omit = ["src/belugas/_types.py"]
 [tool.basedpyright]
     reportImportCycles     = false
     reportMissingSuperCall = false

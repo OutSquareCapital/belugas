@@ -4,8 +4,8 @@ import polars as pl
 import pytest
 from pyochain import Iter
 
-import belouga as bl
-import belouga.typing as t
+import belugas as bl
+import belugas.typing as t
 
 from ._utils import assert_lf_eq
 

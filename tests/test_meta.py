@@ -3,8 +3,8 @@ from collections.abc import Callable
 import pytest
 from pyochain import Iter, Seq
 
-import belouga as bl
-from belouga import meta
+import belugas as bl
+from belugas import meta
 
 
 def _get_fn(name: str) -> Callable[..., bl.LazyFrame]:

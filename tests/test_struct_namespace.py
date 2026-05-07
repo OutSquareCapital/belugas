@@ -1,6 +1,6 @@
 import polars as pl
 
-import belouga as bl
+import belugas as bl
 
 from ._utils import assert_eq
 

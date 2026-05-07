@@ -10,8 +10,8 @@ import sqlglot
 from polars.testing import assert_frame_equal
 from pyochain import Iter
 
-import belouga as bl
-import belouga.typing as t
+import belugas as bl
+import belugas.typing as t
 
 assert_eq = partial(assert_frame_equal, check_dtypes=False, check_row_order=False)
 DATA = Path("tests", "data", "foo")

@@ -1,7 +1,7 @@
 import polars as pl
 import pytest
 
-import belouga as bl
+import belugas as bl
 
 from ._data import sample_bl, sample_lf
 from ._utils import Fns, FnsCat, assert_eq, assert_lf_eq

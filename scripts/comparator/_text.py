@@ -31,7 +31,7 @@ class ComparisonReport:
                 status=Status.SIGNATURE_MISMATCH,
             ),
             _format(
-                self.results, "[+] Extra Methods (belouga-only)", status=Status.EXTRA
+                self.results, "[+] Extra Methods (belugas-only)", status=Status.EXTRA
             ),
         ))
 
@@ -41,7 +41,7 @@ class ComparisonReport:
             ArrayBuilder(self.results)
             .with_name(self.name)
             .coverage_cell()
-            .belouga_count_cell()
+            .belugas_count_cell()
             .count_cell()
             .status_cell(Status.MATCH)
             .status_cell(Status.MISSING)
@@ -53,9 +53,9 @@ class ComparisonReport:
 
 def header() -> Iter[str]:
     txt = """
-# belouga vs Polars API Comparison Report.
+# belugas vs Polars API Comparison Report.
 
-This report shows the API coverage of belouga compared to polars.
+This report shows the API coverage of belugas compared to polars.
 
 ## Summary
 
@@ -69,7 +69,7 @@ class ClassComparison:
     """Converter between entry arguments and ComparisonReport."""
 
     polars_cls: object
-    belouga_cls: object
+    belugas_cls: object
     name: Pql
     ignored_names: Set[str] = field(default_factory=Set[str].new)
 
@@ -80,16 +80,16 @@ class ClassComparison:
             ComparisonReport: A report containing the results of the comparison.
         """
         polars_methods = self._get_public_methods(self.polars_cls)
-        belouga_methods = self._get_public_methods(self.belouga_cls)
+        belugas_methods = self._get_public_methods(self.belugas_cls)
 
         return ComparisonReport(
             self.name,
             polars_methods
-            .union(belouga_methods)
+            .union(belugas_methods)
             .iter()
             .map(
                 lambda name: ComparisonResult(
-                    self.polars_cls, self.belouga_cls, name, self.name
+                    self.polars_cls, self.belugas_cls, name, self.name
                 )
             )
             .sort(key=lambda r: r.method_name),

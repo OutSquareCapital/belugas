@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import polars as pl
 
-import belouga as bl
+import belugas as bl
 
 from ._utils import assert_lf_eq
 

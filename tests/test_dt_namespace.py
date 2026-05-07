@@ -4,8 +4,8 @@ import polars as pl
 import pytest
 from pyochain import Seq
 
-import belouga as bl
-import belouga.typing as t
+import belugas as bl
+import belugas.typing as t
 
 from ._utils import assert_eq, into_ids
 

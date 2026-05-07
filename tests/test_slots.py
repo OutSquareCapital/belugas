@@ -1,7 +1,7 @@
 import pytest
 from pyochain import Err, Ok, Result
 
-import belouga as bl
+import belugas as bl
 
 _OBJS = [
     bl.col(""),

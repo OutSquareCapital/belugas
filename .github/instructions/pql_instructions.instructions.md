@@ -2,15 +2,15 @@
 description: Instructions for the PQL project agents.
 applyTo: '*'
 ---
-# AGENTS Instructions for `belouga`
+# AGENTS Instructions for `belugas`
 
 ## Project mission
 
-`belouga` exposes DuckDB through a Polars-like lazy API built on `sqlglot`.
+`belugas` exposes DuckDB through a Polars-like lazy API built on `sqlglot`.
 
 Primary objective:
 
-- Provide a high-level public API (`belouga.Expr`, `belouga.LazyFrame`) that compiles to efficient DuckDB-native expressions/relations.
+- Provide a high-level public API (`belugas.Expr`, `belugas.LazyFrame`) that compiles to efficient DuckDB-native expressions/relations.
 
 Secondary objective:
 
@@ -20,14 +20,14 @@ Secondary objective:
 
 ## Current public surface
 
-`belouga` currently exposes:
+`belugas` currently exposes:
 
-- `LazyFrame` in `src/belouga/_frame.py`.
-- `Expr` in `src/belouga/_expr.py`, re-exported from `src/belouga/__init__.py`.
-- Public scan constructors in `src/belouga/_scans.py` and at package root (`from_df`, `from_dict`, `from_query`, `from_table`, `from_table_function`, ...).
-- Module-level expression helpers in `src/belouga/_funcs.py` (`col`, `lit`, `when`, `coalesce`, scalar aggs, horizontal aggs, `element`, `row_number`, ...).
+- `LazyFrame` in `src/belugas/_frame.py`.
+- `Expr` in `src/belugas/_expr.py`, re-exported from `src/belugas/__init__.py`.
+- Public scan constructors in `src/belugas/_scans.py` and at package root (`from_df`, `from_dict`, `from_query`, `from_table`, `from_table_function`, ...).
+- Module-level expression helpers in `src/belugas/_funcs.py` (`col`, `lit`, `when`, `coalesce`, scalar aggs, horizontal aggs, `element`, `row_number`, ...).
 - `selectors`, `meta`, and datatype objects re-exported from the package root.
-- `Expr` lives in `src/belouga/_expr.py` and the public frame type is `LazyFrame`.
+- `Expr` lives in `src/belugas/_expr.py` and the public frame type is `LazyFrame`.
 - Relation handling is organized around `LazyFrame` plus `ScanSource`.
 
 ---
@@ -36,16 +36,16 @@ Secondary objective:
 
 ### 1) Public API layer
 
-- `src/belouga/_frame.py`: public `LazyFrame` API.
-- `src/belouga/_scans.py`: public constructors for turning Python/native data into `LazyFrame`.
-- `src/belouga/__init__.py`: exported user-facing symbols.
-- `src/belouga/_expr.py`: public `Expr` API, re-exported at the package root.
+- `src/belugas/_frame.py`: public `LazyFrame` API.
+- `src/belugas/_scans.py`: public constructors for turning Python/native data into `LazyFrame`.
+- `src/belugas/__init__.py`: exported user-facing symbols.
+- `src/belugas/_expr.py`: public `Expr` API, re-exported at the package root.
 
 This layer should remain Polars-like and user ergonomic.
 
 ### 2) Frame/query layer
 
-#### `LazyFrame` (`src/belouga/_frame.py`)
+#### `LazyFrame` (`src/belugas/_frame.py`)
 
 `LazyFrame` is the main query builder.
 
@@ -59,11 +59,11 @@ This layer should remain Polars-like and user ergonomic.
 
 ### 3) Expression layer
 
-#### `Expr` (`src/belouga/_expr.py`)
+#### `Expr` (`src/belugas/_expr.py`)
 
 `Expr` is the public expression object.
 
-- Extends the generated `Fns` mixin from `src/belouga/_fns.py`.
+- Extends the generated `Fns` mixin from `src/belugas/_fns.py`.
 - Wraps a `sqlglot.exp.Expr` through `ExprHandler`/`CoreHandler`.
 - Carries `meta: ExprMeta` to preserve naming, aliasing, and context-sensitive behavior.
 - Uses `Expr.new(...)` as the normal coercion entrypoint.
@@ -77,7 +77,7 @@ Important sharp edge:
 
 ### 4) SQL core layer
 
-#### Core abstractions (`src/belouga/_core.py`)
+#### Core abstractions (`src/belugas/_core.py`)
 
 The current SQL core layer is centered on `sqlglot` AST composition plus a DuckDB conversion boundary.
 
@@ -95,7 +95,7 @@ The current SQL core layer is centered on `sqlglot` AST composition plus a DuckD
 - **`anon(name, *args)` / `anon_agg(name, *args)` / `func(name, *args)`**
   - Low-level expression builders used throughout the expression layer.
 
-#### Conversion helpers (`src/belouga/_core.py`)
+#### Conversion helpers (`src/belugas/_core.py`)
 
 - **`into_expr(value, as_col=True) -> sqlglot.exp.Expr`**
   - Normalizes `Expr`, strings, and Python literals into `sqlglot` expressions.
@@ -104,9 +104,9 @@ The current SQL core layer is centered on `sqlglot` AST composition plus a DuckD
   - Bulk conversion helper for function arguments.
 
 - **`PQLConversionError`**
-  - Raised from `src/belouga/_scans.py` when SQL generation cannot be parsed by DuckDB.
+  - Raised from `src/belugas/_scans.py` when SQL generation cannot be parsed by DuckDB.
 
-#### Relation/input wrapper (`src/belouga/_scans.py`)
+#### Relation/input wrapper (`src/belugas/_scans.py`)
 
 `ScanSource` is the current wrapper around `duckdb.DuckDBPyRelation` plus column metadata.
 
@@ -117,18 +117,18 @@ The current SQL core layer is centered on `sqlglot` AST composition plus a DuckD
 
 ### 5) Supporting modules
 
-- `src/belouga/_funcs.py`: public module-level expression helpers (`col`, `lit`, `reduce`, `coalesce`, horizontal aggs, `unnest`, ...).
-- `src/belouga/_when.py`: fluent `when(...).then(...).otherwise(...)` builder.
-- `src/belouga/_window.py`: window specification helpers and rolling/window plumbing.
-- `src/belouga/_meta.py`: expression metadata, markers, and planning helpers used by context methods.
-- `src/belouga/namespaces.py`: handwritten namespace behavior and Polars-compat shims.
-- `src/belouga/selectors.py`: selectors API.
-- `src/belouga/datatypes.py`: `belouga` datatype objects and conversions.
+- `src/belugas/_funcs.py`: public module-level expression helpers (`col`, `lit`, `reduce`, `coalesce`, horizontal aggs, `unnest`, ...).
+- `src/belugas/_when.py`: fluent `when(...).then(...).otherwise(...)` builder.
+- `src/belugas/_window.py`: window specification helpers and rolling/window plumbing.
+- `src/belugas/_meta.py`: expression metadata, markers, and planning helpers used by context methods.
+- `src/belugas/namespaces.py`: handwritten namespace behavior and Polars-compat shims.
+- `src/belugas/selectors.py`: selectors API.
+- `src/belugas/datatypes.py`: `belugas` datatype objects and conversions.
 
 ### 6) Auto-generated code (do not edit manually)
 
-- `src/belouga/_fns.py`: generated DuckDB function wrappers and generated namespace mixins.
-- `src/belouga/meta.py`: generated `duckdb_*` module-level meta helpers.
+- `src/belugas/_fns.py`: generated DuckDB function wrappers and generated namespace mixins.
+- `src/belugas/meta.py`: generated `duckdb_*` module-level meta helpers.
 
 Generated from scripts in `scripts/`.
 
@@ -152,7 +152,7 @@ Edit generator pipelines and regenerate instead of patching generated files by h
 
 2. Do not patch generated files directly:
 
-- Never hand-edit `src/belouga/_fns.py` or `src/belouga/meta.py`.
+- Never hand-edit `src/belugas/_fns.py` or `src/belugas/meta.py`.
 - Modify generator logic in `scripts/fn_generator/*` or `scripts/meta_generator/*` and regenerate.
 - Note that 90% of the time, a few modifications in the `_rules.py` module are all of what is needed to fix a generator issue or add an exception. Always check the rules before considering a generator code patch.
 
@@ -216,7 +216,7 @@ Current helpers and conventions:
 
 - `tests/_utils.py` provides `assert_eq`, `assert_lf_eq`, and `FnsCat`.
 - `assert_eq` validates expression behavior through both `select()` and `with_columns()` by default.
-- Tests heavily use parametrized belouga/polars function pairs and identical call chains.
+- Tests heavily use parametrized belugas/polars function pairs and identical call chains.
 
 Rules for any new/updated tests:
 
@@ -227,7 +227,7 @@ Rules for any new/updated tests:
 
 1. Identical call chains:
 
-- belouga and reference backend (Narwhals/Polars) chains must be structurally identical.
+- belugas and reference backend (Narwhals/Polars) chains must be structurally identical.
 - No parameter/method-call divergence unless impossible.
 
 1. If identical chains are impossible:
@@ -254,7 +254,7 @@ When implementing a missing/mismatched method:
 
 1. Check if the capability already exists in `Expr`, `LazyFrame`, a namespace class, module-level helpers, selectors, or generated mixins.
 2. Validate naming and signature alignment against project intent (Polars-like + DuckDB-centric).
-3. Add/adjust tests with identical belouga vs reference chains.
+3. Add/adjust tests with identical belugas vs reference chains.
 4. Check `scripts/comparator/_rules.py` before deciding a mismatch is a bug.
 5. Regenerate coverage report if API surface changed.
 
@@ -318,4 +318,4 @@ DuckDB dialect behavior matters when changing expression generation.
 ### Polars API
 
 Polars API is the ergonomics and parity reference.
-Keep `belouga` decisions aligned with DuckDB semantics and the current repository architecture.
+Keep `belugas` decisions aligned with DuckDB semantics and the current repository architecture.

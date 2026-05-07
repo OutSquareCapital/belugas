@@ -9,8 +9,8 @@ from polars.lazyframe.group_by import LazyGroupBy as PlLazyGroupBy
 from polars.testing import assert_frame_equal
 from pyochain import Seq
 
-import belouga as bl
-from belouga._groupby import LazyGroupBy  # noqa: PLC2701
+import belugas as bl
+from belugas._groupby import LazyGroupBy  # noqa: PLC2701
 
 from ._utils import into_ids
 

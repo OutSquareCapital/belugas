@@ -16,7 +16,7 @@ from rich.text import Text
 @final
 class _Paths:
     SELF = Path(__file__).relative_to(Path().cwd())
-    PQL = Path("src", "belouga")
+    PQL = Path("src", "belugas")
     FNS = PQL.joinpath("_fns.py")
     META = PQL.joinpath("meta.py")
     TYPING = PQL.joinpath("typing.py")
@@ -103,7 +103,7 @@ def gen_meta(
 
 @app.command()
 def compare() -> int:
-    """Run the comparison between polars/narwhals and belouga and generate markdown report at the repo root.
+    """Run the comparison between polars/narwhals and belugas and generate markdown report at the repo root.
 
     Returns:
         int

@@ -6,7 +6,7 @@ import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
 
-import belouga as bl
+import belugas as bl
 
 assert_eq = partial(assert_frame_equal, check_dtypes=False, check_row_order=False)
 

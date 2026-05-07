@@ -3,7 +3,7 @@ from datetime import date, datetime, time
 import duckdb
 import polars as pl
 
-import belouga as bl
+import belugas as bl
 
 nan = float("nan")
 

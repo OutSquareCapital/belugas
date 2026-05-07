@@ -2,7 +2,7 @@ import polars as pl
 import pytest
 from pyochain.traits import PyoIterable
 
-import belouga as bl
+import belugas as bl
 
 from ._utils import ExprPair
 

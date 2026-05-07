@@ -1,27 +1,27 @@
 
-# belouga
+# belugas
 
 <p align="center">
     <img src="docs/Bélouga.jpg" alt="Belouga" width="260" />
     <br/>
 </p>
 
-`belouga` (French term for beluga), is a dataframe library with a `DuckDB` backend.
+`belugas` is a dataframe library with a `DuckDB` backend.
 
-Just like his arctic cetacean cousin [narwhals](https://github.com/narwhals-dev/narwhals), `belouga` API is inspired by [polars](https://github.com/pola-rs/polars), with a fluent, lazy API, focused on building reusable expressions chains that can be executed once passed in a `LazyFrame` context.
+Just like his arctic cetacean cousin [narwhals](https://github.com/narwhals-dev/narwhals), `belugas` API is inspired by [polars](https://github.com/pola-rs/polars), with a fluent, lazy API, focused on building reusable expressions chains that can be executed once passed in a `LazyFrame` context.
 
-Contrary to `narwhals` or [`Ibis`](https://github.com/ibis-project/ibis), `belouga` is a specialized tool, aiming to expose the full power of `DuckDB` possibilities, in a syntax familiar to `polars` users, without concessions on functionnality.
+Contrary to `narwhals` or [`Ibis`](https://github.com/ibis-project/ibis), `belugas` is a specialized tool, aiming to expose the full power of `DuckDB` possibilities, in a syntax familiar to `polars` users, without concessions on functionnality.
 
 It is not trying to be portable across multiple backends, but rather to be the best possible interface for users who want to write expressive queries in Python and execute them on `DuckDB`.
 
 ## Features
 
-The two main pillars of `belouga` are:
+The two main pillars of `belugas` are:
 
 - `Expr`, the base class for all expressions, created from `col`, `lit`, selectors, and others module functions, that can be combined together to build complex expressions chains.
 - `LazyFrame`, the main entry point for all data manipulation, that can be created from various data sources (arrow, python mapping/sequences, pandas dataframe, CSV, parquet, json etc...), and on which you can call all the available methods to build your query.
 
-`belouga` currently provides:
+`belugas` currently provides:
 
 - `LazyFrame::{select, filter, with_columns, join, join_asof, pivot, unpivot, sort, sink_csv, sink_parquet, ...}`
 - Aggregations contexts with `LazyFrame::group_by::{agg, all, len, ...}`
@@ -40,13 +40,13 @@ The two main pillars of `belouga` are:
 ### Installation
 
 ```shell
-uv add https://github.com/OutSquareCapital/belouga.git
+uv add https://github.com/OutSquareCapital/belugas.git
 ```
 
 ### Example
 
 ```python
-import belouga as bl
+import belugas as bl
 
 data = {
     "city": ["Paris", "Paris", "Berlin", "Berlin"],
@@ -84,7 +84,7 @@ Output:
 You can inspect the generated SQL query directly, format it, with syntax highlighting and various available themes:
 
 ```python
-import belouga as bl
+import belugas as bl
 
 query = bl.LazyFrame({"x": [1, 2, 3]}).filter(bl.col("x").gt(1))
 sql = query.sql_query()
@@ -133,7 +133,7 @@ Output:
 
 ### DuckDB
 
-`belouga` uses `DuckDB` as the execution engine.
+`belugas` uses `DuckDB` as the execution engine.
 
 ### sqlglot
 
@@ -144,7 +144,7 @@ Output:
 Iterable-returning methods return `pyochain` objects, so column lists and schema views stay chainable:
 
 ```python
-import belouga as bl
+import belugas as bl
 
 lf = bl.LazyFrame({"price": [1, 2, 3], "name": ["x", "y", "z"]})
 
@@ -157,7 +157,7 @@ print(result)
 
 ## Comparison with other tools
 
-**DuckDB Relational API** is the native way to interact with DuckDB in Python, but as it currently stands, `belouga` offers much more possibilities. For example, `LazyFrame::{unpivot, join_asof, pivot}` are not available in the relational API, and the function catalog is only available trough raw str passed to functions, without hover documentation nor type safety on the argument types.
+**DuckDB Relational API** is the native way to interact with DuckDB in Python, but as it currently stands, `belugas` offers much more possibilities. For example, `LazyFrame::{unpivot, join_asof, pivot}` are not available in the relational API, and the function catalog is only available trough raw str passed to functions, without hover documentation nor type safety on the argument types.
 
 ### Narwhals
 
