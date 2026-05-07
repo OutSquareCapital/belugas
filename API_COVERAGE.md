@@ -10,7 +10,7 @@ Each summary cell is relative to Polars.
 | Class               | Coverage                                                                                     | Belouga Total | Compared | Matched | Missing | Mismatched | Belouga only |
 | ------------------- | -------------------------------------------------------------------------------------------- | ------------- | -------- | ------- | ------- | ---------- | ------------ |
 | LazyFrame           | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (38.8%) | 62            | 55       | 31      | 25      | 24         | 7            |
-| Expr                | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (39.3%) | 331           | 128      | 84      | 86      | 44         | 203          |
+| Expr                | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (39.3%) | 327           | 128      | 84      | 86      | 44         | 199          |
 | LazyGroupBy         | <span style="color: #27ae60;">██████</span><span style="color: #bdc3c7;">░░░░</span> (62.5%) | 12            | 12       | 10      | 4       | 2          | 0            |
 | ExprStrNameSpace    | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (31.2%) | 122           | 38       | 15      | 10      | 23         | 84           |
 | ExprListNameSpace   | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (41.9%) | 91            | 28       | 18      | 15      | 10         | 63           |
@@ -475,7 +475,7 @@ Each summary cell is relative to Polars.
   - **Polars**: (`other: Any`) -> Expr
   - **belugas**: (`right: IntoExprColumn | bytes | bytearray | memoryview | int`) -> Self
 
-### [+] Extra Methods (belugas-only) (203)
+### [+] Extra Methods (belugas-only) (199)
 
 - `acos`
 - `acosh`
@@ -492,7 +492,6 @@ Each summary cell is relative to Polars.
 - `arg_min_nulls_last`
 - `argmax`
 - `argmin`
-- `asc`
 - `asin`
 - `asinh`
 - `atan`
@@ -530,7 +529,6 @@ Each summary cell is relative to Polars.
 - `currval`
 - `decode`
 - `dense_rank`
-- `desc`
 - `element_at`
 - `encode`
 - `entropy_shannon`
@@ -599,10 +597,9 @@ Each summary cell is relative to Polars.
 - `nth_value`
 - `ntile`
 - `nullif`
-- `nulls_first`
-- `nulls_last`
 - `obj_description`
 - `octet_length`
+- `order_by`
 - `parse_duckdb_log_message`
 - `percent_rank`
 - `power`
@@ -639,7 +636,6 @@ Each summary cell is relative to Polars.
 - `rtruediv`
 - `sem`
 - `set_bit`
-- `set_order`
 - `setseed`
 - `sha1`
 - `sha256`

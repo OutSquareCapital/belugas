@@ -36,7 +36,7 @@ from ._funcs import all, col, lit, row_number, unnest
 from ._joins import JoinBuilder, JoinKeys
 from ._meta import ExprPlan, Marker
 from ._scans import ScanSource
-from .utils import TryIter, TrySeq, check_by_arg, try_iter, try_seq
+from .utils import TryIter, TrySeq, try_iter, try_seq
 
 if TYPE_CHECKING:
     import polars as pl
@@ -367,7 +367,27 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         Returns:
             Self: A new LazyFrame with the sorted rows.
         """
-        return (
+
+        def check_by_arg(
+            compared: Seq[Expr],
+            name: str,
+            arg: TrySeq[bool],
+        ) -> Result[Iter[bool], ValueError]:
+            length = compared.length()
+            match arg:
+                case Sequence():
+                    len_arg = len(arg)
+                    match len_arg == length:
+                        case True:
+                            return Ok(try_iter(arg))
+                        case False:
+                            msg = f"the length of `{name}` ({len_arg}) does not match the length of `by` ({length})"
+                            return Err(ValueError(msg))
+
+                case _:
+                    return Ok(try_iter(arg).cycle().take(length))
+
+        order_exprs = (
             try_iter(by)
             .chain(more_by)
             .map(lambda v: Expr.new(v, as_col=True))
@@ -379,9 +399,15 @@ class LazyFrame(CoreHandler[exp.Selectable]):
                 )
             )
             .map_star(
-                lambda expr, desc, nls: expr.set_order(desc=desc, nulls_last=nls).inner
+                lambda expr, desc, nls: (
+                    expr.order_by(descending=desc, nulls_last=nls).inner
+                )
             )
-            .into(lambda order_exprs: _slct_all().from_("src").order_by(*order_exprs))
+        )
+        return (
+            _slct_all()
+            .from_("src")
+            .order_by(*order_exprs)
             .pipe(self._from_ast, src=self, schema=Some(self._schema))
         )
 
@@ -1086,8 +1112,8 @@ class LazyFrame(CoreHandler[exp.Selectable]):
                 .map(col)
                 .chain(
                     order_names.iter().map(
-                        lambda name: col(name).set_order(
-                            desc=descending, nulls_last=nulls_last
+                        lambda name: col(name).order_by(
+                            descending=descending, nulls_last=nulls_last
                         )
                     )
                 )

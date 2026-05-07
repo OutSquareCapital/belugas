@@ -385,9 +385,6 @@ class Expr(Fns):
         expr = exp.Alias(this=self.inner.unalias(), alias=exp.to_identifier(name))
         return self.__class__(expr, self.meta.unalias())
 
-    def asc(self) -> Self:
-        return self._cls(exp.Ordered(this=self.inner, desc=False))
-
     def between(self, lower: IntoExpr, upper: IntoExpr) -> Self:
         return self._cls(
             exp.Between(this=self.inner, low=into_expr(lower), high=into_expr(upper))
@@ -406,8 +403,18 @@ class Expr(Fns):
         expr = exp.Collate(this=self.inner, expression=exp.to_identifier(collation))
         return self._cls(expr)
 
-    def desc(self) -> Self:
-        return self._cls(exp.Ordered(this=self.inner, desc=True))
+    def order_by(self, *, descending: bool = True, nulls_last: bool = True) -> Self:
+        """Order the expression by itself.
+
+        Args:
+            descending (bool): Whether to sort in descending
+            nulls_last (bool): Whether to put nulls last
+
+        Returns:
+            Self: An expression with the order by applied.
+        """
+        expr = exp.Ordered(this=self.inner, desc=descending, nulls_first=not nulls_last)
+        return self._cls(expr)
 
     def is_in(self, args: TryIter[IntoExpr], *more_args: IntoExpr) -> Self:
         exprs = into_expr_list(try_iter(args).chain(more_args))
@@ -421,12 +428,6 @@ class Expr(Fns):
 
     def is_null(self) -> Self:
         return self._cls(exp.Is(this=self.inner, expression=exp.Null()))
-
-    def nulls_first(self) -> Self:
-        return self._cls(exp.Ordered(this=self.inner, nulls_first=True))
-
-    def nulls_last(self) -> Self:
-        return self._cls(exp.Ordered(this=self.inner, nulls_first=False))
 
     def show(self) -> None:
         print(self.inner.sql(dialect="duckdb", identify=True))
@@ -1014,26 +1015,6 @@ class Expr(Fns):
             .map(lambda order_exprs: expr(partition_exprs, order_exprs))
             .unwrap_or_else(lambda: expr(partition_exprs))
         )
-
-    def set_order(self, *, desc: bool, nulls_last: bool) -> Self:
-        """Set the ordering of the expression. Syntactic sugar for use in parameterized functions.
-
-        Args:
-        desc (bool): Whether to sort in descending order.
-        nulls_last (bool): Whether to put nulls last.
-
-        Returns:
-            Self
-        """
-        match (desc, nulls_last):
-            case (True, True):
-                return self.desc().nulls_last()
-            case (True, False):
-                return self.desc()
-            case (False, True):
-                return self.asc().nulls_last()
-            case (False, False):
-                return self.asc()
 
     def dense_rank(self) -> Self:
         """The rank of the current row without gaps; this function counts peer groups.
