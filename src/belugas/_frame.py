@@ -7,7 +7,7 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Self, SupportsInt, overload
+from typing import TYPE_CHECKING, Any, Literal, Self, SupportsInt, overload, override
 
 from pyochain import (
     NONE,
@@ -105,30 +105,17 @@ class LazyFrame(CoreHandler[exp.Selectable]):
                 self._schema = source.schema
 
     def _make(
-        self,
-        ast: exp.Selectable,
-        sources: Dict[str, ScanSource],
-        schema: Option[Schema] = NONE,
+        self, ast: exp.Selectable, sources: Dict[str, ScanSource], schema: Schema
     ) -> Self:
         out = self.__class__.__new__(self.__class__)
         out._inner = ast
         out._sources = sources
-        out._schema = schema.unwrap_or_else(
-            lambda: _compute_schema(
-                ast,
-                sources
-                .items()
-                .iter()
-                .map_star(lambda name, source: (name, source.schema))
-                .collect(Dict),
-            )
-        )
+        out._schema = schema
         return out
 
     def _from_ast(
         self,
         ast: exp.Selectable,
-        *,
         schema: Option[Schema] = NONE,
         **subs: Self | ScanSource,
     ) -> Self:
@@ -148,7 +135,25 @@ class LazyFrame(CoreHandler[exp.Selectable]):
             .chain(self._sources.items())
             .collect(Dict)
         )
-        return ast.transform(_replacer, subs=subs).pipe(self._make, new_sources, schema)  # pyright: ignore[reportArgumentType]
+        new_schema = schema.unwrap_or_else(
+            lambda: _compute_schema(
+                ast,
+                new_sources
+                .items()
+                .iter()
+                .map_star(lambda name, source: (name, source.schema))
+                .collect(Dict),
+            )
+        )
+        return ast.transform(_replacer, subs=subs).pipe(
+            self._make,  # pyright: ignore[reportArgumentType]
+            new_sources,
+            new_schema,
+        )
+
+    @override
+    def _cls(self, value: exp.Selectable) -> Self:
+        return self._from_ast(value, src=self, schema=Some(self._schema))
 
     def _materialize(self) -> DuckDBPyRelation:
         return self._inner.pipe(ScanSource.from_query, **self._sources).relation
@@ -228,9 +233,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         return plan.select_ctx().map_or_else(
             lambda: self.__class__(ScanSource.from_none().relation),
             lambda ast: self._from_ast(
-                ast,
-                schema=Some(_compute_input_schema(ast, self._schema)),
-                src=self,
+                ast, Some(_compute_input_schema(ast, self._schema)), src=self
             ),
         )
 
@@ -253,9 +256,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         plan = self._schema.into(ExprPlan, exprs, more_exprs, named_exprs)
         ast = plan.with_columns_ctx()
         return self._from_ast(
-            ast,
-            schema=Some(_compute_input_schema(ast, self._schema)),
-            src=self,
+            ast, Some(_compute_input_schema(ast, self._schema)), src=self
         )
 
     def filter(
@@ -286,12 +287,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
             .reduce(Expr.and_)
             .inner
         )
-        return (
-            _slct_all()
-            .from_("src")
-            .where(condition)
-            .pipe(self._from_ast, src=self, schema=Some(self._schema))
-        )
+        return _slct_all().from_("src").where(condition).pipe(self._cls)
 
     def group_by(
         self,
@@ -404,12 +400,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
                 )
             )
         )
-        return (
-            _slct_all()
-            .from_("src")
-            .order_by(*order_exprs)
-            .pipe(self._from_ast, src=self, schema=Some(self._schema))
-        )
+        return _slct_all().from_("src").order_by(*order_exprs).pipe(self._cls)
 
     def limit(self, n: int) -> Self:
         """Limit the number of rows.
@@ -420,12 +411,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         Returns:
             Self: A new LazyFrame with the limited rows.
         """
-        return (
-            _slct_all()
-            .from_("src")
-            .limit(n)
-            .pipe(self._from_ast, src=self, schema=Some(self._schema))
-        )
+        return _slct_all().from_("src").limit(n).pipe(self._cls)
 
     def head(self, n: int = 5) -> Self:
         """Get the first n rows.
@@ -505,11 +491,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
                         )
                     )
 
-        return (
-            _qry(Option(length), offset)
-            .map(lambda ast: self._from_ast(ast, src=self, schema=Some(self._schema)))
-            .unwrap()
-        )
+        return _qry(Option(length), offset).map(self._cls).unwrap()
 
     def tail(self, n: int = 5) -> Self:
         """Get the last n rows.
@@ -841,7 +823,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         Returns:
             Self: A new LazyFrame that is a copy of the current one.
         """
-        return self._make(self._inner, self._sources)
+        return self._make(self._inner, self._sources, self._schema)
 
     def gather_every(self, n: int, offset: int = 0) -> Self:
         """Take every nth row starting from offset.
@@ -1123,9 +1105,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
                 _slct_all().from_("src").distinct(*subset_names).order_by(*order_exprs)
             )
 
-        return (
-            _query().unwrap().pipe(self._from_ast, src=self, schema=Some(self._schema))
-        )
+        return _query().unwrap().pipe(self._cls)
 
     def pivot(  # noqa: C901, PLR0913
         self,
