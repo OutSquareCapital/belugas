@@ -73,73 +73,6 @@ def _resolve_exploded(expr: Expr, *, is_distinct: bool) -> Expr:
     return expr.implode()
 
 
-def extract_root_name(node: exp.Expr) -> str:  # noqa: PLR0911
-    match node:
-        case exp.Alias() | exp.Column():
-            return node.output_name
-        case exp.Literal() | exp.Boolean() | exp.Null():
-            return Marker.LITERAL
-        case exp.Case():
-            return _case_root_name(node)
-        case exp.Anonymous() | exp.AnonymousAggFunc() | exp.Distinct() | exp.List():
-            match node.expressions:
-                case [exp.Expr() as first_arg, *_]:
-                    return extract_root_name(first_arg)
-                case _:
-                    return Marker.LITERAL
-        case exp.Func():
-            return _func_root_name(node)
-        case exp.Window():
-            return _window_root_name(node)
-        case exp.Expr():
-            match node.this:  # pyright: ignore[reportAny]
-                case exp.Expr() as inner:
-                    return extract_root_name(inner)
-                case _:  # pyright: ignore[reportAny]
-                    return Marker.LITERAL
-
-
-def _case_root_name(node: exp.Case) -> str:
-    match node.args.get("ifs", []):
-        case [exp.If() as first_if, *_]:
-            match first_if.args.get("true"):
-                case exp.Expr() as then_val:
-                    return extract_root_name(then_val)
-                case _:
-                    return Marker.LITERAL
-        case _:  # pyright: ignore[reportAny]
-            return Marker.LITERAL
-
-
-def _func_root_name(node: exp.Func) -> str:
-    match node.this:  # pyright: ignore[reportAny]
-        case exp.Expr() as inner:
-            name = extract_root_name(inner)
-            match name:
-                case Marker.LITERAL:
-                    return _root_col_name(node)
-                case _:
-                    return name
-        case _:  # pyright: ignore[reportAny]
-            return _root_col_name(node)
-
-
-def _window_root_name(node: exp.Window) -> str:
-    name = extract_root_name(node.this)  # pyright: ignore[reportAny]
-    if name in {Marker.LITERAL, Marker.TEMP}:
-        return _root_col_name(node)
-    return name
-
-
-def _root_col_name(node: exp.Expr) -> str:
-    return (
-        _find_all(node, exp.Column)
-        .map(lambda c: c.output_name)
-        .find(lambda name: name != Marker.TEMP)
-        .unwrap_or(Marker.LITERAL)
-    )
-
-
 @dataclass(slots=True)
 class AliasMapper:
     """Metadata for expressions, used for tracking properties that affect query generation."""
@@ -163,61 +96,9 @@ class MultiAliasMapper(AliasMapper):
 
         return self.__class__(self.resolver, Some(_get_mapper()))
 
-    def into_resolved(self, expr: Expr, schema: Schema) -> Iter[ResolvedExpr]:
-        base_names = self.resolver(schema)
-        output_names = self.get_output_names(base_names, expr)
-
-        def _resolved(expr: Expr, col_name: str, name: str) -> ResolvedExpr:
-            target = exp.column(col_name)
-
-            def _replacer(node: exp.Expr) -> exp.Expr:
-                match node:
-                    case exp.Star() | exp.Columns():
-                        return target
-                    case _:
-                        return node
-
-            return (
-                expr.inner
-                .transform(_replacer)
-                .pipe(expr.__class__)
-                .pipe(ResolvedExpr, name)
-            )
-
-        match expr.inner:
-            case exp.Alias():
-                expr = expr.inner.unalias().pipe(expr.__class__)
-                alias = output_names.first()
-                return base_names.iter().map(lambda name: _resolved(expr, name, alias))
-
-            case _:
-                return (
-                    base_names
-                    .iter()
-                    .zip(output_names)
-                    .map_star(lambda name, output: _resolved(expr, name, output))
-                )
-
-    def get_output_names(self, base_names: Cols, expr: Expr) -> Cols:
-        match expr.inner, self.alias_name:
-            case exp.Alias() as inner, Some(alias_fn):
-                return Seq((alias_fn(inner.output_name),))
-            case exp.Alias() as inner, Null():
-                return Seq((inner.output_name,))
-            case _, Some(alias_fn):
-                return base_names.iter().map(alias_fn).collect()
-            case _:
-                return base_names
-
     @override
     def reset(self) -> Self:
         return self.__class__(self.resolver, NONE)
-
-
-def _find_all[T: exp.Expr](
-    expr: exp.Expr, *exprs: type[T], bfs: bool = True
-) -> Iter[T]:
-    return Iter(expr.find_all(*exprs, bfs=bfs))
 
 
 @dataclass(slots=True, init=False)
@@ -291,6 +172,155 @@ class ResolvedExpr(Pipeable):
         return self.name != marker and is_temp
 
 
+def _resolve(val: IntoExpr, schema: Schema) -> Iter[ResolvedExpr]:
+    from ._expr import Expr
+
+    def _get_inner_node(inner_node: exp.Star | list[exp.Expr]) -> Cols:
+        match inner_node:
+            case exp.Star():
+                return schema.keys()
+            case list() as cols:
+                return Iter(cols).map(lambda c: c.name).collect()
+
+    match val:
+        case Expr():
+            match val.aliaser:
+                case MultiAliasMapper() as meta:
+                    base_names = meta.resolver(schema)
+                    match val.inner, meta.alias_name:
+                        case exp.Alias() as inner, Some(alias_fn):
+                            output_names = Seq((alias_fn(inner.output_name),))
+                        case exp.Alias() as inner, Null():
+                            output_names = Seq((inner.output_name,))
+                        case _, Some(alias_fn):
+                            output_names = base_names.iter().map(alias_fn).collect()
+                        case _:
+                            output_names = base_names
+                    return _expand_columns(val, base_names, output_names)
+
+                case _:
+                    match val.inner.find(exp.Columns):
+                        case None:
+                            name = extract_root_name(val.inner)
+                            return ResolvedExpr(val, name).into(Iter.once)
+                        case _ as columns_node:
+                            base_names = _get_inner_node(columns_node.this)  # pyright: ignore[reportAny]
+                            return _expand_columns(val, base_names, base_names)
+        case _:
+            return (
+                Expr
+                .new(val, as_col=True)
+                .pipe(lambda e: ResolvedExpr(e, e.inner.output_name))
+                .into(Iter.once)
+            )
+
+
+def _expand_columns(
+    expr: Expr, base_names: Cols, output_names: Cols
+) -> Iter[ResolvedExpr]:
+    def _resolved(src: Expr, col_name: str, name: str) -> ResolvedExpr:
+        target = exp.column(col_name)
+
+        def _replacer(node: exp.Expr) -> exp.Expr:
+            match node:
+                case exp.Star() | exp.Columns():
+                    return target
+                case _:
+                    return node
+
+        return (
+            src.inner.transform(_replacer).pipe(src.__class__).pipe(ResolvedExpr, name)
+        )
+
+    match expr.inner:
+        case exp.Alias():
+            unaliased = expr.inner.unalias().pipe(expr.__class__)
+            alias = output_names.first()
+            return base_names.iter().map(
+                lambda col_name: _resolved(unaliased, col_name, alias)
+            )
+        case _:
+            return (
+                base_names
+                .iter()
+                .zip(output_names)
+                .map_star(lambda name, output: _resolved(expr, name, output))
+            )
+
+
+def extract_root_name(node: exp.Expr) -> str:  # noqa: PLR0911
+    match node:
+        case exp.Alias() | exp.Column():
+            return node.output_name
+        case exp.Literal() | exp.Boolean() | exp.Null():
+            return Marker.LITERAL
+        case exp.Case():
+            return _case_root_name(node)
+        case exp.Anonymous() | exp.AnonymousAggFunc() | exp.Distinct() | exp.List():
+            match node.expressions:
+                case [exp.Expr() as first_arg, *_]:
+                    return extract_root_name(first_arg)
+                case _:
+                    return Marker.LITERAL
+        case exp.Func():
+            return _func_root_name(node)
+        case exp.Window():
+            return _window_root_name(node)
+        case exp.Expr():
+            match node.this:  # pyright: ignore[reportAny]
+                case exp.Expr() as inner:
+                    return extract_root_name(inner)
+                case _:  # pyright: ignore[reportAny]
+                    return Marker.LITERAL
+
+
+def _case_root_name(node: exp.Case) -> str:
+    match node.args.get("ifs", []):
+        case [exp.If() as first_if, *_]:
+            match first_if.args.get("true"):
+                case exp.Expr() as then_val:
+                    return extract_root_name(then_val)
+                case _:
+                    return Marker.LITERAL
+        case _:  # pyright: ignore[reportAny]
+            return Marker.LITERAL
+
+
+def _func_root_name(node: exp.Func) -> str:
+    match node.this:  # pyright: ignore[reportAny]
+        case exp.Expr() as inner:
+            name = extract_root_name(inner)
+            match name:
+                case Marker.LITERAL:
+                    return _root_col_name(node)
+                case _:
+                    return name
+        case _:  # pyright: ignore[reportAny]
+            return _root_col_name(node)
+
+
+def _window_root_name(node: exp.Window) -> str:
+    name = extract_root_name(node.this)  # pyright: ignore[reportAny]
+    if name in {Marker.LITERAL, Marker.TEMP}:
+        return _root_col_name(node)
+    return name
+
+
+def _root_col_name(node: exp.Expr) -> str:
+    return (
+        _find_all(node, exp.Column)
+        .map(lambda c: c.output_name)
+        .find(lambda name: name != Marker.TEMP)
+        .unwrap_or(Marker.LITERAL)
+    )
+
+
+def _find_all[T: exp.Expr](
+    expr: exp.Expr, *exprs: type[T], bfs: bool = True
+) -> Iter[T]:
+    return Iter(expr.find_all(*exprs, bfs=bfs))
+
+
 @dataclass(slots=True, init=False)
 class ExprPlan:
     schema: Schema
@@ -313,31 +343,12 @@ class ExprPlan:
                 case _:
                     return Expr.new(val, as_col=True).alias(name)
 
-        def _resolve(val: IntoExpr) -> Iter[ResolvedExpr]:
-            from ._expr import Expr
-
-            match val:
-                case Expr():
-                    match val.aliaser:
-                        case MultiAliasMapper() as meta:
-                            return meta.into_resolved(val, schema)
-                        case _:
-                            name = extract_root_name(val.inner)
-                            return ResolvedExpr(val, name).into(Iter.once)
-                case _:
-                    return (
-                        Expr
-                        .new(val, as_col=True)
-                        .pipe(lambda e: ResolvedExpr(e, e.inner.output_name))
-                        .into(Iter.once)
-                    )
-
         self.schema = schema
         self.projections = (
             try_iter(exprs)
             .chain(more_exprs)
             .chain(Iter(named_exprs.items()).map_star(_alias_named_expr))
-            .flat_map(_resolve)
+            .flat_map(lambda val: _resolve(val, schema))
             .collect()
         )
 

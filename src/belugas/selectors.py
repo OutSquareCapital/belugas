@@ -55,13 +55,6 @@ class Resolver:
         return cls(_all_columns)
 
     @classmethod
-    def fixed(cls, names: Cols) -> Self:
-        def _fixed(_: Schema) -> Cols:
-            return names
-
-        return cls(_fixed)
-
-    @classmethod
     def all_fn(cls, exclude: Option[TryIter[IntoExprColumn]]) -> Self:
         return exclude.map(
             lambda exc: (

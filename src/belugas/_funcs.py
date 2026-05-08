@@ -310,14 +310,13 @@ def var(column: str, *, ddof: int = 1) -> Expr:
 def _agg_expr(
     agg: Callable[[Expr], Expr], cols: TryIter[str], more_cols: Iterable[str]
 ) -> Expr:
-    from .selectors import Resolver
-
-    all_cols = try_iter(cols).chain(more_cols).collect().then_some()
-    meta = all_cols.map(Resolver.fixed).unwrap_or_else(Resolver.all_columns).into_meta()
     return (
-        all_cols
+        try_iter(cols)
+        .chain(more_cols)
+        .collect()
+        .then_some()
         .map(lambda inner_cols: exp.Columns(this=inner_cols.into(into_expr_list)))
         .unwrap_or_else(lambda: exp.Columns(this=exp.Star()))
-        .pipe(Expr, meta)
+        .pipe(Expr)
         .pipe(agg)
     )
