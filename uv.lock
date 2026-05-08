@@ -32,6 +32,63 @@ wheels = [
 ]
 
 [[package]]
+name = "belugas"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "duckdb" },
+    { name = "pyochain" },
+    { name = "sqlglot", extra = ["c"] },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "basedpyright" },
+    { name = "ibis" },
+    { name = "matplotlib" },
+    { name = "narwhals" },
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "pandas-stubs" },
+    { name = "polars" },
+    { name = "pyarrow" },
+    { name = "pyarrow-stubs" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytz" },
+    { name = "ruff" },
+    { name = "sdsort" },
+    { name = "typer" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "duckdb", specifier = ">=1.5.2" },
+    { name = "pyochain", specifier = ">=0.9.2" },
+    { name = "sqlglot", extras = ["c"], specifier = ">=30.7.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "basedpyright", specifier = ">=1.38.2" },
+    { name = "ibis", specifier = ">=3.3.0" },
+    { name = "matplotlib", specifier = ">=3.10.8" },
+    { name = "narwhals", specifier = ">=2.15.0" },
+    { name = "numpy", specifier = ">=2.4.2" },
+    { name = "pandas", specifier = ">=3.0.1" },
+    { name = "pandas-stubs", specifier = ">=3.0.0.260204" },
+    { name = "polars", specifier = ">=1.37.1" },
+    { name = "pyarrow", specifier = ">=23.0.0" },
+    { name = "pyarrow-stubs", specifier = ">=20.0.0.20251215" },
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "pytz", specifier = ">=2025.2" },
+    { name = "ruff", specifier = ">=0.14.14" },
+    { name = "sdsort", specifier = ">=0.4.2" },
+    { name = "typer", specifier = ">=0.21.1" },
+]
+
+[[package]]
 name = "click"
 version = "8.3.3"
 source = { registry = "https://pypi.org/simple" }
@@ -423,24 +480,15 @@ wheels = [
 ]
 
 [[package]]
-name = "logeye"
-version = "1.5.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/f7664c5745e76acbc2231cb2a6485ec2d16d9ecc7d9a475ad4c5248a6410/logeye-1.5.2.tar.gz", hash = "sha256:32c5656b44ae4995d7c61ff3fcbc0d009e85ce5f0ced6d58c86d0650dd754c6d", size = 46450, upload-time = "2026-04-14T22:20:06.27Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4f/25/7d39cebbd0a3f99b5a4b9618683bf04b2e99f8956c6153865eb4408bab95/logeye-1.5.2-py3-none-any.whl", hash = "sha256:a039d11a760563767a0d6e65722f8aed25e5cab1e6e24eaeb10dd0a6aef279f1", size = 31729, upload-time = "2026-04-14T22:20:04.703Z" },
-]
-
-[[package]]
 name = "markdown-it-py"
-version = "4.0.0"
+version = "4.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mdurl" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5b/f5/4ec618ed16cc4f8fb3b701563655a69816155e79e24a17b651541804721d/markdown_it_py-4.0.0.tar.gz", hash = "sha256:cb0a2b4aa34f932c007117b194e945bd74e0ec24133ceb5bac59009cda1cb9f3", size = 73070, upload-time = "2025-08-11T12:57:52.854Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/06/ff/7841249c247aa650a76b9ee4bbaeae59370dc8bfd2f6c01f3630c35eb134/markdown_it_py-4.2.0.tar.gz", hash = "sha256:04a21681d6fbb623de53f6f364d352309d4094dd4194040a10fd51833e418d49", size = 82454, upload-time = "2026-05-07T12:08:28.36Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl", hash = "sha256:87327c59b172c5011896038353a81343b6754500a08cd7a4973bb48c6d578147", size = 87321, upload-time = "2025-08-11T12:57:51.923Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/81/4da04ced5a082363ecfa159c010d200ecbd959ae410c10c0264a38cac0f5/markdown_it_py-4.2.0-py3-none-any.whl", hash = "sha256:9f7ebbcd14fe59494226453aed97c1070d83f8d24b6fc3a3bcf9a38092641c4a", size = 91687, upload-time = "2026-05-07T12:08:27.182Z" },
 ]
 
 [[package]]
@@ -501,11 +549,11 @@ wheels = [
 
 [[package]]
 name = "narwhals"
-version = "2.20.0"
+version = "2.21.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e9/f3/257adc69a71011b4c8cda321b00f02c5bf1980ae38ffd05a58d9632d4de8/narwhals-2.20.0.tar.gz", hash = "sha256:c10994975fa7dc5a68c2cffcddbd5908fc8ebb2d463c5bab085309c0ee1f551e", size = 627848, upload-time = "2026-04-20T12:11:45.427Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2d/0e/3ad61eb87088cc4932e0d851531fa82f845a6230b68b091a0e298cc7e537/narwhals-2.21.0.tar.gz", hash = "sha256:7c6e7f50528e62b7a967dd864d7e117d2955d38d4f730653ce46a9861358e2dc", size = 633083, upload-time = "2026-05-08T12:29:02.587Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d0/69/f24d3d1c38ad69e256138b4ec2452a8c7cf66be49dc214771ae99dd4f0a0/narwhals-2.20.0-py3-none-any.whl", hash = "sha256:16e750ea5507d4ba6e8d03455b5f93a535e0405976561baea235bca5dc9f475d", size = 449373, upload-time = "2026-04-20T12:11:43.596Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/e1/68c2256b69a314eba133673377ba9118c356f6342a0c02b61de449cf2bf2/narwhals-2.21.0-py3-none-any.whl", hash = "sha256:1e6617d0fca68ae1fda29e5397c4eaacd3ffc9fffe6bcd6ded0c690475e853be", size = 451943, upload-time = "2026-05-08T12:29:01.058Z" },
 ]
 
 [[package]]
@@ -735,65 +783,6 @@ wheels = [
 ]
 
 [[package]]
-name = "belugas"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "duckdb" },
-    { name = "pyochain" },
-    { name = "sqlglot", extra = ["c"] },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "basedpyright" },
-    { name = "ibis" },
-    { name = "logeye" },
-    { name = "matplotlib" },
-    { name = "narwhals" },
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "pandas-stubs" },
-    { name = "polars" },
-    { name = "pyarrow" },
-    { name = "pyarrow-stubs" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytz" },
-    { name = "ruff" },
-    { name = "sdsort" },
-    { name = "typer" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "duckdb", specifier = ">=1.5.2" },
-    { name = "pyochain", specifier = ">=0.9.2" },
-    { name = "sqlglot", extras = ["c"], specifier = ">=30.7.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "basedpyright", specifier = ">=1.38.2" },
-    { name = "ibis", specifier = ">=3.3.0" },
-    { name = "logeye", specifier = ">=1.4.0" },
-    { name = "matplotlib", specifier = ">=3.10.8" },
-    { name = "narwhals", specifier = ">=2.15.0" },
-    { name = "numpy", specifier = ">=2.4.2" },
-    { name = "pandas", specifier = ">=3.0.1" },
-    { name = "pandas-stubs", specifier = ">=3.0.0.260204" },
-    { name = "polars", specifier = ">=1.37.1" },
-    { name = "pyarrow", specifier = ">=23.0.0" },
-    { name = "pyarrow-stubs", specifier = ">=20.0.0.20251215" },
-    { name = "pytest", specifier = ">=9.0.2" },
-    { name = "pytest-cov", specifier = ">=7.0.0" },
-    { name = "pytz", specifier = ">=2025.2" },
-    { name = "ruff", specifier = ">=0.14.14" },
-    { name = "sdsort", specifier = ">=0.4.2" },
-    { name = "typer", specifier = ">=0.21.1" },
-]
-
-[[package]]
 name = "pyarrow"
 version = "24.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -852,23 +841,23 @@ wheels = [
 
 [[package]]
 name = "pyochain"
-version = "0.9.3"
+version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cytoolz" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6b/af/5aa790bf9197e09f44302ea1212e558d61009e5f08ee80803b0af95294c7/pyochain-0.9.3.tar.gz", hash = "sha256:72a9ffb426632f2de69e615dd0060e7c90063cd820ed47e583929e16d50da865", size = 61108, upload-time = "2026-04-23T17:47:29.298Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/99/06/f69adc82375366ad86a3e58610b0c5938b1733544121fb1d67dff09343d5/pyochain-0.10.0.tar.gz", hash = "sha256:31063cec335cc0684fdc1f964d9e6f4c9ec1fe4613f64a03d3d7af6c5b115583", size = 61694, upload-time = "2026-05-07T16:18:44.716Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/07/d5/b2fe41e04d256c398294ed3d4f770e25b462e87ee15207e7cbc070da0c72/pyochain-0.9.3-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:7f50c383bffaaa96313f9994bdcb4028b693b7577c7d0e6a19d929170f245ad0", size = 362637, upload-time = "2026-04-23T17:47:26.448Z" },
-    { url = "https://files.pythonhosted.org/packages/31/c1/bf4de33368bef8b9e51d50fdb34ab5dfb4682565b3bc4c4f6f4c2e4fc9a8/pyochain-0.9.3-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:f97408b1250ef50622b3af5bf50a3a67d8ba0ff7cc0dadf651bf16635969ec57", size = 352628, upload-time = "2026-04-23T17:47:23.44Z" },
-    { url = "https://files.pythonhosted.org/packages/3d/69/f32110df06d4497e65126023cb429995c7b929f11118ac645351c6236b74/pyochain-0.9.3-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:16b947c91fd22940122d2f5d4278bd9d6ca90ca4833cebdd1c71265b488ce665", size = 373197, upload-time = "2026-04-23T17:47:17.091Z" },
-    { url = "https://files.pythonhosted.org/packages/20/72/f28a4a1da48d8e27d3d1be84b0c6f00946f01afbb8fe7bf7f00c525956e1/pyochain-0.9.3-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2796f6203b5af090b76c91d4c8d5cca155c9924a858843316a0dd3874bf3e8f9", size = 374480, upload-time = "2026-04-23T17:47:20.602Z" },
-    { url = "https://files.pythonhosted.org/packages/73/aa/fee2a33938c938dc978a62888b18f5bbc709de63f9807934ee6256c1e3c8/pyochain-0.9.3-cp313-cp313-win_amd64.whl", hash = "sha256:b80f99377ef7b3f27fb8f22584567fece2ec95df81fc43a9bbbda7355b0d184c", size = 256530, upload-time = "2026-04-23T17:47:30.611Z" },
-    { url = "https://files.pythonhosted.org/packages/b6/0e/131e2ce56e0a8a83cc06b47e351b24d3908c395d56980ea238f2bd7cbed5/pyochain-0.9.3-cp314-cp314-macosx_10_12_x86_64.whl", hash = "sha256:1b5f0eef0ef0b40cdea4f52c785c9470e9033383909dbdd6bd7bbd375baf1eb0", size = 367373, upload-time = "2026-04-23T17:47:27.817Z" },
-    { url = "https://files.pythonhosted.org/packages/fe/c1/81d4ef1d6e06d312234e4be3b6c9a08128e30be784386d4a5bcecdaf45eb/pyochain-0.9.3-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:e1603e0345a058e3a2b0a4de24c7b9fbbca351613bdb133ce5325c60e5d17984", size = 356748, upload-time = "2026-04-23T17:47:24.907Z" },
-    { url = "https://files.pythonhosted.org/packages/02/fe/2a8312242f35ffad9c6f625330d0c533342d3668652d71077defab5eb25d/pyochain-0.9.3-cp314-cp314-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8790d6127c5a00717bbf1d36c672e9fb45b7aeb2ce76aa1ccbdcd2d638e3ff00", size = 379480, upload-time = "2026-04-23T17:47:18.731Z" },
-    { url = "https://files.pythonhosted.org/packages/ff/2a/1fd26d66290023ceb7cc694a65dfdc10b812f3d7434ab78f0735fc12be5d/pyochain-0.9.3-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9647aecc29f75e06fbd79a5a5061750e6a8f1801a7bad4ed1b35e25ba3df9d0a", size = 378166, upload-time = "2026-04-23T17:47:21.856Z" },
-    { url = "https://files.pythonhosted.org/packages/8c/6f/42de748e946862d06f3e86c28d35e34b786b03e8af1550b768d9124592a9/pyochain-0.9.3-cp314-cp314-win_amd64.whl", hash = "sha256:738987b8683d8b66e7a012c0b31cebf601834ed5ce219d429ba904c16dea0eb4", size = 261559, upload-time = "2026-04-23T17:47:31.939Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/ea/f368420a29a442a038a44f1166971ad084300181270b51bbb77aba72c1a3/pyochain-0.10.0-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:cbe60059dd304bfcf35a1d4745a058e7813890347b0d7464d17c742cd4bf2fd7", size = 361524, upload-time = "2026-05-07T16:18:42.385Z" },
+    { url = "https://files.pythonhosted.org/packages/c1/30/4239ad6516cbaca06edc8eee1595540a0ee4da18fce3bdc28ac0bc03dada/pyochain-0.10.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:c046d46f64b91a069c3867c66a325c6bcb37536f6066d853a8bfe249f02cbd0e", size = 348568, upload-time = "2026-05-07T16:18:39.704Z" },
+    { url = "https://files.pythonhosted.org/packages/df/33/92f77a7e255738d4836e76f7d45acf80c549af6193c289f6992074c45a21/pyochain-0.10.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f608ac1e90cd4ecd92e815f8e5e29a3ad94d11d11ee8bdf5664eda661719ccfb", size = 373737, upload-time = "2026-05-07T16:18:33.39Z" },
+    { url = "https://files.pythonhosted.org/packages/e1/80/91eaebad61fb2e7b7735ae6e825bf19a4858a0798d1736bf8ff2125effe1/pyochain-0.10.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4ee5ab8ac0d9a451aa8c3468962e766fe5f8245a1601738e1068fb015b943468", size = 373873, upload-time = "2026-05-07T16:18:37.237Z" },
+    { url = "https://files.pythonhosted.org/packages/80/4f/996e566aeac6fa47808e7ac7d34ae978fbab37541c64ee1137ea91c91ca9/pyochain-0.10.0-cp313-cp313-win_amd64.whl", hash = "sha256:ede6ccde549e51dc6c7d1b12df33da81663aacd2e179afa1a2f92552666a983c", size = 258618, upload-time = "2026-05-07T16:18:45.755Z" },
+    { url = "https://files.pythonhosted.org/packages/e2/a4/2c50c8bb5b23461006230d5c18be0cc64811b4a996f99ba5962272f29c1d/pyochain-0.10.0-cp314-cp314-macosx_10_12_x86_64.whl", hash = "sha256:39fcbc88fe1f995f524c135e9b0b056c57628415db96a127c842471f8f06a1b8", size = 361954, upload-time = "2026-05-07T16:18:43.396Z" },
+    { url = "https://files.pythonhosted.org/packages/59/9c/cc732b7d678542ff8d5d959069cbfd7645cae629ade864b0260de718f412/pyochain-0.10.0-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:79a88a40dbf706230ab0f254d0ac760dbc6953f9d278869acb3722c98ff53e95", size = 348581, upload-time = "2026-05-07T16:18:41.203Z" },
+    { url = "https://files.pythonhosted.org/packages/24/55/87038b52ec5366f8578929bf3ed10918dfb53c1f777423aed2263314d4f6/pyochain-0.10.0-cp314-cp314-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:79ec0d0df71bdd8f67e5c92f574fa6af84dc544f2fc0eea734250b2393f99894", size = 373295, upload-time = "2026-05-07T16:18:35.341Z" },
+    { url = "https://files.pythonhosted.org/packages/0e/78/4de196e2feca4d19c3040515cbcda408a41a989752dcb7ff50b9cb156a97/pyochain-0.10.0-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5f95b56da9a6a3658240276b3cd6fb1453ece5b75ef4ae88403151b2c7e7c90f", size = 373821, upload-time = "2026-05-07T16:18:38.329Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/b1/ef018ce9193aa025f1ba34d4887b496ff5bcf8ccc48490a703022cf46f80/pyochain-0.10.0-cp314-cp314-win_amd64.whl", hash = "sha256:149fc5388c5fa31b8e1cfc8c6c273e34fad30ad1a4a8ac2702b69853248b47b8", size = 258364, upload-time = "2026-05-07T16:18:46.918Z" },
 ]
 
 [[package]]

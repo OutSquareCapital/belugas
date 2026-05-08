@@ -10,7 +10,6 @@
     dev = [
         "basedpyright>=1.38.2",
         "ibis>=3.3.0",
-        "logeye>=1.4.0",
         "matplotlib>=3.10.8",
         "narwhals>=2.15.0",
         "numpy>=2.4.2",
@@ -25,7 +24,7 @@
         "ruff>=0.14.14",
         "sdsort>=0.4.2",
         "typer>=0.21.1",
-    ]
+]
 [build-system]
     build-backend = "uv_build"
     requires      = ["uv_build>=0.8.15,<0.9.0"]
