@@ -36,7 +36,7 @@ class LazyGroupBy:
         self._strategy: GroupByClause | None = strategy
         keys_names = keys.iter().filter_map(_root_column_name).collect(Set)
         self._schema = (
-            frame.schema
+            frame._schema  # pyright: ignore[reportPrivateUsage]
             .items()
             .iter()
             .filter_star(lambda name, _dt: name not in keys_names)
@@ -105,10 +105,6 @@ class LazyGroupBy:
 
         return (
             self._schema
-            .items()
-            .iter()
-            .map_star(lambda k, v: (k, v.raw))
-            .collect(Dict)
             .into(ExprPlan, aggs, more_aggs, named_aggs)
             .agg_ctx(Iter(key_glots))
             .group_by(*_group_by_clause())
