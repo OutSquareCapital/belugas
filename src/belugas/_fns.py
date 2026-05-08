@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, ClassVar, Self
 from ._core import ExprHandler, NameSpaceHandler, anon, anon_agg, func
 
 if TYPE_CHECKING:
-    from .typing import IntoExpr, IntoExprColumn, SeqLiteral
+    from .typing import BlobLiteral, IntoExpr, IntoExprColumn, SeqLiteral
 
 
 class Fns(ExprHandler):
@@ -2236,6 +2236,16 @@ class Fns(ExprHandler):
         """
         return self._cls(anon("octet_length", self.inner))
 
+    def parse_delta_filter_logline(self) -> Self:
+        """SQL parse_delta_filter_logline function.
+
+        **SQL name**: *parse_delta_filter_logline*
+
+        Returns:
+            Self
+        """
+        return self._cls(anon("parse_delta_filter_logline", self.inner))
+
     def parse_duckdb_log_message(self, message: IntoExprColumn) -> Self:
         """Parse the message into the expected logical type.
 
@@ -3400,6 +3410,19 @@ class Fns(ExprHandler):
             Self
         """
         return self._cls(anon("weighted_avg", self.inner, weight))
+
+    def write_blob(self, col1: IntoExprColumn | BlobLiteral) -> Self:
+        """SQL write_blob function.
+
+        **SQL name**: *write_blob*
+
+        Args:
+            col1 (IntoExprColumn | BlobLiteral): `BLOB` expression
+
+        Returns:
+            Self
+        """
+        return self._cls(anon("write_blob", self.inner, col1))
 
     def write_log(self, *args: IntoExpr) -> Self:
         """Writes to the logger.

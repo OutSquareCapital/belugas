@@ -15,9 +15,11 @@ from ._schemas import TableSchema
 from ._sections import FunctionInfo, build_file
 
 
-def run_pipeline(caller: Path, source: Path, *, profile: bool = False) -> str:
+def run_pipeline(
+    caller: Path, source: Path, *, profile: bool = False, regenerate: bool
+) -> str:
     return (
-        _try_scan(source)
+        _try_scan(source, regenerate=regenerate)
         .pipe(run_qry)
         .pipe(_inspect if profile else lambda lf: lf)
         .collect()
@@ -31,14 +33,16 @@ def run_pipeline(caller: Path, source: Path, *, profile: bool = False) -> str:
     )
 
 
-def _try_scan(source: Path) -> pl.LazyFrame:
-    if source.exists():
+def _try_scan(source: Path, *, regenerate: bool) -> pl.LazyFrame:
+    if source.exists() and not regenerate:
         return pl.scan_parquet(source)
     import duckdb
 
     conn = duckdb.connect()
     conn.install_extension("spatial")
     conn.load_extension("spatial")
+    conn.install_extension("delta")
+    conn.load_extension("delta")
     df = conn.table_function("duckdb_functions").pl().cast(TableSchema)
     df.write_parquet(source)
     return df.lazy()

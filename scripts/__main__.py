@@ -44,12 +44,20 @@ def gen_fns(
     profile: Annotated[
         bool, typer.Option("--p", help="Enable profiling of the pipeline")
     ] = False,
+    regenerate: Annotated[
+        bool,
+        typer.Option(
+            "--r", help="Regenerate the source parquet file from DuckDB introspection"
+        ),
+    ] = False,
 ) -> None:
     """Generate typed DuckDB function wrappers from the database."""
     from .fn_generator import run_pipeline
 
     console.print("Fetching functions from DuckDB...")
-    content = run_pipeline(_Paths.SELF, data_path, profile=profile)
+    content = run_pipeline(
+        _Paths.SELF, data_path, profile=profile, regenerate=regenerate
+    )
 
     output.parent.mkdir(parents=True, exist_ok=True)
     res = output.write_text(content, encoding="utf-8")

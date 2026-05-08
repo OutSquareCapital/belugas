@@ -114,7 +114,7 @@ def {self.final_name}({self._signature()}) -> LazyFrame:
 
 def run_pipeline(caller: Path, source: Path) -> str:
     return (
-        _try_scan(source)
+        _try_scan(source, regenerate=False)
         .pipe(_query)
         .collect()
         .map_rows(lambda x: MetaFnInfo.from_row(*x), return_dtype=pl.Object)  # pyright: ignore[reportAny]

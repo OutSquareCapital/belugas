@@ -103,6 +103,7 @@ class DuckDbTypes(StrEnum):
     VARCHAR_ARRAY = "VARCHAR[]"
     VARCHAR_2D_ARRAY = "VARCHAR[][]"
     V_ARRAY = "V[]"
+    DELTA_STRUCT = 'STRUCT(file_name VARCHAR, "timestamp" BIGINT, file_size UBIGINT)[]'
 
     def into_py(self) -> str:
         match self.value:
