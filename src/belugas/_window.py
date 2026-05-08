@@ -104,11 +104,9 @@ class OverBuilder:
         return self.expr
 
     def handle_nulls(self, *, ignore_nulls: bool) -> Self:
-        match ignore_nulls:
-            case True:
-                return self.__class__(exp.IgnoreNulls(this=self.expr))
-            case False:
-                return self
+        if ignore_nulls:
+            return self.__class__(exp.IgnoreNulls(this=self.expr))
+        return self
 
     def handle_fn_order_by(self, **kwargs: Unpack[FnArgs]) -> Self:
         def _build(cols: Seq[IntoExprColumn]) -> exp.WithinGroup:
@@ -237,18 +235,16 @@ class BoundsValues(NamedTuple):
     @classmethod
     def rolling(cls, window_size: int, *, center: bool) -> Self:
         size = window_size - 1
-        match center:
-            case True:
-                left = window_size // 2
-                right = size - left
-                return cls(
-                    Side(str(left), Bounds.PRECEDING),
-                    Side(str(right), Bounds.FOLLOWING),
-                )
-            case False:
-                return cls(
-                    Side(str(size), Bounds.PRECEDING), Side(Bounds.CURRENT, Bounds.ROW)
-                )
+        if center:
+            left = window_size // 2
+            right = size - left
+            return cls(
+                Side(str(left), Bounds.PRECEDING),
+                Side(str(right), Bounds.FOLLOWING),
+            )
+        return cls(
+            Side(str(size), Bounds.PRECEDING), Side(Bounds.CURRENT, Bounds.ROW)
+        )
 
     @classmethod
     def new(cls, bounds: BoundArgs, *, has_order_by: bool) -> Option[Self]:

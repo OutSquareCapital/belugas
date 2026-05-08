@@ -45,11 +45,9 @@ class JoinBuilder:
                 return Some(self.rhs(name))
 
     def for_outer(self, name: str) -> Expr:
-        match name in self.left:
-            case True:
-                return self._aliased(name)
-            case False:
-                return self.rhs(name)
+        if name in self.left:
+            return self._aliased(name)
+        return self.rhs(name)
 
     def for_right(self, name: str) -> Expr:
         match (name in self.left, name in self.right):
@@ -128,12 +126,10 @@ class JoinKeys[T: Seq[str] | str](NamedTuple):
             case (Some(vals), Null(), Null()):
                 return Ok(JoinKeys(vals, vals))
             case (Null(), Some(left_vals), Some(right_vals)):
-                match left_vals.length() == right_vals.length():
-                    case True:
-                        return Ok(JoinKeys(left_vals, right_vals))
-                    case False:
-                        msg = "`by_left` and `by_right` must have the same length."
-                        return Err(ValueError(msg))
+                if left_vals.length() == right_vals.length():
+                    return Ok(JoinKeys(left_vals, right_vals))
+                msg = "`by_left` and `by_right` must have the same length."
+                return Err(ValueError(msg))
             case (Null(), Null(), Null()):
                 empty = Seq[str].new()
                 return Ok(JoinKeys(empty, empty))
