@@ -16,7 +16,9 @@ from rich import print
 from rich.text import Text
 
 from ..fn_generator._dtypes import DuckDbTypes, FuncTypes
-from ..fn_generator._rules import CONVERTER, SHADOWERS
+from ..fn_generator._main import _try_scan  # pyright: ignore[reportPrivateUsage]
+from ..fn_generator._query import _to_param_names  # pyright: ignore[reportPrivateUsage]
+from ..fn_generator._rules import CONVERTER
 
 
 @dataclass(slots=True)
@@ -112,11 +114,12 @@ def {self.final_name}({self._signature()}) -> LazyFrame:
 
 def run_pipeline(caller: Path, source: Path) -> str:
     return (
-        pl
-        .scan_parquet(source)
+        _try_scan(source)
         .pipe(_query)
         .collect()
-        .pipe(_to_infos)
+        .map_rows(lambda x: MetaFnInfo.from_row(*x), return_dtype=pl.Object)  # pyright: ignore[reportAny]
+        .pipe(lambda df: Iter[MetaFnInfo](df.to_series()))
+        .collect()
         .inspect(
             lambda x: print(
                 Text(f"Generated {x.length()} meta functions", style="yellow")
@@ -144,20 +147,7 @@ def _query(lf: pl.LazyFrame) -> pl.LazyFrame:
             fn_name,
             fn_name.str.strip_prefix("duckdb_").alias("final_name"),
             "description",
-            pl.col("parameters").list.eval(
-                pl
-                .element()
-                .str.strip_chars("'\"[]")
-                .str.to_lowercase()
-                .pipe(
-                    lambda e: (
-                        pl
-                        .when(e.is_in(SHADOWERS))
-                        .then(pl.concat_str(e, pl.lit("_arg")))
-                        .otherwise(e)
-                    )
-                )
-            ),
+            pl.col("parameters").list.eval(_to_param_names(pl.element())),
             pl
             .col("parameter_types")
             .list.eval(
@@ -176,15 +166,6 @@ def _query(lf: pl.LazyFrame) -> pl.LazyFrame:
         )
         .unique(subset=fn_name, keep="first")
         .sort(fn_name)
-    )
-
-
-def _to_infos(df: pl.DataFrame) -> Seq[MetaFnInfo]:
-    return (
-        df
-        .map_rows(lambda x: MetaFnInfo.from_row(*x), return_dtype=pl.Object)  # pyright: ignore[reportAny]
-        .pipe(lambda df: Iter[MetaFnInfo](df.to_series()))
-        .collect()
     )
 
 
