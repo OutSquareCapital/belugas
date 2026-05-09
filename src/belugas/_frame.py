@@ -382,7 +382,12 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         Returns:
             Self: A new LazyFrame with the limited rows.
         """
-        return _slct_all().from_(Tables.SRC, copy=False).limit(n).pipe(self._cls)
+        return (
+            _slct_all()
+            .from_(Tables.SRC, copy=False)
+            .limit(exp.convert(n), copy=False)
+            .pipe(self._cls)
+        )
 
     def head(self, n: int = 5) -> Self:
         """Get the first n rows.
@@ -415,11 +420,15 @@ class LazyFrame(CoreHandler[exp.Selectable]):
                     return Ok(
                         _slct_all()
                         .from_(Tables.SRC, copy=False)
-                        .limit(len_val.unwrap_or(MAX_I64))
-                        .offset(offset)
+                        .limit(exp.convert(len_val.unwrap_or(MAX_I64)), copy=False)
+                        .offset(exp.convert(offset), copy=False)
                     )
                 case (Some(0), _):
-                    return Ok(_slct_all().from_(Tables.SRC, copy=False).limit(0))
+                    return Ok(
+                        _slct_all()
+                        .from_(Tables.SRC, copy=False)
+                        .limit(exp.convert(0), copy=False)
+                    )
                 case (Some(length), offset):
                     slice_len_expr = col("slice_len")
                     stats = exp.select(lit(1).count().alias("slice_len").inner).from_(
