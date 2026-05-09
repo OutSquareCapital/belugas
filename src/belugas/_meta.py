@@ -54,7 +54,10 @@ def _into_windowed(cols: PyoIterable[ResolvedExpr]) -> exp.Expr:
     if cols.any(_is_windowed):
         row_nb = row_number().window().sub(1).alias(Marker.TEMP).inner
         return (
-            exp.select(row_nb, exp.Star()).from_(Tables.SRC).subquery(Tables.SRC.name)
+            exp
+            .select(row_nb, exp.Star())
+            .from_(Tables.SRC)
+            .subquery(Tables.SRC.name, copy=False)
         )
     return Tables.SRC
 
