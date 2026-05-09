@@ -109,7 +109,6 @@ class ResolvedExpr(Pipeable):
     name: str
     has_projection_distinct: bool
     is_pure_reducer: bool
-    is_multi: bool
 
     def __init__(self, expr: Expr, name: str) -> None:
         self.name = name
@@ -122,7 +121,6 @@ class ResolvedExpr(Pipeable):
         self.is_pure_reducer = search(exp.AggFunc, exp.List).any(
             lambda node: not _has_window_ancestor(node)
         ) and not search(exp.Column).any(_is_projection_distinct)
-        self.is_multi = isinstance(inner, exp.Columns) or inner.is_star
         if self.has_projection_distinct:
 
             def _strip(node: exp.Expr) -> exp.Expr:
@@ -139,7 +137,7 @@ class ResolvedExpr(Pipeable):
             self.expr = expr
 
     def maybe_alias(self, expr: Expr) -> Expr:
-        return expr if self.is_multi or not self.name else expr.alias(self.name)
+        return expr if not self.name else expr.alias(self.name)
 
     def implode_or_scalar(self) -> Expr:
         if self.is_pure_reducer:
@@ -412,7 +410,6 @@ class ExprPlan:
         updates = (
             self.projections
             .iter()
-            .filter(lambda proj: not proj.is_multi)
             .map(
                 lambda proj: (
                     proj.name,
