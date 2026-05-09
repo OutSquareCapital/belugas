@@ -209,7 +209,7 @@ class Expr(Fns):
         def _cols_op(expr: exp.Expr) -> exp.Expr:
             match expr:
                 case exp.Star():
-                    return exp.Columns(this=expr.copy())
+                    return exp.Columns(this=expr)
                 case _:
                     return expr
 
