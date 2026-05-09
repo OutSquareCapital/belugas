@@ -17,8 +17,8 @@ The project heavily compares `belugas` behavior against reference Polars chains 
 To run the tests, use:
 
 ```shell
-uv run pytest tests/
-uv run pytest tests/ --cov=src/ --cov-report=term-missing # If we want to check the uncovered lines
+uv run pytest
+uv run pytest --cov=src/ --cov-report=term-missing # If we want to check the uncovered lines
 ```
 
 ## Type checking and formatting
