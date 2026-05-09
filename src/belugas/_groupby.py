@@ -117,7 +117,7 @@ class LazyGroupBy:
             .group_by(*_group_by_clause())
             .pipe(
                 self._frame._from_ast,  # pyright: ignore[reportPrivateUsage]
-                schema=Some(plan.agg_schema(key_schema)),
+                schema=plan.agg_schema(key_schema),
                 src=self._frame,
             )
         )

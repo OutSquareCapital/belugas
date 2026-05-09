@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Self, SupportsInt, overload, override
 
 from pyochain import (
-    NONE,
     Dict,
     Err,
     Iter,
@@ -25,16 +24,13 @@ from pyochain import (
     Vec,
 )
 from sqlglot import exp
-from sqlglot.optimizer.annotate_types import annotate_types
-from sqlglot.optimizer.qualify import qualify
-from sqlglot.schema import MappingSchema
 
 from . import datatypes as dt
 from ._core import CoreHandler, into_expr
 from ._expr import Expr
 from ._funcs import all, col, lit, row_number, unnest
 from ._joins import JoinBuilder, JoinKeys
-from ._meta import ExprPlan, Marker, ResolvedExpr, lookup_type
+from ._meta import ExprPlan, Marker
 from ._pivots import pivot, unpivot
 from ._scans import ScanSource
 from .utils import TryIter, TrySeq, try_iter, try_seq
@@ -106,7 +102,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
     def _from_ast(
         self,
         ast: exp.Selectable,
-        schema: Option[Schema] = NONE,
+        schema: Schema,
         **subs: Self | ScanSource,
     ) -> Self:
         def _src_pairs(
@@ -118,6 +114,36 @@ class LazyFrame(CoreHandler[exp.Selectable]):
                 case ScanSource():
                     return Iter.once((v.identity, v))
 
+        def _replacer(
+            node: exp.Selectable, subs: Mapping[str, ScanSource | LazyFrame]
+        ) -> exp.Expr:
+            match node:
+                case exp.Table() if node.name in subs:
+                    alias_name = node.alias_or_name
+                    pivots: Option[list[exp.Pivot]] = Option(node.args.get("pivots"))
+                    match subs[node.name]:
+                        case LazyFrame() as lf:
+                            alias = exp.TableAlias(this=exp.to_identifier(alias_name))
+                            this = lf._inner
+                            return exp.Subquery(
+                                this=this,
+                                alias=alias,
+                                pivots=pivots.unwrap_or_else(list),
+                            )
+                        case ScanSource() as src:
+                            return (
+                                exp
+                                .to_table(src.identity)
+                                .pipe(exp.alias_, alias_name, table=True)
+                                .apply(
+                                    lambda out: pivots.map(
+                                        lambda p: out.set("pivots", p)
+                                    )
+                                )
+                            )
+                case _:
+                    return node
+
         new_sources = (
             Iter(subs.items())
             .map_star(_src_pairs)
@@ -126,24 +152,11 @@ class LazyFrame(CoreHandler[exp.Selectable]):
             .collect(Dict)
         )
 
-        def _build(transformed: exp.Selectable) -> Self:
-            new_schema = schema.unwrap_or_else(
-                lambda: _compute_schema(
-                    transformed,
-                    new_sources
-                    .items()
-                    .iter()
-                    .map_star(lambda name, source: (name, source.schema))
-                    .collect(Dict),
-                )
-            )
-            return self._make(transformed, new_sources, new_schema)
-
-        return ast.transform(_replacer, subs=subs).pipe(_build)  # pyright: ignore[reportArgumentType]
+        return ast.transform(_replacer, subs=subs).pipe(self._make, new_sources, schema)  # pyright: ignore[reportArgumentType]
 
     @override
     def _cls(self, value: exp.Selectable) -> Self:
-        return self._from_ast(value, src=self, schema=Some(self._schema))
+        return self._from_ast(value, src=self, schema=self._schema)
 
     def _materialize(self) -> DuckDBPyRelation:
         return self._inner.pipe(ScanSource.from_query, **self._sources).relation
@@ -219,9 +232,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         plan = self._schema.into(ExprPlan, exprs, more_exprs, named_exprs)
         return plan.select_ctx().map_or_else(
             lambda: self.__class__(ScanSource.from_none().relation),
-            lambda ast: self._from_ast(
-                ast, Some(_fast_select_schema(plan.projections, self._schema)), src=self
-            ),
+            lambda ast: self._from_ast(ast, plan.select_schema(self._schema), src=self),
         )
 
     def with_columns(
@@ -242,11 +253,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         """
         plan = self._schema.into(ExprPlan, exprs, more_exprs, named_exprs)
         ast = plan.with_columns_ctx()
-        return self._from_ast(
-            ast,
-            Some(_fast_with_columns_schema(plan.projections, self._schema)),
-            src=self,
-        )
+        return self._from_ast(ast, plan.with_columns_schema(self._schema), src=self)
 
     def filter(
         self,
@@ -327,11 +334,11 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         Returns:
             Self: A new LazyFrame with the aggregated rows.
         """
-        return (
-            self._schema
-            .into(ExprPlan, exprs, more_exprs, named_exprs)
-            .group_by_all_ctx()
-            .pipe(self._from_ast, src=self)
+        plan = self._schema.into(ExprPlan, exprs, more_exprs, named_exprs)
+        return plan.group_by_all_ctx().pipe(
+            self._from_ast,
+            plan.agg_schema(Dict[str, exp.DataType].new()),
+            src=self,
         )
 
     def sort(
@@ -513,8 +520,26 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         Returns:
             Self: A new LazyFrame with the specified columns dropped.
         """
-        star_exclude = try_iter(columns).chain(more_columns).into(all).inner
-        return exp.select(star_exclude).from_("src").pipe(self._from_ast, src=self)
+        cols = (
+            try_iter(columns)
+            .chain(more_columns)
+            .map(lambda e: Expr.new(e, as_col=True))
+            .collect()
+        )
+        to_drop = cols.iter().map(lambda e: e.inner.output_name).collect(Set)
+        schema = (
+            self._schema
+            .items()
+            .iter()
+            .filter_star(lambda name, _: name not in to_drop)
+            .collect(Dict)
+        )
+        return (
+            exp
+            .select(cols.into(all).inner)
+            .from_("src")
+            .pipe(self._from_ast, schema, src=self)
+        )
 
     def drop_nulls(self, subset: TryIter[str] = None) -> Self:
         """Drop rows that contain null values.
@@ -599,7 +624,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         slct = _slct_all().from_
         lhs = slct("lhs")
         rhs = slct("rhs")
-        return self._from_ast(exp.union(lhs, rhs), lhs=self, rhs=other)
+        return self._from_ast(exp.union(lhs, rhs), self._schema, lhs=self, rhs=other)
 
     def rename(self, mapping: Mapping[str, str]) -> Self:
         """Rename columns.
@@ -649,14 +674,30 @@ class LazyFrame(CoreHandler[exp.Selectable]):
                 case _:
                     return Iter.once(col(name).inner)
 
-        return (
-            self._schema
-            .iter()
-            .flat_map(_proj)
-            .into(_select)
-            .from_("src")
-            .pipe(self._from_ast, src=self)
+        def _schema_proj(
+            name: str, raw: exp.DataType
+        ) -> Iter[tuple[str, exp.DataType]]:
+            match name in targets, raw.this:  # pyright: ignore[reportAny]
+                case (True, exp.DType.STRUCT):
+                    exprs: list[exp.Expr] = raw.expressions
+                    return (
+                        Iter(exprs)
+                        .map(
+                            lambda col_def: (
+                                col_def.this.this,  # pyright: ignore[reportAny]
+                                dt.DataType.from_sql(col_def.kind),  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType, reportAttributeAccessIssue]
+                            )
+                        )
+                        .map_star(lambda f, fd: (f, fd.raw))  # pyright: ignore[reportAny]
+                    )
+                case _:
+                    return Iter.once((name, raw))
+
+        schema = (
+            self._schema.items().iter().map_star(_schema_proj).flatten().collect(Dict)
         )
+        ast = self._schema.iter().flat_map(_proj).into(_select).from_("src")
+        return self._from_ast(ast, schema, src=self)
 
     def first(self) -> Self:
         """Get the first row.
@@ -902,9 +943,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
             .join("rhs", on=condition, join_type=join_type)
             .pipe(
                 self._from_ast,
-                schema=Some(
-                    builder.join_schema(self._schema, other._schema, join_keys, how)
-                ),
+                schema=builder.join_schema(self._schema, other._schema, join_keys, how),
                 lhs=self,
                 rhs=other,
             )
@@ -930,7 +969,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         )
         return self._from_ast(
             ast,
-            schema=Some(builder.join_schema_cross(self._schema, other._schema)),
+            schema=builder.join_schema_cross(self._schema, other._schema),
             lhs=self,
             rhs=other,
         )
@@ -990,6 +1029,24 @@ class LazyFrame(CoreHandler[exp.Selectable]):
             .reduce(Expr.and_)
             .inner
         )
+        schema = (
+            self._schema
+            .items()
+            .iter()
+            .chain(
+                other._schema
+                .items()
+                .iter()
+                .filter_star(lambda name, _: name not in drop_keys)
+                .map_star(
+                    lambda name, dtype: (
+                        f"{name}{suffix}" if name in self.columns else name,
+                        dtype,
+                    )
+                )
+            )
+            .collect(Dict)
+        )
         return (
             builder.left
             .iter()
@@ -999,7 +1056,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
             .into(_select)
             .from_("lhs")
             .join("rhs", on=by_cond, join_type="asof left")
-            .pipe(self._from_ast, lhs=self, rhs=other)
+            .pipe(self._from_ast, schema=schema, lhs=self, rhs=other)
         )
 
     def unique(
@@ -1143,6 +1200,25 @@ class LazyFrame(CoreHandler[exp.Selectable]):
             aggregate_function,
             maintain_order=maintain_order,
         )
+        unknown = exp.DType.UNKNOWN.into_expr()
+        on_values = Iter(on_columns).map(str).collect()
+        pivot_schema = (
+            idx_cols
+            .iter()
+            .map(lambda name: (name, self._schema.get_item(name).unwrap()))
+            .chain(
+                on_values.iter().flat_map(
+                    lambda ov: (
+                        Iter.once((ov, unknown))
+                        if not multi
+                        else val_cols.iter().map(
+                            lambda vc: (f"{vc}{separator}{ov}", unknown)
+                        )
+                    )
+                )
+            )
+            .collect(Dict)
+        )
 
         def _handle_multi(expr: exp.Selectable) -> Self:
             if multi:
@@ -1161,9 +1237,9 @@ class LazyFrame(CoreHandler[exp.Selectable]):
                     .iter()
                     .map(col)
                     .chain(val_cols.iter().flat_map(_rename_col))
-                    .into(expr.pipe(self._from_ast, src=self).select)
+                    .into(expr.pipe(self._from_ast, pivot_schema, src=self).select)
                 )
-            return expr.pipe(self._from_ast, src=self)
+            return expr.pipe(self._from_ast, pivot_schema, src=self)
 
         return pivoted.pipe(_handle_multi)
 
@@ -1187,9 +1263,29 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         Returns:
             Self: A new LazyFrame with the unpivoted data.
         """
+        index_set = try_iter(index).collect(dict.fromkeys)
+        match on:
+            case None:
+                first_dtype = self.columns.iter().next()
+            case _:
+                first_dtype = try_iter(on).next()
+        value_dtype = first_dtype.and_then(self._schema.get_item).unwrap_or_else(
+            exp.DType.UNKNOWN.into_expr
+        )
+        unpivot_schema = (
+            self._schema
+            .items()
+            .iter()
+            .filter_star(lambda name, _: name in index_set)
+            .chain((
+                (variable_name, exp.DType.VARCHAR.into_expr()),
+                (value_name, value_dtype),
+            ))
+            .collect(Dict)
+        )
         return self.columns.into(
             unpivot, on, index, variable_name, value_name, order_by
-        ).pipe(self._from_ast, src=self)
+        ).pipe(self._from_ast, unpivot_schema, src=self)
 
     def with_row_index(self, name: str, *, order_by: TryIter[str]) -> Self:
         """Insert row index based on order_by.
@@ -1202,8 +1298,14 @@ class LazyFrame(CoreHandler[exp.Selectable]):
             Self: A new LazyFrame with the row index added.
         """
         row_nb = row_number().window(order_by=order_by).sub(1).alias(name).inner
-        return (
-            exp.select(row_nb, exp.Star()).from_("src").pipe(self._from_ast, src=self)
+        schema = (
+            Iter
+            .once((name, exp.DType.BIGINT.into_expr()))
+            .chain(self._schema.items())
+            .collect(Dict)
+        )
+        return self._from_ast(
+            exp.select(row_nb, exp.Star()).from_("src"), schema, src=self
         )
 
     def top_k(
@@ -1383,73 +1485,3 @@ def _slct_all() -> exp.Select:
 
 def _select(exprs: Iterable[exp.Expr | str]) -> exp.Select:
     return exp.select(*exprs)
-
-
-def _fast_with_columns_schema(projections: Seq[ResolvedExpr], schema: Schema) -> Schema:
-    updates = _fast_select_schema(projections, schema)
-    return (
-        schema
-        .items()
-        .iter()
-        .map_star(lambda name, dtype: (name, updates.get_item(name).unwrap_or(dtype)))
-        .chain(updates.items().iter().filter_star(lambda name, _: name not in schema))
-        .collect(Dict)
-    )
-
-
-def _fast_select_schema(projections: Seq[ResolvedExpr], schema: Schema) -> Schema:
-    return (
-        projections
-        .iter()
-        .map(lambda proj: (proj.name, lookup_type(proj.expr.inner, schema)))
-        .collect(Dict)
-    )
-
-
-def _compute_schema(ast: exp.Selectable, tables: Dict[str, Schema]) -> Schema:
-    schema = MappingSchema(dialect="duckdb")
-    _ = (
-        tables
-        .items()
-        .iter()
-        .for_each_star(lambda name, table: schema.add_table(name, table.into(dict)))  # pyright: ignore[reportUnknownMemberType]
-    )
-
-    def _into_selects(expr: exp.Selectable) -> Iter[exp.Expr]:
-        return Iter(expr.selects)
-
-    # NOTE: need to update annotations upstream to keep the return generic
-    return (
-        ast
-        .copy()
-        .pipe(qualify, schema=schema, validate_qualify_columns=False)
-        .pipe(annotate_types, schema=schema)
-        .pipe(_into_selects)  # pyright: ignore[reportArgumentType]
-        .map(lambda p: (p.alias_or_name, Option(p.type).unwrap()))
-        .collect(Dict)
-    )
-
-
-def _replacer(
-    node: exp.Selectable, subs: Mapping[str, ScanSource | LazyFrame]
-) -> exp.Expr:
-    match node:
-        case exp.Table() if node.name in subs:
-            alias_name = node.alias_or_name
-            pivots: Option[list[exp.Pivot]] = Option(node.args.get("pivots"))
-            match subs[node.name]:
-                case LazyFrame() as lf:
-                    alias = exp.TableAlias(this=exp.to_identifier(alias_name))
-                    this = lf._inner  # pyright: ignore[reportPrivateUsage]
-                    return exp.Subquery(
-                        this=this, alias=alias, pivots=pivots.unwrap_or_else(list)
-                    )
-                case ScanSource() as src:
-                    return (
-                        exp
-                        .to_table(src.identity)
-                        .pipe(exp.alias_, alias_name, table=True)
-                        .apply(lambda out: pivots.map(lambda p: out.set("pivots", p)))
-                    )
-        case _:
-            return node

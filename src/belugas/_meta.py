@@ -402,6 +402,29 @@ class ExprPlan:
             .collect(Dict)
         )
 
+    def with_columns_schema(self, schema: Schema) -> Schema:
+        updates = self.select_schema(schema)
+        return (
+            schema
+            .items()
+            .iter()
+            .map_star(
+                lambda name, dtype: (name, updates.get_item(name).unwrap_or(dtype))
+            )
+            .chain(
+                updates.items().iter().filter_star(lambda name, _: name not in schema)
+            )
+            .collect(Dict)
+        )
+
+    def select_schema(self, schema: Schema) -> Schema:
+        return (
+            self.projections
+            .iter()
+            .map(lambda proj: (proj.name, lookup_type(proj.expr.inner, schema)))
+            .collect(Dict)
+        )
+
     def select_ctx(self) -> Option[exp.Select]:
         def _non_empty_slct(source: exp.Expr) -> exp.Select:
             if self.projections.all(lambda resolved: resolved.has_projection_distinct):
