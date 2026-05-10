@@ -20,6 +20,7 @@ class _Paths:
     FNS = PQL.joinpath("_fns.py")
     META = PQL.joinpath("meta.py")
     TYPING = PQL.joinpath("typing.py")
+    NODES = PQL.joinpath("_plan", "nodes.py")
 
     DATA = Path("scripts", "data", "functions.parquet")
     STUB = Path(".venv", "Lib", "site-packages", "_duckdb-stubs", "__init__.pyi")
@@ -75,6 +76,19 @@ def gen_themes(path: InputPath = _Paths.TYPING) -> None:
     _run_ruff(check_only=False, dest=path)
     console.print(
         Text("Generated themes Literal in ").append(path.as_posix(), style="cyan")
+    )
+    console.print(f"Done with exit code {res}!", style="bold green")
+
+
+@app.command()
+def gen_nodes(path: InputPath = _Paths.NODES) -> None:
+    """Generate a `Type` of all available styles for pretty-printing of the `LazyFrame.sql_query` method."""
+    from ._theme_generator import generate_nodes
+
+    res = generate_nodes(_Paths.SELF, path)
+    _run_ruff(check_only=False, dest=path)
+    console.print(
+        Text("Generated nodes Type in ").append(path.as_posix(), style="cyan")
     )
     console.print(f"Done with exit code {res}!", style="bold green")
 
