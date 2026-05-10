@@ -448,11 +448,3 @@ class ExprPlan:
         return include_source_cols or not self.projections.all(
             lambda resolved: resolved.is_pure_reducer
         )
-
-    def with_fields_ctx(self, expr: Expr) -> Expr:
-        return (
-            self.projections
-            .iter()
-            .map(lambda proj: proj.as_aliased(broadcast_agg=False))
-            .into(lambda args: expr.struct.insert(*args))
-        )

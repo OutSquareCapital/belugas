@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import TYPE_CHECKING, final
 
-from pyochain import Dict
+from pyochain import Iter
 from sqlglot import exp
 
 from . import datatypes as dt
@@ -26,8 +26,9 @@ from ._fns import (
     StructFns,
 )
 from ._funcs import element, lit
-from ._plan import ExprPlan, extract_root_name
+from ._plan import extract_root_name
 from ._when import when
+from .utils import try_iter
 
 if TYPE_CHECKING:
     from ._expr import AliasFn
@@ -466,19 +467,26 @@ class ExprStructNameSpace(StructFns[Expr]):
         return self.inner.to_json()
 
     def with_fields(
-        self, exprs: TryIter[IntoExpr], *more_exprs: IntoExpr, **named_exprs: IntoExpr
+        self,
+        exprs: TryIter[IntoExpr] = None,
+        *more_exprs: IntoExpr,
+        **named_exprs: IntoExpr,
     ) -> Expr:
         """Return a new struct with updated or additional fields.
 
         Returns:
             Expr
         """
-        return (
-            Dict[str, exp.DataType]
-            .new()
-            .into(ExprPlan, exprs, more_exprs, named_exprs)
-            .with_fields_ctx(self.inner)
+
+        def _to_aliased(val: IntoExpr) -> Expr:
+            expr = Expr.new(val, as_col=True)
+            return expr.alias(extract_root_name(expr.inner))
+
+        named = Iter(named_exprs.items()).map_star(
+            lambda name, val: Expr.new(val, as_col=True).alias(name)
         )
+        all_exprs = try_iter(exprs).chain(more_exprs).map(_to_aliased).chain(named)
+        return self.insert(*all_exprs)
 
 
 @dataclass(slots=True)
