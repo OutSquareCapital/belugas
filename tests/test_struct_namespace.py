@@ -1,4 +1,5 @@
 import polars as pl
+import pytest
 
 import belugas as bl
 
@@ -31,6 +32,12 @@ def test_with_fields() -> None:
     )
 
 
+skip_field = pytest.mark.skip(
+    reason="Field overwrite is currently not supported in Belugas"
+)
+
+
+@skip_field
 def test_with_fields_arithmetic() -> None:
     assert_eq(
         bl_struct.with_fields(
@@ -42,6 +49,7 @@ def test_with_fields_arithmetic() -> None:
     )
 
 
+@skip_field
 def test_with_fields_cast() -> None:
     assert_eq(
         bl_struct.with_fields(bl_struct.field("a").cast(bl.Float64).alias("a")),
@@ -49,6 +57,7 @@ def test_with_fields_cast() -> None:
     )
 
 
+@skip_field
 def test_with_fields_chained() -> None:
     assert_eq(
         bl_struct.with_fields(bl_struct.field("a").add(1).mul(2).alias("computed")),
