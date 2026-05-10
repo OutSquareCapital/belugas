@@ -15,7 +15,7 @@ from sqlglot import exp
 from . import _plan as planner, datatypes as dt
 from ._core import CoreHandler
 from ._expr import Expr
-from ._funcs import col, row_number
+from ._funcs import col
 from ._scans import ScanSource
 from .utils import TryIter, TrySeq, try_iter
 
@@ -116,12 +116,8 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         return self._inner.pipe(ScanSource.from_query, **self._sources).relation
 
     def _iter_slct(self, func: Callable[[Expr], Expr]) -> Self:
-        return (
-            self.columns
-            .iter()
-            .map(lambda c: col(c).pipe(func).alias(c).inner)
-            .into(self.select)
-        )
+        ast, schema = planner.select_all(self._schema, func)
+        return self._from_ast(ast, schema, src=self)
 
     @overload
     def _into_pl(self, *, lazy: Literal[True]) -> pl.LazyFrame: ...
@@ -409,10 +405,7 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         )
 
     def union(self, other: Self) -> Self:
-        slct = exp.select(exp.Star()).from_
-        lhs = slct(planner.Tables.LHS)
-        rhs = slct(planner.Tables.RHS)
-        return self._from_ast(exp.union(lhs, rhs), self._schema, lhs=self, rhs=other)
+        return self._from_ast(planner.union(), self._schema, lhs=self, rhs=other)
 
     def rename(self, mapping: Mapping[str, str]) -> Self:
         """Rename columns.
@@ -423,12 +416,8 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         Returns:
             Self: A new LazyFrame with the renamed columns.
         """
-        return (
-            self.columns
-            .iter()
-            .map(lambda c: col(c).alias(mapping.get(c, c)))
-            .into(self.select)
-        )
+        ast, schema = planner.rename(self._schema, mapping)
+        return self._from_ast(ast, schema, src=self)
 
     def sql_query(self) -> ParsedQuery:
         """Generate a `ParsedQuery` object.
@@ -815,28 +804,25 @@ class LazyFrame(CoreHandler[exp.Selectable]):
             .collect(Dict)
         )
 
-        def _handle_multi(expr: exp.Selectable) -> Self:
-            if multi:
-                on_values = Iter(on_columns).map(str).collect()
+        if multi:
+            on_values = Iter(on_columns).map(str).collect()
 
-                def _rename_col(val_col: str) -> Iter[Expr]:
-                    def _swap(on_val: str) -> Expr:
-                        in_ = f"{on_val}_{val_col}"
-                        out = f"{val_col}{separator}{on_val}"
-                        return col(in_).alias(out)
+            def _rename_col(val_col: str) -> Iter[Expr]:
+                def _swap(on_val: str) -> Expr:
+                    in_ = f"{on_val}_{val_col}"
+                    out = f"{val_col}{separator}{on_val}"
+                    return col(in_).alias(out)
 
-                    return on_values.iter().map(_swap)
+                return on_values.iter().map(_swap)
 
-                return (
-                    idx_cols
-                    .iter()
-                    .map(col)
-                    .chain(val_cols.iter().flat_map(_rename_col))
-                    .into(expr.pipe(self._from_ast, pivot_schema, src=self).select)
-                )
-            return expr.pipe(self._from_ast, pivot_schema, src=self)
-
-        return pivoted.pipe(_handle_multi)
+            return (
+                idx_cols
+                .iter()
+                .map(col)
+                .chain(val_cols.iter().flat_map(_rename_col))
+                .into(pivoted.pipe(self._from_ast, pivot_schema, src=self).select)
+            )
+        return pivoted.pipe(self._from_ast, pivot_schema, src=self)
 
     def unpivot(
         self,
@@ -873,18 +859,8 @@ class LazyFrame(CoreHandler[exp.Selectable]):
         Returns:
             Self: A new LazyFrame with the row index added.
         """
-        row_nb = row_number().window(order_by=order_by).sub(1).alias(name).inner
-        schema = (
-            Iter
-            .once((name, exp.DType.BIGINT.into_expr()))
-            .chain(self._schema.items())
-            .collect(Dict)
-        )
-        return self._from_ast(
-            exp.select(row_nb, exp.Star()).from_(planner.Tables.SRC, copy=False),
-            schema,
-            src=self,
-        )
+        ast, new_schema = planner.with_row_index(self._schema, name, order_by)
+        return self._from_ast(ast, new_schema, src=self)
 
     def top_k(
         self, k: int, by: TryIter[IntoExpr], *, reverse: TrySeq[bool] = False

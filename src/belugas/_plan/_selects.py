@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable, Mapping
 from typing import TYPE_CHECKING
 
 from pyochain import Dict, Iter, Seq, Some
@@ -143,3 +143,40 @@ def _into_windowed(cols: PyoIterable[ResolvedExpr]) -> exp.Expr:
             .subquery(Tables.SRC.name, copy=False)
         )
     return Tables.SRC
+
+
+def rename(schema: Schema, mapping: Mapping[str, str]) -> tuple[exp.Selectable, Schema]:
+    exprs = schema.iter().map(lambda c: exp.column(c).as_(mapping.get(c, c)))
+    return select(schema, exprs, (), {})
+
+
+def with_row_index(
+    schema: Schema, name: str, order_by: TryIter[str]
+) -> tuple[exp.Selectable, Schema]:
+    from .._funcs import row_number
+
+    row_nb = row_number().window(order_by=order_by).sub(1).alias(name).inner
+    new_schema = (
+        Iter
+        .once((name, exp.DType.BIGINT.into_expr()))
+        .chain(schema.items())
+        .collect(Dict)
+    )
+    return exp.select(row_nb, exp.Star()).from_(Tables.SRC, copy=False), new_schema
+
+
+def select_all(
+    schema: Schema, func: Callable[[Expr], Expr]
+) -> tuple[exp.Selectable, Schema]:
+    from .._funcs import col
+
+    exprs = schema.iter().map(lambda c: col(c).pipe(func).alias(c).inner)
+
+    return select(schema, exprs, (), {})
+
+
+def union() -> exp.Union:
+    slct = exp.select(exp.Star()).from_
+    lhs = slct(Tables.LHS)
+    rhs = slct(Tables.RHS)
+    return exp.union(lhs, rhs)

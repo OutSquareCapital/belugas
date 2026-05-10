@@ -4,7 +4,7 @@ from ._group_by import agg, group_by_all
 from ._joins import join, join_asof, join_cross
 from ._meta import Marker, Tables, extract_root_name, resolve_all
 from ._pivots import pivot, unpivot
-from ._selects import select, with_columns
+from ._selects import rename, select, select_all, union, with_columns, with_row_index
 from ._slice import slice
 from ._sort import sort
 from ._unique import unique
@@ -25,12 +25,16 @@ __all__ = [
     "join_cross",
     "limit",
     "pivot",
+    "rename",
     "resolve_all",
     "select",
+    "select_all",
     "slice",
     "sort",
+    "union",
     "unique",
     "unnest",
     "unpivot",
     "with_columns",
+    "with_row_index",
 ]
