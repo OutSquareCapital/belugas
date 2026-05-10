@@ -61,7 +61,7 @@ def limit(n: int) -> exp.Select:
         exp
         .select(exp.Star())
         .from_(Tables.SRC, copy=False)
-        .limit(exp.convert(n), copy=False)
+        .limit(exp.Literal.number(n), copy=False)
     )
 
 

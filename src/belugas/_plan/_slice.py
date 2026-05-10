@@ -19,15 +19,15 @@ def slice(lf_length: Option[int], offset: int) -> Result[exp.Select, ValueError]
                 exp
                 .select(exp.Star())
                 .from_(Tables.SRC, copy=False)
-                .limit(exp.convert(len_val.unwrap_or(MAX_I64)), copy=False)
-                .offset(exp.convert(offset), copy=False)
+                .limit(exp.Literal.number(len_val.unwrap_or(MAX_I64)), copy=False)
+                .offset(exp.Literal.number(offset), copy=False)
             )
         case (Some(0), _):
             return Ok(
                 exp
                 .select(exp.Star())
                 .from_(Tables.SRC, copy=False)
-                .limit(exp.convert(0), copy=False)
+                .limit(exp.Literal.number(0), copy=False)
             )
         case (Some(length), offset):
             slice_len_expr = col("slice_len")
