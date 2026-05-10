@@ -166,7 +166,7 @@ class LazyFrame(CoreHandler[ScanSource]):
 
     def filter(
         self,
-        predicates: TryIter[IntoExprColumn],
+        predicates: TryIter[IntoExprColumn] = None,
         *more_predicates: IntoExprColumn,
         **constraints: IntoExpr,
     ) -> Self:
