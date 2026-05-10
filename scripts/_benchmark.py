@@ -171,7 +171,7 @@ def _get_table() -> Table:
 def _get_timing(runs: int, fn: BenchFn[Frame]) -> float:
     return (
         Iter(range(runs))
-        .map(lambda _: timeit.timeit(fn, number=1) * 1000)
+        .map(lambda _: timeit.timeit(lambda: fn().collect_schema(), number=1) * 1000)
         .into(statistics.median)
     )
 
