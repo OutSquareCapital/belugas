@@ -43,6 +43,11 @@ class _Expressions:
 
 
 @dataclass(slots=True)
+class Scan(Node):
+    """Node representing a scan operation."""
+
+
+@dataclass(slots=True)
 class Select(_Expressions, Node):
     """Node representing a select operation."""
 
@@ -229,6 +234,7 @@ PlanNode = (
     | Limit
     | Pivot
     | Rename
+    | Scan
     | Select
     | SelectAll
     | Slice
