@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 import polars as pl
 import pytest
 
@@ -10,21 +12,31 @@ bl_x = bl.col("x")
 bl_age = bl.col("age")
 pl_x = pl.col("x")
 pl_age = pl.col("age")
+data = {"a": [1, 2], "b": [3, 4]}
+pl_lf = pl.LazyFrame(data)
+bl_lf = bl.LazyFrame(pl_lf)
+type FnsTup = tuple[Callable[[pl.Expr], pl.Expr], Callable[[bl.Expr], bl.Expr]]
+_ALL_FNS: list[FnsTup] = [
+    (pl.Expr.mean, bl.Expr.mean),
+    (lambda c: c.add(1), lambda c: c.add(1)),
+]
 
 
-def test_all_add() -> None:
-    data = {"a": [1, 2], "b": [3, 4]}
+@pytest.mark.parametrize("fns", _ALL_FNS)
+def test_all_add(fns: FnsTup) -> None:
     assert_lf_eq(
-        pl.LazyFrame(data).select(pl.all().add(1)),
-        bl.LazyFrame(data).select(bl.all().add(1)),
+        pl_lf.select(pl.all().pipe(fns[0])),
+        bl_lf.select(bl.all().pipe(fns[1])),
+    )
+    assert_lf_eq(
+        pl_lf.with_columns(pl.all().pipe(fns[0])),
+        bl_lf.with_columns(bl.all().pipe(fns[1])),
     )
 
 
 def test_all_chained() -> None:
-    data = {"a": [1, 2], "b": [3, 4]}
     assert_lf_eq(
-        pl.LazyFrame(data).select(pl.all().mul(2).add(1)),
-        bl.LazyFrame(data).select(bl.all().mul(2).add(1)),
+        pl_lf.select(pl.all().mul(2).add(1)), bl_lf.select(bl.all().mul(2).add(1))
     )
 
 
