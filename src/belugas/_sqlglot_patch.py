@@ -6,10 +6,53 @@ from pyochain import Iter
 from sqlglot import Dialect, exp, parser
 from sqlglot.dialects.dialect import build_regexp_extract
 from sqlglot.dialects.duckdb import DuckDB
+from sqlglot.generators.duckdb import DuckDBGenerator
 from sqlglot.parsers.duckdb import DuckDBParser
 
 type FuncRegistery = dict[str, Callable[..., exp.Expr]]
 type BindedFn = Callable[[list[exp.Expr]], exp.Expr]
+
+
+_DUCKDB_DATATYPE_SQL = DuckDBGenerator.TRANSFORMS[exp.DataType]
+
+
+def _patched_datatype_sql(self: DuckDBGenerator, expression: exp.DataType) -> str:
+    """Render LIST dtypes with bracket syntax for DuckDB CAST compatibility.
+
+    Root cause:
+        DuckDB modern versions REJECT the ``CAST(x AS LIST(T))`` syntax in CAST contexts:
+        ``Parser Error: Expected a constant as type modifier``.
+
+        However, DuckDB ACCEPTS both ``T[]`` (dynamic array) and ``T[N]`` (fixed-size array)
+        syntax for all array/list types.
+
+        SQLGlot's DuckDBGenerator emits ``LIST(T)`` for ``exp.DType.LIST`` by default,
+        causing belugas casts to fail at parse time.
+
+    Solution:
+        Patch the DuckDB generator to emit ``T[]`` (bracket syntax) instead of ``LIST(T)``.
+        This is semantically equivalent but compatible with modern DuckDB parser.
+
+    Concrete example:
+        Before (fails in DuckDB):
+            CAST("col" AS LIST(USMALLINT))
+            ✗ Parser Error: Expected a constant as type modifier
+
+        After (works):
+            CAST("col" AS USMALLINT[])
+            ✓ Success
+
+    Related parsing behavior:
+        When DuckDB/sqlglot parse ``T[]`` syntax, it produces ``DType.ARRAY`` (not ``LIST``).
+        So from_sql() in datatypes.py normalizes ``ARRAY without values`` back to ``List``.
+
+    Returns:
+        str: DuckDB-compatible SQL for the provided data type expression.
+    """
+    if expression.is_type(exp.DType.LIST):
+        return f"{self.expressions(expression, flat=True)}[]"
+
+    return _DUCKDB_DATATYPE_SQL(self, expression)
 
 
 def _regexp_extract(expr: type[exp.Expr]) -> BindedFn:
@@ -146,6 +189,10 @@ DUCKDB_FUNCTIONS: FuncRegistery = DuckDBParser.FUNCTIONS | {  # pyright: ignore[
 }
 
 DuckDBParser.FUNCTIONS = DUCKDB_FUNCTIONS
+
+DuckDBGenerator.TRANSFORMS |= {
+    exp.DataType: _patched_datatype_sql,
+}
 
 
 def _add_to_meta(

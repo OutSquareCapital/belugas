@@ -71,6 +71,26 @@ class DataType(ABC):
 
         Returns:
             DataType: The corresponding PQL DataType.
+
+        Notes:
+            **DuckDB list/array type parsing asymmetry:**
+
+            DuckDB accepts both syntaxes for dynamic lists:
+            - ``T[]`` → parsed by sqlglot as ``DType.ARRAY`` (no ``values``)
+            - ``LIST(T)`` → parsed by sqlglot as ``DType.LIST``
+
+            However, DuckDB modern versions REJECT ``LIST(T)`` in CAST contexts
+            (Parser Error: Expected a constant as type modifier).
+
+            Our patch emits ``T[]`` instead of ``LIST(T)`` for code generation (_sqlglot_patch.py).
+
+            This means parsing ``T[]`` produces ``DType.ARRAY`` without ``values``,
+            which is semantically a dynamic list—so we normalize it to ``List`` here
+            to match user intent and enable round-tripping.
+
+        Example:
+            - Parse ``BIGINT[]`` → ``ARRAY<BIGINT>`` (no values) → normalize to ``List(Int64)``
+            - Parse ``BIGINT[2]`` → ``ARRAY<BIGINT>[2]`` (has values=2) → keep as ``Array(Int64, size=2)``
         """
         dt_enum: exp.DType = dtype.this  # pyright: ignore[reportAny]
         match dt_enum:
