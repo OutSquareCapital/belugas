@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from .._scans import ScanSource
     from ..typing import IntoExpr, Schema, TryIter
 
+type NodeResult = tuple[exp.Selectable, Schema]
+
 
 class Tables:
     SRC: exp.Table = exp.to_table("src")
@@ -33,14 +35,17 @@ class CompiledPlan(NamedTuple):
 
 
 def compile_plan(source: ScanSource, plan_nodes: Vec[nodes.PlanNode]) -> CompiledPlan:
+    def _process(acc: NodeResult, node: nodes.PlanNode) -> NodeResult:
+        new_ast, new_schema, extra = _compile_node(*acc, node)
+        sources.extend(extra.items())
+        return new_ast, new_schema
 
-    schema: Schema = source.schema
-    sources: Dict[str, ScanSource] = Dict.from_ref({source.identity: source})
-    ast: exp.Selectable = exp.select(exp.Star()).from_(exp.to_table(source.identity))
-    for node in plan_nodes:
-        ast, schema, extra = _compile_node(ast, schema, node)
-        sources = sources.items().iter().chain(extra.items()).collect(Dict)
-    return CompiledPlan(ast, schema, sources)
+    ast = exp.select(exp.Star()).from_(exp.to_table(source.identity))
+    accumulator = (ast, source.schema)
+    sources = Vec([(source.identity, source)])
+    return CompiledPlan(
+        *plan_nodes.iter().fold(accumulator, _process), sources.into(Dict)
+    )
 
 
 def _compile_node(  # noqa: PLR0915
@@ -52,8 +57,8 @@ def _compile_node(  # noqa: PLR0915
 
     empty = Dict[str, ScanSource].new()
 
-    def sub(template: exp.Selectable) -> exp.Selectable:
-        return _substitute(template, {"src": src_ast})
+    def sub(ast: exp.Selectable) -> exp.Selectable:
+        return _substitute(ast, {"src": src_ast})
 
     def merge(ast: exp.Selectable, other: exp.Selectable) -> exp.Selectable:
         return _substitute(ast, {"lhs": src_ast, "rhs": other})
@@ -192,9 +197,7 @@ def _compile_node(  # noqa: PLR0915
             return (merge(ast, other.ast), new_schema, other.sources)
 
 
-def _substitute(
-    template: exp.Selectable, subs: dict[str, exp.Selectable]
-) -> exp.Selectable:
+def _substitute(ast: exp.Selectable, subs: dict[str, exp.Selectable]) -> exp.Selectable:
     def _replacer(node: exp.Selectable) -> exp.Selectable:
         match node:
             case exp.Table() if node.name in subs:
@@ -204,7 +207,7 @@ def _substitute(
             case _:
                 return node
 
-    return template.transform(_replacer, copy=False)
+    return ast.transform(_replacer, copy=False)
 
 
 def lookup_type(inner: exp.Expr, schema: Schema) -> exp.DataType:
