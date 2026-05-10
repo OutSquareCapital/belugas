@@ -43,8 +43,11 @@ def select(
             ).from_(source)
             return ast, new_schema
         case _:
-            msg = "Need to decouple from ScanSource"
-            raise NotImplementedError(msg)
+            ast = exp.select(exp.null().as_(Marker.TEMP)).from_(Tables.SRC)
+            new_schema: Schema = Dict.from_ref({
+                Marker.TEMP: exp.DType.NULL.into_expr()
+            })
+            return ast, new_schema
 
 
 def with_columns(
