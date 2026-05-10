@@ -644,7 +644,7 @@ class Expr(Fns):
         strategy: FillNullStrategy | None = None,
         limit: int | None = None,
     ) -> Self:
-        def _get_strat() -> Result[Expr | Self, ValueError]:  # noqa: PLR0911
+        def _get_strat() -> Result[Expr | Self, ValueError]:
             match (Option(value), Option(strategy), Option(limit)):
                 case (Some(_), Some(_), _):
                     msg = "cannot specify both `value` and `strategy`"

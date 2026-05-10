@@ -346,7 +346,7 @@ class ScanSource:
             raise BelugasConversionError(e, query) from e
 
     @classmethod
-    def build(cls, source: IntoRel | None, orient: Orientation = "col") -> Self:  # noqa: PLR0911
+    def build(cls, source: IntoRel | None, orient: Orientation = "col") -> Self:
         match source:
             case None:
                 return cls.from_none()
