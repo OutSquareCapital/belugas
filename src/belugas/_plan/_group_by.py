@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from pyochain import Dict, Iter, Seq, Set, Vec
 from sqlglot import exp
 
-from ._meta import ResolvedExpr, Tables, lookup_type, resolve_all
+from ._resolve import ResolvedExpr, Tables, lookup_type, resolve_all
 
 if TYPE_CHECKING:
     from .._expr import Expr

@@ -8,7 +8,7 @@ from sqlglot import exp
 
 from .._core import into_expr
 from ..utils import try_iter
-from ._meta import Tables
+from ._resolve import Tables
 
 if TYPE_CHECKING:
     from .._expr import Expr

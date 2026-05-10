@@ -3,8 +3,8 @@ from ._explode import explode
 from ._filters import drop, drop_rows, filter, limit
 from ._group_by import agg, agg_columns, group_by_all
 from ._joins import join, join_asof, join_cross
-from ._meta import Tables, extract_root_name, resolve_all
 from ._pivots import pivot, unpivot
+from ._resolve import Tables, extract_root_name, resolve_all
 from ._selects import (
     cast,
     rename,

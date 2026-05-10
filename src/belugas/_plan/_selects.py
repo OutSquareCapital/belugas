@@ -7,7 +7,7 @@ from pyochain import Dict, Iter, Seq, Some
 from sqlglot import exp
 
 from .._core import Marker
-from ._meta import (
+from ._resolve import (
     ResolvedExpr,
     Tables,
     find_all,

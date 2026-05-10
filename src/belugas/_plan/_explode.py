@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, NamedTuple
 from pyochain import Dict, Iter
 from sqlglot import exp
 
-from ._meta import Tables, resolve_all
+from ._resolve import Tables, resolve_all
 
 if TYPE_CHECKING:
     from pyochain.traits import PyoIterable

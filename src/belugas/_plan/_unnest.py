@@ -8,7 +8,7 @@ from sqlglot import exp
 
 from .. import datatypes as dt
 from ..utils import try_iter
-from ._meta import Tables
+from ._resolve import Tables
 
 if TYPE_CHECKING:
     from ..typing import IntoExprColumn, Schema, TryIter

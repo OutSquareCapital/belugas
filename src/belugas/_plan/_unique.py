@@ -6,7 +6,7 @@ from pyochain import Err, Null, Ok, Result, Seq, Some
 from sqlglot import exp
 
 from ..utils import try_seq
-from ._meta import Tables
+from ._resolve import Tables
 
 if TYPE_CHECKING:
     from ..typing import TryIter, TrySeq, UniqueKeepStrategy

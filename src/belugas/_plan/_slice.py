@@ -3,7 +3,7 @@ from __future__ import annotations
 from pyochain import Err, Ok, Option, Result, Some
 from sqlglot import exp
 
-from ._meta import Tables
+from ._resolve import Tables
 
 MAX_I64 = 9_223_372_036_854_775_807
 

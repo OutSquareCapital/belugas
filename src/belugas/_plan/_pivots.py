@@ -7,7 +7,7 @@ from pyochain import NONE, Dict, Err, Iter, Null, Ok, Option, Result, Seq, Some
 from sqlglot import exp
 
 from ..utils import try_iter, try_seq
-from ._meta import Tables
+from ._resolve import Tables
 
 if TYPE_CHECKING:
     from .._expr import Expr
