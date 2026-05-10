@@ -64,24 +64,26 @@ class Filter(Node):
     constraints: dict[str, IntoExpr]
 
 
-@dataclass(slots=True)
-class GroupBy(Node):
+@dataclass
+class _GroupByBase(Node):
     keys: Seq[Expr]
     strategy: GroupByClause | None
     drop_null_keys: bool
 
 
-# NOTE: should we herit from GroupBy here?
 @dataclass(slots=True)
-class Agg(_Expressions, GroupBy):
+class GroupBy(_GroupByBase):
+    """Node representing a group_by operation."""
+
+
+@dataclass(slots=True)
+class Agg(_Expressions, _GroupByBase):
     """Node representing an aggregation operation."""
 
 
 @dataclass(slots=True)
-class AggColumns(Node):
-    keys: Seq[Expr]
-    func: ExprFn
-    drop_null_keys: bool
+class AggColumns(_GroupByBase):
+    """Node representing an aggregation operation that applies the same function to all columns."""
 
 
 @dataclass(slots=True)
@@ -210,26 +212,32 @@ class Rename(Node):
     mapping: Mapping[str, str]
 
 
-type PlanNode = (
-    Select
-    | WithColumns
-    | Filter
-    | Sort
-    | Limit
-    | Slice
+# plan node marker START
+PlanNode = (
+    Agg
+    | AggColumns
+    | Cast
     | Drop
     | DropRows
     | Explode
-    | Unnest
-    | Rename
+    | Filter
+    | GroupBy
     | GroupByAll
     | Join
-    | JoinCross
     | JoinAsof
-    | Unique
+    | JoinCross
+    | Limit
     | Pivot
-    | Unpivot
-    | WithRowIndex
+    | Rename
+    | Select
     | SelectAll
+    | Slice
+    | Sort
     | Union
+    | Unique
+    | Unnest
+    | Unpivot
+    | WithColumns
+    | WithRowIndex
 )
+# plan node marker END
