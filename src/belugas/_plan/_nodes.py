@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyochain import Dict, Option, Seq
-
-    from belugas.utils import TryIter, TrySeq
+    from pyochain import Option, Seq
 
     from .._expr import Expr
     from .._frame import LazyFrame
+    from ..datatypes import DataType
     from ..typing import (
         AsofJoinStrategy,
+        GroupByClause,
         IntoExpr,
         IntoExprColumn,
         JoinStrategy,
@@ -20,6 +20,13 @@ if TYPE_CHECKING:
         PythonLiteral,
         UniqueKeepStrategy,
     )
+    from ..utils import TryIter, TrySeq
+
+type ExprFn = Callable[[Expr], Expr]
+"""Function type for operations that take a single `Expr` and return anoter.
+
+Useful to defer method calls on `Expr` until the plan is being compiled.
+"""
 
 
 @dataclass(slots=True)
@@ -28,37 +35,63 @@ class Node:
 
 
 @dataclass(slots=True)
-class Select(Node):
-    exprs: Seq[IntoExpr]
-    named: Dict[str, IntoExpr]
+class _Expressions:
+    exprs: TryIter[IntoExpr]
+    more_exprs: Iterable[IntoExpr]
+    named: dict[str, IntoExpr]
 
 
 @dataclass(slots=True)
-class IterSlct(Node):
-    func: Callable[[Expr], Expr]
+class Select(_Expressions, Node):
+    """Node representing a select operation."""
 
 
 @dataclass(slots=True)
-class WithColumns(Node):
-    exprs: Seq[IntoExpr]
-    named: Dict[str, IntoExpr]
+class SelectAll(Node):
+    func: ExprFn
+
+
+@dataclass(slots=True)
+class WithColumns(_Expressions, Node):
+    """Node representing a with_columns operation."""
 
 
 @dataclass(slots=True)
 class Filter(Node):
-    predicates: Seq[IntoExprColumn]
-    constraints: Dict[str, IntoExpr]
+    predicates: TryIter[IntoExprColumn]
+    more_predicates: Iterable[IntoExprColumn]
+    constraints: dict[str, IntoExpr]
 
 
 @dataclass(slots=True)
-class GroupByAll(Node):
-    exprs: Seq[IntoExpr]
-    named: Dict[str, IntoExpr]
+class GroupBy(Node):
+    keys: Seq[Expr]
+    strategy: GroupByClause | None
+    drop_null_keys: bool
+
+
+# NOTE: should we herit from GroupBy here?
+@dataclass(slots=True)
+class Agg(_Expressions, GroupBy):
+    """Node representing an aggregation operation."""
+
+
+@dataclass(slots=True)
+class AggColumns(Node):
+    keys: Seq[Expr]
+    func: ExprFn
+    drop_null_keys: bool
+
+
+@dataclass(slots=True)
+class GroupByAll(_Expressions, Node):
+    """Node representing a group_by_all operation."""
 
 
 @dataclass(slots=True)
 class Sort(Node):
-    by: Seq[IntoExpr]
+    by: TryIter[IntoExpr]
+    more_by: Iterable[IntoExpr]
     descending: TrySeq[bool]
     nulls_last: TrySeq[bool]
 
@@ -70,24 +103,32 @@ class Limit(Node):
 
 @dataclass(slots=True)
 class Slice(Node):
-    offset: int
     length: Option[int]
-
-
-@dataclass(slots=True)
-class Drop(Node):
-    columns: Seq[IntoExprColumn]
+    offset: int
 
 
 @dataclass(slots=True)
 class DropRows(Node):
     subset: TryIter[str]
-    fn: Callable[[Expr], Expr]
+    fn: ExprFn
+
+
+@dataclass(slots=True)
+class Drop(Node):
+    columns: TryIter[IntoExprColumn]
+    more_columns: Iterable[IntoExprColumn]
 
 
 @dataclass(slots=True)
 class Explode(Node):
-    columns: Seq[IntoExprColumn]
+    columns: TryIter[IntoExprColumn]
+    more_columns: Iterable[IntoExprColumn]
+
+
+@dataclass(slots=True)
+class Unnest(Node):
+    columns: TryIter[IntoExprColumn]
+    more_columns: Iterable[IntoExprColumn]
 
 
 @dataclass(slots=True)
@@ -96,47 +137,38 @@ class Union(Node):
 
 
 @dataclass(slots=True)
-class Unnest(Node):
-    columns: Seq[IntoExprColumn]
-
-
-@dataclass(slots=True)
-class Rename(Node):
-    mapping: Dict[str, str]
-
-
-@dataclass(slots=True)
-class Join(Node):
+class _JoinBase(Node):
     other: LazyFrame
-    on: TrySeq[str]
+    suffix: str
+
+
+@dataclass(slots=True)
+class Join(_JoinBase):
+    on: TryIter[str]
     how: JoinStrategy
-    left_on: TrySeq[str]
-    right_on: TrySeq[str]
-    suffix: str
+    left_on: TryIter[str]
+    right_on: TryIter[str]
 
 
 @dataclass(slots=True)
-class JoinCross(Node):
-    other: LazyFrame
-    suffix: str
+class JoinCross(_JoinBase):
+    """Node representing a cross join operation."""
 
 
 @dataclass(slots=True)
 class JoinAsof(Node):
-    other: LazyFrame
     left_on: Option[str]
     right_on: Option[str]
     on: Option[str]
-    by_left: TrySeq[str]
-    by_right: TrySeq[str]
-    by: TrySeq[str]
+    by_left: TryIter[str]
+    by_right: TryIter[str]
+    by: TryIter[str]
     strategy: AsofJoinStrategy
-    suffix: str
 
 
 @dataclass(slots=True)
 class Unique(Node):
-    subset: TrySeq[str]
+    subset: TryIter[str]
     keep: UniqueKeepStrategy
     order_by: TrySeq[str]
 
@@ -167,6 +199,16 @@ class WithRowIndex(Node):
     order_by: TryIter[str]
 
 
+@dataclass(slots=True)
+class Cast(Node):
+    dtypes: Mapping[str, DataType] | DataType
+
+
+@dataclass(slots=True)
+class Rename(Node):
+    mapping: Mapping[str, str]
+
+
 type PlanNode = (
     Select
     | WithColumns
@@ -187,6 +229,6 @@ type PlanNode = (
     | Pivot
     | Unpivot
     | WithRowIndex
-    | IterSlct
+    | SelectAll
     | Union
 )
