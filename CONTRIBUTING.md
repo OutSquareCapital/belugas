@@ -76,15 +76,38 @@ This is the boundary where Python values are normalized into `sqlglot` expressio
 
 `LazyFrame` is the relational builder.
 
-It wraps a `sqlglot` selectable, tracks sources and schema, and implements the main query operations such as `select`, `with_columns`, `filter`, `group_by`, `join`, `pivot`, `sort`, `collect`, and `lazy`.
+It wraps a `ScanSource` (the underlying DuckDB relation and schema) and accumulates operations as a list of `PlanNode`s.
+Each operation (`select`, `with_columns`, `filter`, `group_by`, `join`, `pivot`, `sort`, etc.) appends a node to the list; nothing is compiled to SQL, until `fetch_all`, `collect_schema`, `collect()`, `lazy()` and other terminal methods are called.
 
-Grouped operations are split into `src/belugas/_groupby.py`, and join normalization lives in `src/belugas/_joins.py`.
+At execution time, `LazyFrame._compile()` calls `_plan.compile_plan(source, nodes)`, which optimize, then iterates through the node sequence, pattern-matches each node, resolves expressions, and delegates to the corresponding handler inside `src/belugas/_plan/`.
+The result is a `CompiledPlan` holding the final `sqlglot` AST, the output schema, and all referenced sources.
+`ScanSource.from_query(ast, **sources)` then materializes it into a DuckDB relation.
+
+Grouped operations are handled by `src/belugas/_groupby.py`, which returns a `LazyGroupBy` and pushes `Agg`/`AggColumns` plan nodes back onto the frame.
+
+### Plan system
+
+`src/belugas/_plan/` is the plan compilation subsystem:
+
+- `nodes.py` — Immutable plan node types (`Select`, `WithColumns`, `Filter`, `Agg`, `Join`, `Sort`, `Pivot`, `Unique`, `Explode`, …). Each node carries exactly the data needed to compile its operation.
+- `_resolve.py` — `compile_plan()`: iterates the node list, calls the relevant handler per node type, and threads the evolving SQL AST and schema through each step.
+- `_optimize.py` — `optimize_nodes()`: merges consecutive compatible nodes before compilation (consecutive filters → single AND, consecutive drops → combined set, etc.).
+- `_selects.py` — projection operations (`select`, `with_columns`, `rename`, `cast`, `select_all`).
+- `_filters.py` — WHERE clause generation (`filter`, `drop_rows`, `limit`, `drop`).
+- `_group_by.py` — `GROUP BY` and aggregation compilation.
+- `_joins.py` — join compilation (inner/left/right/full/asof/cross).
+- `_sort.py` — `ORDER BY` generation.
+- `_pivots.py` — pivot and unpivot reshaping.
+- `_unique.py` — `DISTINCT` and `ROW_NUMBER`-based deduplication strategies.
+- `_explode.py` / `_unnest.py` — list/struct unnesting.
+- `_slice.py` — `LIMIT` + `OFFSET` slicing.
 
 ### Expression system
 
 `Expr` wraps a `sqlglot` expression and extends the generated mixins from `src/belugas/_fns.py`.
 
-Expression metadata lives in `src/belugas/_meta.py`; it is responsible for naming, aliasing, markers, and frame-context behavior, so regressions there usually surface through `select` and `with_columns`.
+Expression aliasing is managed by `AliasMapper`, `MultiAliasMapper`, and `Resolver`, all defined directly in `src/belugas/_expr.py`.
+Regressions in this area usually surface through `select` and `with_columns`, since output column names depend on alias tracking.
 
 Namespaces such as `.str`, `.list`, `.struct`, `.dt`, `.arr`, `.json`, `.re`, `.map`, `.enum`, `.geo`, and `.name` are implemented in `src/belugas/namespaces.py`.
 
@@ -92,13 +115,13 @@ Namespaces such as `.str`, `.list`, `.struct`, `.dt`, `.arr`, `.json`, `.re`, `.
 
 `src/belugas/_scans.py` contains `ScanSource`, the bridge between query ASTs and executable DuckDB relations.
 
-It normalizes supported inputs such as DuckDB relations, Python mappings and sequences, NumPy arrays, pandas and Polars objects, SQL queries, tables, and table functions, then materializes queries through `ScanSource.from_query(...)`.
+It normalizes supported inputs such as DuckDB relations, Python mappings and sequences, NumPy arrays, pandas and Polars objects, SQL queries, tables, and table functions, then materializes compiled plans through `ScanSource.from_query(ast, **sources)`.
 
 The rest of the handwritten support code is organized by concern:
 
 - `src/belugas/_when.py` for conditional builders
 - `src/belugas/_window.py` for window logic
-- `src/belugas/_parser.py` for SQL parsing and query inspection
+- `src/belugas/_parser.py` for SQL parsing and rich query display
 - `src/belugas/_sqlglot_patch.py` for DuckDB-specific `sqlglot` extensions
 - `src/belugas/selectors.py` for selectors
 - `src/belugas/datatypes.py` for public datatypes
