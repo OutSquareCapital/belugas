@@ -129,6 +129,9 @@ Output:
 └───────────────────────────┘
 ```
 
+If you print the `LazyFrame` and you have rich installed, you can inspect the AST of the query as a tree:
+![alt text](docs/tree.png)
+
 ## Dependencies
 
 ### DuckDB
