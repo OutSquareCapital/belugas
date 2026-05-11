@@ -70,7 +70,12 @@ def _compile_node(  # noqa: PLR0915
         return _substitute(ast, {"lhs": src_ast, "rhs": other})
 
     match node:
-        case nodes.GroupBy() | nodes.Scan():
+        case nodes.Scan():
+            source = ScanSource.build(node.data, node.orient).set_alias()
+            ast = exp.select(exp.Star()).from_(exp.to_table(source.identity))
+            new_schema = source.schema
+            return ast, new_schema, Dict([(source.identity, source)])
+        case nodes.GroupBy():
             raise NotImplementedError
         case nodes.Select():
             ast, new_schema = plan.select(
