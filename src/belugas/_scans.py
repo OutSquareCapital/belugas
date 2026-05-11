@@ -4,7 +4,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING
 
 from duckdb import DuckDBPyConnection
-from pyochain import Option, Vec
+from pyochain import Option
 
 from ._frame import LazyFrame
 from ._plan import nodes
@@ -266,5 +266,5 @@ def _from_node(scan: nodes.Scan) -> LazyFrame:
         LazyFrame
     """
     out = LazyFrame.__new__(LazyFrame)
-    out._inner = Vec([scan])  # pyright: ignore[reportAttributeAccessIssue, reportPrivateUsage]
+    out._inner = scan  # pyright: ignore[reportPrivateUsage]
     return out

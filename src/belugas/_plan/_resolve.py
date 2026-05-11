@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, NamedTuple
 
 from duckdb import DuckDBPyRelation
-from pyochain import Dict, Iter, Null, Option, Seq, Set, Some, Vec
+from pyochain import Dict, Iter, Null, Option, Seq, Set, Some
 from pyochain.traits import Pipeable
 from sqlglot import exp
 
@@ -43,21 +43,31 @@ class CompiledPlan(NamedTuple):
     sources: Dict[str, DuckDBPyRelation]
 
 
-def compile_plan(plan_nodes: nodes.Plan, *, optimize: bool = True) -> CompiledPlan:
-    def _process(acc: NodeResult, node: nodes.Node) -> NodeResult:
-        new_ast, new_schema, extra = _compile_node(*acc, node)
-        sources.extend(extra.items())
-        return new_ast, new_schema
+def compile_plan(node: nodes.Node, *, optimize: bool = True) -> CompiledPlan:
+    root = optimize_nodes(node) if optimize else node
+    return _compile_tree(root)
 
-    scan: nodes.Scan = plan_nodes.first()  # pyright: ignore[reportAssignmentType]
-    source = _resolve_scan(scan).set_alias()
-    ast = exp.select(exp.Star()).from_(exp.to_table(source.identity))
-    accumulator = (ast, source.schema)
-    sources = Vec([(source.identity, source.relation)])
-    optimized_nodes = optimize_nodes(plan_nodes) if optimize else plan_nodes
-    return CompiledPlan(
-        *optimized_nodes.iter().skip(1).fold(accumulator, _process), sources.into(Dict)
-    )
+
+def _compile_tree(node: nodes.Node) -> CompiledPlan:
+    match node:
+        case nodes.LogicalNode():
+            compiled_src = _compile_tree(node.inner)
+            compiled_node = _compile_node(compiled_src.ast, compiled_src.schema, node)
+            sources = (
+                compiled_src.sources
+                .items()
+                .iter()
+                .chain(compiled_node.sources.items())
+                .collect(Dict)
+            )
+            return CompiledPlan(compiled_node.ast, compiled_node.schema, sources)
+        case nodes.BaseScan():
+            # NOTE: we need to ignore the type due to python limitations.
+            source = _resolve_scan(node).set_alias()  # pyright: ignore[reportArgumentType]
+            ast = exp.select(exp.Star()).from_(exp.to_table(source.identity))
+            return CompiledPlan(
+                ast, source.schema, Dict([(source.identity, source.relation)])
+            )
 
 
 def _resolve_scan(node: nodes.Scan) -> scans.ScanResult:
@@ -92,7 +102,7 @@ def _resolve_scan(node: nodes.Scan) -> scans.ScanResult:
 
 def _compile_node(  # noqa: PLR0915
     src_ast: exp.Selectable, schema: Schema, node: nodes.Node
-) -> tuple[exp.Selectable, Schema, Dict[str, DuckDBPyRelation]]:
+) -> CompiledPlan:
     from belugas import _plan as plan
 
     empty = Dict[str, DuckDBPyRelation].new()
@@ -104,61 +114,68 @@ def _compile_node(  # noqa: PLR0915
         return _substitute(ast, {"lhs": src_ast, "rhs": other})
 
     match node:
+        case nodes.BaseScan():
+            source = _resolve_scan(node).set_alias()  # pyright: ignore[reportArgumentType]
+            ast = exp.select(exp.Star()).from_(exp.to_table(source.identity))
+            return CompiledPlan(
+                ast, source.schema, Dict([(source.identity, source.relation)])
+            )
+
         case nodes.GroupBy():
             raise NotImplementedError
         case nodes.Select():
             ast, new_schema = plan.select(
                 schema, node.exprs, node.more_exprs, node.named
             )
-            return sub(ast), new_schema, empty
+            return CompiledPlan(sub(ast), new_schema, empty)
         case nodes.SelectAll():
             ast, new_schema = plan.select_all(schema, node.func)
-            return sub(ast), new_schema, empty
+            return CompiledPlan(sub(ast), new_schema, empty)
         case nodes.WithColumns():
             ast, new_schema = plan.with_columns(
                 schema, node.exprs, node.more_exprs, node.named
             )
-            return sub(ast), new_schema, empty
+            return CompiledPlan(sub(ast), new_schema, empty)
         case nodes.Filter():
             ast = plan.filter(node.predicates, node.more_predicates, node.constraints)
-            return sub(ast), schema, empty
+            return CompiledPlan(sub(ast), schema, empty)
         case nodes.Sort():
             ast = plan.sort(node.by, node.more_by, node.descending, node.nulls_last)
-            return sub(ast), schema, empty
+            return CompiledPlan(sub(ast), schema, empty)
         case nodes.Limit():
             ast = plan.limit(node.n)
-            return sub(ast), schema, empty
+            return CompiledPlan(sub(ast), schema, empty)
         case nodes.Slice():
             ast = plan.slice(node.length, node.offset).unwrap()
-            return sub(ast), schema, empty
+            return CompiledPlan(sub(ast), schema, empty)
         case nodes.Drop():
             ast, new_schema = plan.drop(schema, node.columns, node.more_columns)
-            return sub(ast), new_schema, empty
+            return CompiledPlan(sub(ast), new_schema, empty)
         case nodes.DropRows():
             ast = plan.drop_rows(schema, node.subset, node.fn)
-            return sub(ast), schema, empty
+            return CompiledPlan(sub(ast), schema, empty)
         case nodes.Explode():
             ast = plan.explode(schema, node.columns, node.more_columns).with_(
                 "_explode_src", as_=src_ast, materialized=False, copy=False
             )
-            return ast, schema, empty
+            return CompiledPlan(ast, schema, empty)
         case nodes.Unnest():
             ast, new_schema = plan.unnest(schema, node.columns, node.more_columns)
-            return sub(ast), new_schema, empty
+            return CompiledPlan(sub(ast), new_schema, empty)
         case nodes.Rename():
             ast, new_schema = plan.rename(schema, node.mapping)
-            return sub(ast), new_schema, empty
+            return CompiledPlan(sub(ast), new_schema, empty)
         case nodes.Cast():
             ast, new_schema = plan.cast(schema, node.dtypes)
-            return sub(ast), new_schema, empty
+            return CompiledPlan(sub(ast), new_schema, empty)
         case nodes.WithRowIndex():
             ast, new_schema = plan.with_row_index(schema, node.name, node.order_by)
-            return sub(ast), new_schema, empty
+            return CompiledPlan(sub(ast), new_schema, empty)
         case nodes.GroupByAll():
             ast, new_schema = plan.group_by_all(
                 schema, node.exprs, node.more_exprs, node.named
             )
-            return sub(ast), new_schema, empty
+            return CompiledPlan(sub(ast), new_schema, empty)
         case nodes.Agg():
             ast, new_schema = plan.agg(
                 schema,
@@ -169,15 +186,15 @@ def _compile_node(  # noqa: PLR0915
                 node.strategy,
                 drop_null_keys=node.drop_null_keys,
             )
-            return sub(ast), new_schema, empty
+            return CompiledPlan(sub(ast), new_schema, empty)
         case nodes.AggColumns():
             ast, new_schema = plan.agg_columns(
                 schema, node.keys, node.func, drop_null_keys=node.drop_null_keys
             )
-            return sub(ast), new_schema, empty
+            return CompiledPlan(sub(ast), new_schema, empty)
         case nodes.Unique():
             ast = plan.unique(node.subset, node.keep, node.order_by).unwrap()
-            return sub(ast), schema, empty
+            return CompiledPlan(sub(ast), schema, empty)
         case nodes.Pivot():
             ast, new_schema = plan.pivot(
                 schema,
@@ -189,7 +206,7 @@ def _compile_node(  # noqa: PLR0915
                 maintain_order=node.maintain_order,
                 separator=node.separator,
             )
-            return sub(ast), new_schema, empty
+            return CompiledPlan(sub(ast), new_schema, empty)
         case nodes.Unpivot():
             ast, new_schema = plan.unpivot(
                 schema,
@@ -199,13 +216,13 @@ def _compile_node(  # noqa: PLR0915
                 node.value_name,
                 node.order_by,
             )
-            return sub(ast), new_schema, empty
+            return CompiledPlan(sub(ast), new_schema, empty)
         case nodes.Union():
-            other = compile_plan(node.other.inner)
+            other = compile_plan(node.other, optimize=False)
             ast = plan.union()
-            return (merge(ast, other.ast), schema, other.sources)
+            return CompiledPlan(merge(ast, other.ast), schema, other.sources)
         case nodes.Join():
-            other = compile_plan(node.other.inner)
+            other = compile_plan(node.other, optimize=False)
             ast, new_schema = plan.join(
                 schema,
                 other.schema,
@@ -215,13 +232,13 @@ def _compile_node(  # noqa: PLR0915
                 node.right_on,
                 node.suffix,
             )
-            return (merge(ast, other.ast), new_schema, other.sources)
+            return CompiledPlan(merge(ast, other.ast), new_schema, other.sources)
         case nodes.JoinCross():
-            other = compile_plan(node.other.inner)
+            other = compile_plan(node.other, optimize=False)
             ast, new_schema = plan.join_cross(schema, other.schema, node.suffix)
-            return (merge(ast, other.ast), new_schema, other.sources)
+            return CompiledPlan(merge(ast, other.ast), new_schema, other.sources)
         case nodes.JoinAsof():
-            other = compile_plan(node.other.inner)
+            other = compile_plan(node.other, optimize=False)
             ast, new_schema = plan.join_asof(
                 schema,
                 other.schema,
@@ -234,7 +251,7 @@ def _compile_node(  # noqa: PLR0915
                 node.strategy,
                 node.suffix,
             )
-            return (merge(ast, other.ast), new_schema, other.sources)
+            return CompiledPlan(merge(ast, other.ast), new_schema, other.sources)
 
 
 def _substitute(ast: exp.Selectable, subs: dict[str, exp.Selectable]) -> exp.Selectable:

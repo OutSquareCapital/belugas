@@ -44,6 +44,7 @@ if TYPE_CHECKING:
         StrIntoPyType as DuckStrIntoPyType,
     )
     from pyochain import Dict
+    from rich.console import ConsoleRenderable
 
     from ._core import ExprHandler
     from ._expr import Expr
@@ -129,6 +130,13 @@ class JsonOptions(TypedDict):
     union_by_name: bool | None
     hive_types: HiveTypes | None
     hive_types_autocast: bool | None
+
+
+@runtime_checkable
+class RichRenderable(Protocol):
+    """Protocol for objects that can be rendered by `rich`."""
+
+    def __rich__(self) -> ConsoleRenderable: ...
 
 
 @runtime_checkable

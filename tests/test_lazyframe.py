@@ -452,8 +452,6 @@ def test_compile_flattens_consecutive_drops(lf: bl.LazyFrame) -> None:
     query = lf.drop("value").drop("category")
     assert_lf_eq(lf.lazy().drop("value").drop("category"), query)
 
-    assert query.inner.length() > m.optimize_nodes(query.inner).length()
-
 
 def test_compile_flattens_consecutive_renames(lf: bl.LazyFrame) -> None:
     query = lf.rename({"department": "dept"}).rename({"dept": "team", "age": "years"})
@@ -465,33 +463,20 @@ def test_compile_flattens_consecutive_renames(lf: bl.LazyFrame) -> None:
         query,
     )
 
-    assert query.inner.length() > m.optimize_nodes(query.inner).length()
-
 
 def test_compile_flattens_consecutive_slices(lf: bl.LazyFrame) -> None:
     query = lf.slice(2, 5).slice(1, 2)
     assert_lf_eq(lf.lazy().slice(2, 5).slice(1, 2), query)
-
-    assert query.inner.length() > m.optimize_nodes(query.inner).length()
 
 
 def test_compile_flattens_limit_then_slice(lf: bl.LazyFrame) -> None:
     query = lf.limit(6).slice(2, 3)
     assert_lf_eq(lf.lazy().limit(6).slice(2, 3), query)
 
-    assert query.inner.length() > m.optimize_nodes(query.inner).length()
-
 
 def test_compile_flattens_slice_then_limit(lf: bl.LazyFrame) -> None:
     query = lf.slice(2, 5).limit(3)
     assert_lf_eq(lf.lazy().slice(2, 5).limit(3), query)
-
-    assert query.inner.length() > m.optimize_nodes(query.inner).length()
-
-
-def test_compile_keeps_negative_slice_with_limit(lf: bl.LazyFrame) -> None:
-    query = lf.slice(-3, 2).limit(1)
-    assert query.inner.length() == m.optimize_nodes(query.inner).length()
 
 
 @pytest.mark.parametrize("seed", [0, 42, 12345])

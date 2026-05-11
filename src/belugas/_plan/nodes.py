@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, fields
+from typing import TYPE_CHECKING, override
 
 from pyochain import Seq
 
@@ -10,10 +10,10 @@ from ..typing import FileGlob, PathOrBuffer
 
 if TYPE_CHECKING:
     from duckdb import DuckDBPyConnection
-    from pyochain import Option, Seq, Vec
+    from pyochain import Option
+    from rich.console import RenderableType
 
     from .._expr import Expr
-    from .._frame import LazyFrame
     from ..datatypes import DataType
     from ..typing import (
         AsofJoinStrategy,
@@ -38,166 +38,223 @@ type ExprFn = Callable[[Expr], Expr]
 
 Useful to defer method calls on `Expr` until the plan is being compiled.
 """
-type Plan = Vec[Node]
-"""Logical plan represented as a sequence of `Node`s."""
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, repr=False)
 class BaseNode:
     """Base class for all plan nodes."""
 
+    @override
+    def __repr__(self) -> str:
+        return _to_s(self)
 
-@dataclass(slots=True)
-class _Expressions(BaseNode):
-    exprs: TryIter[IntoExpr]
-    more_exprs: Iterable[IntoExpr]
-    named: dict[str, IntoExpr]
+    def __rich__(self) -> RenderableType:  # noqa: PLW3201
+        from .._show import node_tree
+
+        return node_tree(self)
 
 
-@dataclass(slots=True)
-class _BaseScan(BaseNode):
+def _to_s(node: object, level: int = 0) -> str:
+    indent = "\n" + ("  " * (level + 1))
+    delim = f",{indent}"
+
+    match node:
+        case BaseNode():
+            node_fields = Seq(fields(node))
+            is_leaf = node_fields.all(
+                lambda field: not _is_nested_node(node, field.name)
+            )
+
+            if is_leaf:
+                indent = ""
+                delim = ", "
+
+            items = (
+                node_fields
+                .iter()
+                .filter(lambda field: field.name != "inner")
+                .chain(node_fields.iter().filter(lambda field: field.name == "inner"))
+                .map(lambda field: _field_to_s(node, field.name, level + 1))
+                .join(delim)
+            )
+            return f"{node.__class__.__name__}({indent}{items})"
+        case _:
+            return repr(node)
+
+
+def _is_nested_node(node: BaseNode, name: str) -> bool:
+    value: object = getattr(node, name)  # pyright: ignore[reportAny]
+    return isinstance(value, BaseNode)
+
+
+def _field_to_s(node: BaseNode, name: str, level: int) -> str:
+    value = _node_field_value(node, name)
+    return f"{name}={_to_s(value, level)}"
+
+
+def _node_field_value(node: BaseNode, name: str) -> object:
+    return getattr(node, name)  # pyright: ignore[reportAny]
+
+
+@dataclass(slots=True, repr=False)
+class BaseScan(BaseNode):
     """Base class for all scan nodes."""
 
     connection: Option[DuckDBPyConnection]
 
 
-@dataclass(slots=True)
-class ScanInMemory[T: IntoRel](_BaseScan):
+@dataclass(slots=True, repr=False)
+class ScanInMemory[T: IntoRel](BaseScan):
     data: T | None
     orient: Orientation = "col"
 
 
-@dataclass(slots=True)
-class ScanTable(_BaseScan):
+@dataclass(slots=True, repr=False)
+class ScanTable(BaseScan):
     table: str
 
 
-@dataclass(slots=True)
-class ScanTableFunction(_BaseScan):
+@dataclass(slots=True, repr=False)
+class ScanTableFunction(BaseScan):
     function: str
 
 
-@dataclass(slots=True)
-class _ScanFile[F: FileGlob | PathOrBuffer](_BaseScan):
+@dataclass(slots=True, repr=False)
+class _ScanFile[F: FileGlob | PathOrBuffer](BaseScan):
     path: F
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, repr=False)
 class ScanParquet(_ScanFile[FileGlob]):
     options: ParquetOptions
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, repr=False)
 class ScanCSV(_ScanFile[PathOrBuffer]):
     options: CSVOptions
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, repr=False)
 class ScanJson(_ScanFile[PathOrBuffer]):
     options: JsonOptions
+
+
+@dataclass(slots=True, repr=False)
+class LogicalNode(BaseNode):
+    inner: Node
+
+
+@dataclass(slots=True, repr=False)
+class _Expressions(LogicalNode):
+    exprs: TryIter[IntoExpr]
+    more_exprs: Iterable[IntoExpr]
+    named: dict[str, IntoExpr]
+
+
+_LogicalNode = LogicalNode
 
 
 class Select(_Expressions):
     """Node representing a select operation."""
 
 
-@dataclass(slots=True)
-class SelectAll(BaseNode):
+@dataclass(slots=True, repr=False)
+class SelectAll(LogicalNode):
     func: ExprFn
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, repr=False)
 class WithColumns(_Expressions):
     """Node representing a with_columns operation."""
 
 
-@dataclass(slots=True)
-class Filter(BaseNode):
+@dataclass(slots=True, repr=False)
+class Filter(LogicalNode):
     predicates: TryIter[IntoExprColumn]
     more_predicates: Iterable[IntoExprColumn]
     constraints: dict[str, IntoExpr]
 
 
-@dataclass
-class _GroupByBase(BaseNode):
+@dataclass(repr=False)
+class _GroupByBase(LogicalNode):
     keys: Seq[Expr]
     strategy: GroupByClause | None
     drop_null_keys: bool
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, repr=False)
 class GroupBy(_GroupByBase):
     """Node representing a group_by operation."""
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, repr=False)
 class Agg(_GroupByBase, _Expressions):
     """Node representing an aggregation operation."""
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, repr=False)
 class AggColumns(_GroupByBase):
     """Node representing an aggregation operation that applies the same function to all columns."""
 
     func: ExprFn
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, repr=False)
 class GroupByAll(_Expressions):
     """Node representing a group_by_all operation."""
 
 
-@dataclass(slots=True)
-class Sort(BaseNode):
+@dataclass(slots=True, repr=False)
+class Sort(LogicalNode):
     by: TryIter[IntoExpr]
     more_by: Iterable[IntoExpr]
     descending: TrySeq[bool]
     nulls_last: TrySeq[bool]
 
 
-@dataclass(slots=True)
-class Limit(BaseNode):
+@dataclass(slots=True, repr=False)
+class Limit(LogicalNode):
     n: int
 
 
-@dataclass(slots=True)
-class Slice(BaseNode):
+@dataclass(slots=True, repr=False)
+class Slice(LogicalNode):
     length: Option[int]
     offset: int
 
 
-@dataclass(slots=True)
-class DropRows(BaseNode):
+@dataclass(slots=True, repr=False)
+class DropRows(LogicalNode):
     subset: TryIter[str]
     fn: ExprFn
 
 
-@dataclass(slots=True)
-class Drop(BaseNode):
+@dataclass(slots=True, repr=False)
+class Drop(LogicalNode):
     columns: TryIter[IntoExprColumn]
     more_columns: Iterable[IntoExprColumn]
 
 
-@dataclass(slots=True)
-class Explode(BaseNode):
+@dataclass(slots=True, repr=False)
+class Explode(LogicalNode):
     columns: TryIter[IntoExprColumn]
     more_columns: Iterable[IntoExprColumn]
 
 
-@dataclass(slots=True)
-class Unnest(BaseNode):
+@dataclass(slots=True, repr=False)
+class Unnest(LogicalNode):
     columns: TryIter[IntoExprColumn]
     more_columns: Iterable[IntoExprColumn]
 
 
-@dataclass(slots=True)
-class Union(BaseNode):
-    other: LazyFrame
+@dataclass(slots=True, repr=False)
+class Union(LogicalNode):
+    other: Node
 
 
-@dataclass(slots=True)
-class Join(BaseNode):
-    other: LazyFrame
+@dataclass(slots=True, repr=False)
+class Join(LogicalNode):
+    other: Node
     on: TryIter[str]
     how: JoinStrategy
     left_on: TryIter[str]
@@ -205,17 +262,17 @@ class Join(BaseNode):
     suffix: str
 
 
-@dataclass(slots=True)
-class JoinCross(BaseNode):
+@dataclass(slots=True, repr=False)
+class JoinCross(LogicalNode):
     """Node representing a cross join operation."""
 
-    other: LazyFrame
+    other: Node
     suffix: str
 
 
-@dataclass(slots=True)
-class JoinAsof(BaseNode):
-    other: LazyFrame
+@dataclass(slots=True, repr=False)
+class JoinAsof(LogicalNode):
+    other: Node
     left_on: Option[str]
     right_on: Option[str]
     on: Option[str]
@@ -226,15 +283,15 @@ class JoinAsof(BaseNode):
     suffix: str
 
 
-@dataclass(slots=True)
-class Unique(BaseNode):
+@dataclass(slots=True, repr=False)
+class Unique(LogicalNode):
     subset: TryIter[str]
     keep: UniqueKeepStrategy
     order_by: TrySeq[str]
 
 
-@dataclass(slots=True)
-class Pivot(BaseNode):
+@dataclass(slots=True, repr=False)
+class Pivot(LogicalNode):
     on: TryIter[str]
     on_columns: Sequence[PythonLiteral]
     index: TryIter[str]
@@ -244,8 +301,8 @@ class Pivot(BaseNode):
     separator: str
 
 
-@dataclass(slots=True)
-class Unpivot(BaseNode):
+@dataclass(slots=True, repr=False)
+class Unpivot(LogicalNode):
     on: TryIter[str]
     index: TryIter[str]
     variable_name: str
@@ -253,19 +310,19 @@ class Unpivot(BaseNode):
     order_by: TryIter[str]
 
 
-@dataclass(slots=True)
-class WithRowIndex(BaseNode):
+@dataclass(slots=True, repr=False)
+class WithRowIndex(LogicalNode):
     name: str
     order_by: TryIter[str]
 
 
-@dataclass(slots=True)
-class Cast(BaseNode):
+@dataclass(slots=True, repr=False)
+class Cast(LogicalNode):
     dtypes: Mapping[str, DataType] | DataType
 
 
-@dataclass(slots=True)
-class Rename(BaseNode):
+@dataclass(slots=True, repr=False)
+class Rename(LogicalNode):
     mapping: Mapping[str, str]
 
 
@@ -315,6 +372,7 @@ Node = (
     | Unpivot
     | WithColumns
     | WithRowIndex
+    | BaseScan
 )
 """All nodes that can be part of the logical plan.
 

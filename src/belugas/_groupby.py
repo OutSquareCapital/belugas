@@ -59,7 +59,11 @@ class LazyGroupBy:
 
     def _agg_columns(self, func: Callable[[Expr], Expr]) -> LazyFrame:
         node = nodes.AggColumns(
-            self._keys, self._strategy, drop_null_keys=self._drop_null_keys, func=func
+            self._frame.inner,
+            self._keys,
+            self._strategy,
+            drop_null_keys=self._drop_null_keys,
+            func=func,
         )
         return self._frame._push(node)  # pyright: ignore[reportPrivateUsage]
 
@@ -70,6 +74,7 @@ class LazyGroupBy:
         **named_aggs: IntoExpr,
     ) -> LazyFrame:
         node = nodes.Agg(
+            self._frame.inner,
             aggs,
             more_aggs,
             named_aggs,

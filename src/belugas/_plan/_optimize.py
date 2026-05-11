@@ -1,41 +1,44 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
-from pyochain import NONE, Dict, Iter, Option, Some, Vec
+from pyochain import NONE, Dict, Iter, Option, Some
 
 from ..utils import try_iter
 from . import nodes
 
 if TYPE_CHECKING:
     from ..typing import IntoExpr, IntoExprColumn
+
 type NewNode = Option[nodes.Node]
-type OptimizeStep = tuple[NewNode, nodes.Plan]
-"""Type alias for the accumulator used in the optimization fold step."""
 
 
-def optimize_nodes(plan_nodes: nodes.Plan) -> nodes.Plan:
-    def _step(acc: OptimizeStep, node: nodes.Node) -> OptimizeStep:
-        pending, out = acc
-        match pending:
-            case Some(prev):
-                match _flatten_pair(prev, node):
-                    case Some(merged):
-                        return Some(merged), out
-                    case _:
-                        _ = out.append(prev)
-                        return Some(node), out
-            case _:
-                return Some(node), out
-
-    init = (NONE, Vec[nodes.Node].new())
-    pending, optimized = plan_nodes.iter().fold(init, _step)
-    match pending:
-        case Some(last):
-            _ = optimized.append(last)
-            return optimized
+def optimize_nodes(plan_node: nodes.Node) -> nodes.Node:
+    optimized_children = _optimize_children(plan_node)
+    match optimized_children:
+        case nodes.LogicalNode() as logical:
+            match _flatten_pair(logical.inner, logical):
+                case Some(merged):
+                    return optimize_nodes(merged)
+                case _:
+                    return optimized_children
         case _:
-            return optimized
+            return optimized_children
+
+
+def _optimize_children(node: nodes.Node) -> nodes.Node:
+    match node:
+        case nodes.BaseScan():
+            return node
+        case nodes.Union() | nodes.Join() | nodes.JoinCross() | nodes.JoinAsof():
+            return replace(
+                node,
+                inner=optimize_nodes(node.inner),
+                other=optimize_nodes(node.other),
+            )
+        case nodes.LogicalNode():
+            return replace(node, inner=optimize_nodes(node.inner))
 
 
 def _flatten_pair(prev: nodes.Node, nxt: nodes.Node) -> NewNode:
@@ -47,15 +50,15 @@ def _flatten_pair(prev: nodes.Node, nxt: nodes.Node) -> NewNode:
         case nodes.Rename() as lhs, nodes.Rename() as rhs:
             return Some(_merge_renames(lhs, rhs))
         case nodes.Limit() as lhs, nodes.Limit() as rhs:
-            return Some(nodes.Limit(min(rhs.n, lhs.n)))
+            return Some(nodes.Limit(lhs.inner, min(rhs.n, lhs.n)))
         case nodes.Limit() as lhs, nodes.Slice() as rhs:
             return _merge_limit_then_slice(lhs, rhs)
         case nodes.Slice() as lhs, nodes.Slice() as rhs:
             return _merge_slices(lhs, rhs)
         case nodes.Slice() as lhs, nodes.Limit() as rhs:
             return _merge_slice_then_limit(lhs, rhs)
-        case nodes.Sort(), nodes.Sort() as rhs:
-            return Some(rhs)
+        case nodes.Sort() as lhs, nodes.Sort() as rhs:
+            return Some(lhs)
         case _:
             return NONE
 
@@ -67,10 +70,12 @@ def _merge_limit_then_slice(lhs: nodes.Limit, rhs: nodes.Slice) -> NewNode:
     available = max(lhs.n - rhs.offset, 0)
     match rhs.length:
         case Some(rhs_length):
-            merged = nodes.Slice(Some(min(rhs_length, available)), rhs.offset)
+            merged = nodes.Slice(
+                lhs.inner, Some(min(rhs_length, available)), rhs.offset
+            )
             return Some(merged)
         case _:
-            merged = nodes.Slice(Some(available), rhs.offset)
+            merged = nodes.Slice(lhs.inner, Some(available), rhs.offset)
             return Some(merged)
 
 
@@ -84,21 +89,23 @@ def _merge_slices(lhs: nodes.Slice, rhs: nodes.Slice) -> Option[nodes.Node]:
             match rhs.length:
                 case Some(rhs_length):
                     merged_bounded_slice = nodes.Slice(
-                        Some(min(rhs_length, max(lhs_length - rhs.offset, 0))), offset
+                        lhs.inner,
+                        Some(min(rhs_length, max(lhs_length - rhs.offset, 0))),
+                        offset,
                     )
                     return Some(merged_bounded_slice)
                 case _:
                     merged_open_slice = nodes.Slice(
-                        Some(max(lhs_length - rhs.offset, 0)), offset
+                        lhs.inner, Some(max(lhs_length - rhs.offset, 0)), offset
                     )
                     return Some(merged_open_slice)
         case _:
             match rhs.length:
                 case Some(rhs_length):
-                    rhs_slice = nodes.Slice(Some(rhs_length), offset)
+                    rhs_slice = nodes.Slice(lhs.inner, Some(rhs_length), offset=offset)
                     return Some(rhs_slice)
                 case _:
-                    unbounded_slice = nodes.Slice(NONE, offset)
+                    unbounded_slice = nodes.Slice(lhs.inner, length=NONE, offset=offset)
                     return Some(unbounded_slice)
 
 
@@ -108,10 +115,10 @@ def _merge_slice_then_limit(lhs: nodes.Slice, rhs: nodes.Limit) -> NewNode:
 
     match lhs.length:
         case Some(lhs_length):
-            merged = nodes.Slice(Some(min(lhs_length, rhs.n)), lhs.offset)
+            merged = nodes.Slice(lhs.inner, Some(min(lhs_length, rhs.n)), lhs.offset)
             return Some(merged)
         case _:
-            merged = nodes.Slice(Some(rhs.n), lhs.offset)
+            merged = nodes.Slice(lhs.inner, Some(rhs.n), lhs.offset)
             return Some(merged)
 
 
@@ -123,7 +130,7 @@ def _merge_filters(lhs: nodes.Filter, rhs: nodes.Filter) -> nodes.Filter:
         .chain(try_iter(rhs.predicates))
         .chain(rhs.more_predicates)
     )
-    return nodes.Filter(predicates, (), rhs.constraints)
+    return nodes.Filter(lhs.inner, predicates, (), rhs.constraints)
 
 
 def _constraints_to_predicates(
@@ -141,7 +148,7 @@ def _merge_drops(lhs: nodes.Drop, rhs: nodes.Drop) -> nodes.Drop:
         .chain(try_iter(rhs.columns))
         .chain(rhs.more_columns)
     )
-    return nodes.Drop(columns, ())
+    return nodes.Drop(lhs.inner, columns, ())
 
 
 def _merge_renames(lhs: nodes.Rename, rhs: nodes.Rename) -> nodes.Rename:
@@ -160,4 +167,4 @@ def _merge_renames(lhs: nodes.Rename, rhs: nodes.Rename) -> nodes.Rename:
         .filter_star(lambda name, renamed: renamed != name)
         .collect(Dict)
     )
-    return nodes.Rename(mapping)
+    return nodes.Rename(lhs.inner, mapping)
