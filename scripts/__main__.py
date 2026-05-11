@@ -19,8 +19,6 @@ class _Paths:
     PQL = Path("src", "belugas")
     FNS = PQL.joinpath("_fns.py")
     META = PQL.joinpath("meta.py")
-    TYPING = PQL.joinpath("typing.py")
-    NODES = PQL.joinpath("_plan", "nodes.py")
 
     DATA = Path("scripts", "data", "functions.parquet")
     STUB = Path(".venv", "Lib", "site-packages", "_duckdb-stubs", "__init__.pyi")
@@ -68,11 +66,11 @@ def gen_fns(
 
 
 @app.command()
-def gen_themes(path: InputPath = _Paths.TYPING) -> None:
+def gen_themes() -> None:
     """Generate a `Literal` of all available styles for pretty-printing of the `LazyFrame.sql_query` method."""
     from ._theme_generator import generate_themes
 
-    res = generate_themes(_Paths.SELF, path)
+    res, path = generate_themes(_Paths.SELF)
     _run_ruff(check_only=False, dest=path)
     console.print(
         Text("Generated themes Literal in ").append(path.as_posix(), style="cyan")
@@ -81,11 +79,11 @@ def gen_themes(path: InputPath = _Paths.TYPING) -> None:
 
 
 @app.command()
-def gen_nodes(path: InputPath = _Paths.NODES) -> None:
+def gen_nodes() -> None:
     """Generate a `Type` of all available styles for pretty-printing of the `LazyFrame.sql_query` method."""
     from ._theme_generator import generate_nodes
 
-    res = generate_nodes(_Paths.SELF, path)
+    res, path = generate_nodes(_Paths.SELF)
     _run_ruff(check_only=False, dest=path)
     console.print(
         Text("Generated nodes Type in ").append(path.as_posix(), style="cyan")

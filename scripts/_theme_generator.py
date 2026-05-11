@@ -1,14 +1,18 @@
 from pathlib import Path
+from types import ModuleType
 from typing import NamedTuple, Self
 
 from pyochain import Iter
 
 
-def generate_themes(caller: Path, dest: Path) -> int:
+def generate_themes(caller: Path) -> tuple[int, Path]:
     from pygments.styles._mapping import (  # pyright: ignore[reportMissingTypeStubs]  # noqa: PLC2701
         STYLES,
     )
 
+    from src.belugas import typing as typing_module
+
+    dest = _resolve_module_path(typing_module)
     content = (
         Iter(STYLES.values()).map_star(lambda _, style, __: f'"{style}"').join(" ,")
     )
@@ -16,13 +20,18 @@ def generate_themes(caller: Path, dest: Path) -> int:
 
     doc = """Themes available for SQL syntax highlighting in the `sql_query` method."""
 
-    return _build_content(
-        dest, caller, "# theme marker START", "# theme marker END", content, doc
+    return (
+        _build_content(
+            dest, caller, "# theme marker START", "# theme marker END", content, doc
+        ),
+        dest,
     )
 
 
-def generate_nodes(caller: Path, dest: Path) -> int:
-    from src.belugas._plan import nodes  # noqa: PLC2701
+def generate_nodes(caller: Path) -> tuple[int, Path]:
+    from src.belugas._plan import nodes as node_module  # noqa: PLC2701
+
+    dest = _resolve_module_path(node_module)
 
     def all_subclasses(cls: type) -> Iter[type]:
         def _subcls() -> Iter[type]:
@@ -30,17 +39,34 @@ def generate_nodes(caller: Path, dest: Path) -> int:
 
         return _subcls().chain(_subcls().flat_map(all_subclasses))
 
-    content = (
-        all_subclasses(nodes.BaseNode)
-        .map(lambda cls: cls.__name__)
-        .filter(lambda name: not name.startswith("_"))
+    def _render_type_name(cls: type) -> str:
+        if cls.__name__ == "ScanInMemory":
+            return "ScanInMemory[IntoRel]"
+
+        return cls.__name__
+
+    public_nodes = (
+        all_subclasses(node_module.BaseNode)
+        .filter(lambda cls: not cls.__name__.startswith("_"))
+        .map(_render_type_name)
         .unique()
         .sort()
-        .join(" | ")
     )
-    content = f"Node = ({content})"
+    scan_content = (
+        public_nodes.iter().filter(lambda name: name.startswith("Scan")).join(" | ")
+    )
+    node_content = (
+        public_nodes.iter().filter(lambda name: not name.startswith("Scan")).join(" | ")
+    )
+    scan_content = f"type Scan = ({scan_content})"
+    node_content = f"Node = ({node_content})"
 
-    doc = """All nodes that can be part of the logical plan.
+    scan_doc = """All nodes that represent logical scan sources.
+
+The `Scan` union is generated from all public `BaseNode` subclasses with names starting with `Scan`.
+    """
+
+    node_doc = """All nodes that can be part of the logical plan.
 
 Each node represents a logical operation to be performed on the data, such as filtering, joining, or aggregating.
 
@@ -57,9 +83,35 @@ Note:
     while still being able to treat them as a unified type when building the plan, relying on the type checker to ensure exhaustiveness when matching on them.
     """
 
-    return _build_content(
-        dest, caller, "# plan node marker START", "# plan node marker END", content, doc
+    _ = _build_content(
+        dest,
+        caller,
+        "# plan scan marker START",
+        "# plan scan marker END",
+        scan_content,
+        scan_doc,
     )
+
+    return (
+        _build_content(
+            dest,
+            caller,
+            "# plan node marker START",
+            "# plan node marker END",
+            node_content,
+            node_doc,
+        ),
+        dest,
+    )
+
+
+def _resolve_module_path(module: ModuleType) -> Path:
+    file_path = module.__file__
+    if file_path is None:
+        msg = f"Could not resolve destination path for module: {module.__name__}"
+        raise RuntimeError(msg)
+
+    return Path(file_path)
 
 
 def _build_content(  # noqa: PLR0913, PLR0917
