@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
+from functools import partial
 from typing import TYPE_CHECKING, NamedTuple
 
 from pyochain import Dict, Iter
@@ -39,19 +39,18 @@ def explode(
     )
 
     cond = target.is_not_null().and_(target.list.length().gt(0))
-    projections = ExplodedProjections(
-        schema.keys(), to_explode, target, is_single_explode
+    transformer = partial(
+        transform, schema, to_explode, target, is_single=is_single_explode
     )
-
     rhs = (
         exp
-        .select(*projections.transform(nested=False))
+        .select(*transformer(nested=False))
         .from_(Tables.EXPLODE_SRC, copy=False)
         .where(cond.not_().inner, copy=False)
     )
     return (
         exp
-        .select(*projections.transform(nested=True))
+        .select(*transformer(nested=True))
         .from_(Tables.EXPLODE_SRC, copy=False)
         .where(cond.inner, copy=False)
         .pipe(exp.union, rhs, copy=False)
@@ -72,27 +71,27 @@ class IndexedExpr(NamedTuple):
     expr: Expr
 
 
-@dataclass(slots=True)
-class ExplodedProjections:
-    columns: PyoIterable[str]
-    to_explode: Dict[str, IndexedExpr]
-    target: Expr
-    is_single: bool
+def transform(
+    columns: PyoIterable[str],
+    to_explode: Dict[str, IndexedExpr],
+    target: Expr,
+    *,
+    is_single: bool,
+    nested: bool,
+) -> Iter[exp.Expr]:
+    from .._funcs import col, lit, unnest
 
-    def transform(self, *, nested: bool) -> Iter[exp.Expr]:
-        from .._funcs import col, lit, unnest
+    def _project_col(name: str, replace: Expr) -> Expr:
+        match (nested, name in to_explode):
+            case (True, True):
+                if is_single:
+                    return replace.alias(name)
+                field = to_explode.get_item(name).unwrap().idx
+                return replace.struct.extract(field).alias(name)
+            case (False, True):
+                return lit(None).alias(name)
+            case _:
+                return col(name)
 
-        def _project_col(name: str, replace: Expr) -> Expr:
-            match (nested, name in self.to_explode):
-                case (True, True):
-                    if self.is_single:
-                        return replace.alias(name)
-                    field = self.to_explode.get_item(name).unwrap().idx
-                    return replace.struct.extract(field).alias(name)
-                case (False, True):
-                    return lit(None).alias(name)
-                case _:
-                    return col(name)
-
-        replace = unnest(self.target) if nested else lit(None)
-        return self.columns.iter().map(lambda name: _project_col(name, replace).inner)
+    replace = unnest(target) if nested else lit(None)
+    return columns.iter().map(lambda name: _project_col(name, replace).inner)
