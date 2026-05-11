@@ -83,7 +83,8 @@ The main handwritten support code is split between module-level expression helpe
 
 ### 8) Auto-generated code (do not edit manually)
 
-Generated outputs include `src/belugas/_fns.py`, `src/belugas/meta.py`, `src/belugas/_plan/nodes.py`, and generated parts of `src/belugas/typing.py`. Update the generator pipeline in `scripts/` and regenerate instead of patching those files by hand.
+Generated outputs include `src/belugas/_fns.py`, `src/belugas/meta.py`, two types in `src/belugas/_plan/nodes.py`, and generated parts of `src/belugas/typing.py`. Update the generator pipeline in `scripts/` and regenerate instead of patching those files by hand.
+They have clear markers and docstrigngs.
 
 ### 9) Code generation and analysis scripts
 
