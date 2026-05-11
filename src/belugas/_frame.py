@@ -7,7 +7,7 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Self, SupportsInt, overload
 
-from pyochain import Dict, Iter, Option, Vec
+from pyochain import Dict, Option, Vec
 
 from . import datatypes as dt
 from ._core import CoreHandler, Marker
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
         CsvCompression,
         ParquetFieldsOptions,
     )
-    from duckdb import DuckDBPyConnection, DuckDBPyRelation
+    from duckdb import DuckDBPyConnection
     from pyochain.traits import PyoKeysView, PyoValuesView
 
     from ._groupby import LazyGroupBy
@@ -74,10 +74,10 @@ class LazyFrame(CoreHandler[nodes.Plan]):
         out._inner = self._inner.concat([node])
         return out
 
-    def _collect(self) -> DuckDBPyRelation:
+    def _collect(self) -> scans.ScanResult:
         compiled = compile_plan(self._inner)
 
-        return compiled.ast.pipe(scans.run_query, **compiled.sources).relation
+        return compiled.ast.pipe(scans.run_query, compiled.sources)
 
     def _iter_slct(self, func: Callable[[Expr], Expr]) -> Self:
         return self._push(nodes.SelectAll(func))
@@ -87,9 +87,9 @@ class LazyFrame(CoreHandler[nodes.Plan]):
     @overload
     def _into_pl(self, *, lazy: Literal[False]) -> pl.DataFrame: ...
     def _into_pl(self, *, lazy: bool) -> pl.LazyFrame | pl.DataFrame:
-        rel = self._collect()
-        df = rel.pl(lazy=lazy)
-        if Marker.TEMP in rel.columns:
+        res = self._collect()
+        df = res.relation.pl(lazy=lazy)
+        if Marker.TEMP in res.schema:
             return df.drop(Marker.TEMP)
         return df
 
@@ -379,7 +379,7 @@ class LazyFrame(CoreHandler[nodes.Plan]):
         return ParsedQuery(compile_plan(self._inner).ast)
 
     def explain(self, kind: ExplainType | ExplainTypeLiteral = "standard") -> str:
-        return self._collect().explain(kind)
+        return self._collect().relation.explain(kind)
 
     def unnest(
         self, columns: TryIter[IntoExprColumn], *more_columns: IntoExprColumn
@@ -408,7 +408,7 @@ class LazyFrame(CoreHandler[nodes.Plan]):
 
     def describe(self) -> Self:
         """Return descriptive statistics."""
-        return self.__class__(self._collect().describe())
+        return self.__class__(self._collect().relation.describe())
 
     def sum(self) -> Self:
         """Aggregate the sum of each column.
@@ -588,11 +588,12 @@ class LazyFrame(CoreHandler[nodes.Plan]):
         Returns:
             Schema: The schema of the LazyFrame.
         """
-        rel = self._collect()
         return (
-            Iter(rel.columns)
-            .zip(rel.dtypes)
-            .map_star(lambda name, dtype: (name, dt.DataType.from_duckdb(dtype)))
+            self
+            ._collect()
+            .schema.items()
+            .iter()
+            .map_star(lambda name, dtype: (name, dt.DataType.from_sql(dtype)))
             .collect(Dict)
         )
 
@@ -814,7 +815,7 @@ class LazyFrame(CoreHandler[nodes.Plan]):
         file_size_bytes: str | int | None = None,
     ) -> None:
         """Write to Parquet file."""
-        self._collect().write_parquet(
+        self._collect().relation.write_parquet(
             str(path),
             compression=compression,
             field_ids=field_ids,
@@ -851,7 +852,7 @@ class LazyFrame(CoreHandler[nodes.Plan]):
         write_partition_columns: bool | None = None,
     ) -> None:
         """Write to CSV file."""
-        self._collect().write_csv(
+        self._collect().relation.write_csv(
             str(path),
             sep=separator,
             header=include_header,
@@ -884,7 +885,7 @@ class LazyFrame(CoreHandler[nodes.Plan]):
         )
 
     def fetch_all(self) -> Vec[tuple[Any, ...]]:  # pyright: ignore[reportExplicitAny]
-        return Vec.from_ref(self._collect().fetchall())
+        return Vec.from_ref(self._collect().relation.fetchall())
 
     def show(
         self,
@@ -894,7 +895,7 @@ class LazyFrame(CoreHandler[nodes.Plan]):
         null_value: str | None = None,
         render_mode: RenderModeLiteral | None = None,
     ) -> None:
-        return self._collect().show(
+        return self._collect().relation.show(
             max_width=max_width,
             max_rows=max_rows,
             max_col_width=max_col_width,
@@ -904,8 +905,8 @@ class LazyFrame(CoreHandler[nodes.Plan]):
 
     @property
     def shape(self) -> tuple[int, int]:
-        return self._collect().shape
+        return self._collect().relation.shape
 
     @property
     def height(self) -> int:
-        return self._collect().shape[0]
+        return self.shape[0]

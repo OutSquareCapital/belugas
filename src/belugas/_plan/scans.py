@@ -43,7 +43,9 @@ class ScanResult:
         return self
 
 
-def run_query(query: exp.Selectable, **relations: DuckDBPyRelation) -> ScanResult:
+def run_query(
+    query: exp.Selectable, relations: Mapping[str, DuckDBPyRelation]
+) -> ScanResult:
     try:
         parsed = query.sql(dialect="duckdb", identify=True)
         namespace = {"duckdb": duckdb, "parsed": parsed, **relations}
