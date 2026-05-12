@@ -14,7 +14,7 @@ from rich.syntax import Syntax
 from sqlglot import exp
 
 from . import meta
-from .typing import RichRenderable
+from .typing import FrameLike, IntoPlLazyFrame, RichRenderable
 
 if TYPE_CHECKING:
     from pygments.token import (
@@ -87,6 +87,26 @@ def _get_names(lf: LazyFrame, col_name: str) -> Set[str]:
 DTYPES = _get_dtypes()
 FUNCTIONS = _get_functions()
 SYNTAX = partial(Syntax, lexer=DuckDbSqlLexer(), background_color="default")
+_POLARS_OPS = {
+    "SELECT",
+    "FROM",
+    "FILTER",
+    "WITH_COLUMNS",
+    "AGGREGATE",
+    "LEFT JOIN",
+    "RIGHT PLAN ON",
+    "LEFT PLAN ON",
+    "END LEFT JOIN",
+    "EXPLODE",
+    "ROW INDEX",
+    "SCAN",
+    "PROJECT",
+    "ESTIMATED ROWS",
+    "BY",
+    "DF",
+    "COLUMNS",
+}
+_POLARS_EXPRS = {"col", "when", ">", "<", ">=", "<=", "=="}
 
 
 @dataclass(slots=True)
@@ -112,12 +132,14 @@ def node_tree(node: BaseNode) -> RenderableType:
 
     def _attach(branch: Tree, value: object) -> None:
         match value:
-            case BaseNode():
+            case IntoPlLazyFrame():
+                _ = branch.add(_render_polars_plan(value))
+            case FrameLike():
+                _ = branch.add(Pretty(value))
+            case RichRenderable():
                 _ = branch.add(value.__rich__())
             case exp.Expr():
                 _ = branch.add(expr_tree(value))
-            case RichRenderable():
-                _ = branch.add(value.__rich__())
             case Mapping():
                 if not value:
                     _ = branch.add(Pretty(value, expand_all=True))
@@ -164,6 +186,22 @@ def node_tree(node: BaseNode) -> RenderableType:
     )
 
     return tree
+
+
+def _render_polars_plan(value: IntoPlLazyFrame) -> RenderableType:
+    from rich.panel import Panel
+    from rich.text import Text
+
+    expr_style = "bold yellow"
+    expr_re = r"\.(?!col\b)[A-Za-z_][A-Za-z0-9_]*"
+
+    plan_text = Text(value.explain(), style="bold cyan")
+    _ = plan_text.highlight_words(_POLARS_OPS, style="bold magenta")
+    _ = plan_text.highlight_regex(expr_re, style=expr_style)
+    _ = plan_text.highlight_words(_POLARS_EXPRS, style=expr_style)
+    _ = plan_text.highlight_regex(r'"[^"\n]*"', style="bold green")
+
+    return Panel(plan_text, title="Polars Query Plan", border_style="bright_blue")
 
 
 def expr_tree(node: exp.Expr) -> RenderableType:

@@ -172,6 +172,8 @@ class _PolarsFrame(FrameLike, Protocol):
 class IntoPlLazyFrame(_PolarsFrame, Protocol):
     """Protocol for `polars::LazyFrame`."""
 
+    def explain(self, *args: Any, **kwargs: Any) -> str: ...  # pyright: ignore[reportExplicitAny, reportAny]
+
     def collect_batches(
         self,
         *args: Any,  # pyright: ignore[reportExplicitAny, reportAny]
