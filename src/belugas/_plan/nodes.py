@@ -4,13 +4,13 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, fields
 from typing import TYPE_CHECKING, override
 
-from pyochain import NONE
+from pyochain import NONE, Seq
 
 from ..typing import FileGlob, PathOrBuffer
 
 if TYPE_CHECKING:
     from duckdb import DuckDBPyConnection
-    from pyochain import Option, Seq
+    from pyochain import Option
     from rich.console import RenderableType
 
     from .._expr import Expr
