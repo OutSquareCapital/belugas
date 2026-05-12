@@ -6,16 +6,31 @@ from abc import ABC
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from enum import Enum as PyEnum
-from typing import TYPE_CHECKING, Any, Concatenate, Self, TypeIs, final, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Concatenate,
+    NamedTuple,
+    Self,
+    TypeIs,
+    cast,
+    final,
+    overload,
+)
 
+import duckdb
 from duckdb import sqltypes
-from pyochain import Dict, Iter, Seq
+from pyochain import Dict, Iter, Seq, Vec
 from sqlglot import exp
 
 if TYPE_CHECKING:
+    from _duckdb._typing import (  # pyright: ignore[reportMissingModuleSource]
+        StrIntoPyType,
+    )
     from duckdb.sqltypes import DuckDBPyType
 
     from .typing import EpochTimeUnit, IntoDict
+# TODO: correctly benchmark the performance gain of direct duckdb -> DataType conversion instead of calling `sqlglot::exp::DataType::from_str`.
 
 
 @dataclass(slots=True)
@@ -64,9 +79,15 @@ class DataType(ABC):
         return (
             DUCKDB_MAP
             .get_item(dtype)
-            .map(exp.DType.into_expr)
-            .unwrap_or_else(lambda: exp.DataType.from_str(str(dtype), dialect="duckdb"))
-            .pipe(cls.from_sql)
+            .map(lambda d: d.into_expr().pipe(cls.from_sql))
+            .unwrap_or_else(
+                lambda: (
+                    DUCKDB_NESTED_MAP
+                    .get_item(dtype.id)
+                    .map(lambda constructor: constructor(dtype))
+                    .expect(f"Unsupported DuckDB data type: {dtype}")
+                )
+            )
         )
 
     @classmethod
@@ -693,6 +714,141 @@ class List(NestedType, ComplexDataType):
         return self.from_sql(self.raw.expressions[0])  # pyright: ignore[reportAny]
 
 
+# Raw type aliases for the unparsed children of each DuckDB type, used in the Cast namespace to convert from the raw DuckDBPyType.children to more specific structures for each type.
+# Note that we type container of one element as tuples when they are in fact at runtime lists.
+# This makes the unpacking more convenient.
+type RawNamedType = tuple[str, DuckDBPyType]
+type RawNamedInt = tuple[str, int]
+type RawListChildren = tuple[RawNamedType]
+type RawArrayChildren = tuple[RawNamedType, RawNamedInt]
+type RawStructChildren = list[RawNamedType]
+type RawMapChildren = tuple[RawNamedType, RawNamedType]
+type RawEnumChildren = tuple[tuple[str, list[str]]]
+type RawUnionChildren = list[RawNamedType]
+type RawDecimalChildren = tuple[RawNamedInt, RawNamedInt]
+
+
+class NamedInt(NamedTuple):
+    """Named integer value from DuckDB type children, used for things like array sizes and decimal precision/scale."""
+
+    name: str
+    value: int
+
+
+class NamedValues(NamedTuple):
+    """Named string list from DuckDB type children, used for enum values."""
+
+    name: str
+    values: Vec[str]
+
+    @classmethod
+    def from_raw(cls, raw: RawEnumChildren) -> Self:
+        """Convert raw enum children from DuckDBPyType to a NamedValues instance.
+
+        Args:
+            raw (RawEnumChildren): The raw enum children to convert.
+
+        Returns:
+            NamedValues: The converted NamedValues instance.
+        """
+        (inner,) = raw
+        name, values = inner
+        return cls(name, Vec.from_ref(values))
+
+
+@dataclass(slots=True)
+class Field:
+    """Named parsed field."""
+
+    name: str
+    dtype: DataType
+
+    @classmethod
+    def from_raw(cls, raw: RawNamedType) -> Self:
+        """Convert a raw named type from DuckDBPyType children to a Field instance.
+
+        Returns:
+            Self
+        """
+        name, dtype = raw
+        return cls(name, DataType.from_duckdb(dtype))
+
+
+class _Cast:
+    """Namespace for unsafe casts from raw `duckdb::sqltypes::DuckDBPyType` children to more specific types.
+
+    Note that these casts don't have any runtime effect, and solely act as a first step to convert the raw values more conviently to concrete types.
+    """
+
+    @staticmethod
+    def into_list(dtype: object) -> RawListChildren:
+        return cast(RawListChildren, dtype)
+
+    @staticmethod
+    def into_array(dtype: object) -> RawArrayChildren:
+        return cast(RawArrayChildren, dtype)
+
+    @staticmethod
+    def into_struct(dtype: object) -> RawStructChildren:
+        return cast(RawStructChildren, dtype)
+
+    @staticmethod
+    def into_map(dtype: object) -> RawMapChildren:
+        return cast(RawMapChildren, dtype)
+
+    @staticmethod
+    def into_enum(dtype: object) -> RawEnumChildren:
+        return cast(RawEnumChildren, dtype)
+
+    @staticmethod
+    def into_union(dtype: object) -> RawUnionChildren:
+        return cast(RawUnionChildren, dtype)
+
+    @staticmethod
+    def into_decimal(dtype: object) -> RawDecimalChildren:
+        return cast(RawDecimalChildren, dtype)
+
+
+def _build_decimal(dtype: DuckDBPyType) -> Decimal:
+    precision, scale = _Cast.into_decimal(dtype.children)
+    return Decimal(NamedInt(*precision).value, NamedInt(*scale).value)
+
+
+def _build_enum(dtype: DuckDBPyType) -> Enum:
+    return Enum(NamedValues.from_raw(_Cast.into_enum(dtype.children)).values)
+
+
+def _build_list(dtype: DuckDBPyType) -> List:
+    return List(Field.from_raw(*_Cast.into_list(dtype.children)).dtype)
+
+
+def _build_array(dtype: DuckDBPyType) -> Array:
+    child, size = _Cast.into_array(dtype.children)
+    return Array(Field.from_raw(child).dtype, NamedInt(*size).value)
+
+
+def _build_struct(dtype: DuckDBPyType) -> Struct:
+    return Struct(
+        Iter(_Cast.into_struct(dtype.children))
+        .map(Field.from_raw)
+        .map(lambda f: (f.name, f.dtype))
+    )
+
+
+def _build_map(dtype: DuckDBPyType) -> Map:
+    key, value = _Cast.into_map(dtype.children)
+    return Map(Field.from_raw(key).dtype, Field.from_raw(value).dtype)
+
+
+def _build_union(dtype: DuckDBPyType) -> Union:
+    return Union(
+        Iter(_Cast.into_union(dtype.children))
+        .skip(1)  # First dtype is the tag of the union itself
+        .map(Field.from_raw)
+        .map(lambda f: f.dtype)
+    )
+
+
 PRECISION_MAP: Dict[EpochTimeUnit, exp.DataType] = Dict.from_ref({
     "s": exp.DType.TIMESTAMP_S.into_expr(),
     "ms": exp.DType.TIMESTAMP_MS.into_expr(),
@@ -780,5 +936,22 @@ DUCKDB_MAP: Dict[sqltypes.DuckDBPyType, exp.DType] = Dict.from_ref({
     sqltypes.UUID: exp.DType.UUID,
     sqltypes.VARCHAR: exp.DType.VARCHAR,
     sqltypes.VARIANT: exp.DType.VARIANT,
+    duckdb.type("JSON"): exp.DType.JSON,
+    duckdb.type("GEOMETRY"): exp.DType.GEOMETRY,
+    duckdb.type("BIGNUM"): exp.DType.BIGNUM,
 })
 """Mapping from `duckdb::sqltypes::DuckDBPyType` to `sqlglot::exp::DType` for constant, non-parameterized types."""
+
+
+DUCKDB_NESTED_MAP: Dict[StrIntoPyType, Callable[[DuckDBPyType], DataType]] = (
+    Dict.from_ref({
+        "list": _build_list,
+        "struct": _build_struct,
+        "array": _build_array,
+        "enum": _build_enum,
+        "map": _build_map,
+        "decimal": _build_decimal,
+        "union": _build_union,
+    })
+)
+"""Mapping from DuckDB nested type identifiers to `sqlglot::exp::DType` for parameterized, nested types."""
