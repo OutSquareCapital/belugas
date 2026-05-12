@@ -393,6 +393,30 @@ class LazyFrame(CoreHandler[nodes.Node]):
     def explain(self, kind: ExplainType | ExplainTypeLiteral = "standard") -> str:
         return self._collect().relation.explain(kind)
 
+    def show_graph(self, *, compiled: bool = False, optimized: bool = True) -> None:
+        """Show the AST query plan graph.
+
+        If `compiled` is `True`, shows the plan after resolution, with expressions compiled down to sqlglot.
+
+        Otherwise, shows the `belugas` IR, which is directly built from the user-facing API and thus more closely reflects the structure of the original query.
+
+        Args:
+            compiled (bool): Whether to show the compiled plan (after resolution).
+            optimized (bool): Whether to apply optimizations to `belugas` IR.
+        """
+        from ._plan import optimize_nodes
+        from ._show import expr_tree
+
+        node = optimize_nodes(self._inner) if optimized else self._inner
+        if compiled:
+            node = expr_tree(compile_plan(node, optimize=False).ast)
+        try:
+            from rich import print as rprint
+
+            rprint(node)
+        except ImportError:
+            print(node)
+
     def unnest(
         self, columns: TryIter[IntoExprColumn], *more_columns: IntoExprColumn
     ) -> Self:

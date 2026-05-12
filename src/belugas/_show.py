@@ -91,6 +91,16 @@ def expr_tree(node: exp.Expr) -> RenderableType:
     from rich.text import Text
     from rich.tree import Tree
 
+    def _expr_header(value: exp.Expr) -> Text:
+        name = value.__class__.__name__
+        match value:
+            case exp.Selectable() | exp.From():
+                return Text(f" {name.upper()} ", style="bold white on dark_green")
+            case modifier if modifier.key in exp.QUERY_MODIFIERS:
+                return Text(f" {name.upper()} ", style="bold white on dark_blue")
+            case _:
+                return Text(name, style="bold magenta")
+
     def _handle_mapping(branch: Tree, items: Mapping[Any, object]) -> None:  # pyright: ignore[reportExplicitAny]
 
         def _add_map_item(key: object, item: object) -> None:
@@ -133,7 +143,6 @@ def expr_tree(node: exp.Expr) -> RenderableType:
                 branch = tree.add(Text(name, style="bold cyan"))
                 _attach(branch, value)
 
-    name = node.__class__.__name__
-    tree = Tree(Text(name, style="bold magenta"))
+    tree = Tree(_expr_header(node))
     _ = Iter(node.args.items()).for_each_star(_add_arg)
     return tree
