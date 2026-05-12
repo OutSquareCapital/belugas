@@ -76,17 +76,12 @@ class DataType(ABC):
         Returns:
             DataType: The corresponding PQL DataType.
         """
-        return (
-            DUCKDB_MAP
-            .get_item(dtype)
-            .map(lambda d: d.into_expr().pipe(cls.from_sql))
-            .unwrap_or_else(
-                lambda: (
-                    DUCKDB_NESTED_MAP
-                    .get_item(dtype.id)
-                    .map(lambda constructor: constructor(dtype))
-                    .expect(f"Unsupported DuckDB data type: {dtype}")
-                )
+        return DUCKDB_MAP.get_item(dtype).unwrap_or_else(
+            lambda: (
+                DUCKDB_NESTED_MAP
+                .get_item(dtype.id)
+                .map(lambda constructor: constructor(dtype))
+                .expect(f"Unsupported DuckDB data type: {dtype}")
             )
         )
 
@@ -281,6 +276,14 @@ class ComplexDataType(DataType):
         instance = cls.__new__(cls)
         instance.raw = raw
         return instance
+
+
+@final
+@dataclass(slots=True, unsafe_hash=True)
+class Null(TemporalType):
+    """Null data type."""
+
+    raw: exp.DataType = field(init=False, default=exp.DType.NULL.into_expr())
 
 
 @final
@@ -866,7 +869,7 @@ NESTED_MAP: Dict[exp.DType, type[ComplexDataType]] = Dict.from_ref({
     exp.DType.ENUM: Enum,
     exp.DType.DECIMAL: Decimal,
 })
-"""Mapping from `sqlglot::exp::DType` to PQL `ComplexDataType` constructors for parameterized, nested types."""
+"""Mapping from `sqlglot::exp::DType` to `ComplexDataType` constructors for parameterized, nested types."""
 NON_NESTED_MAP: Dict[exp.DType, DataType] = Dict.from_ref({
     exp.DType.BIGINT: Int64(),
     exp.DType.BIT: BitString(),
@@ -905,42 +908,42 @@ NON_NESTED_MAP: Dict[exp.DType, DataType] = Dict.from_ref({
     exp.DType.VARCHAR: String(),
     exp.DType.VARIANT: Number(),
 })
-"""Mapping from `sqlglot::exp::DType` to PQL `DataType` for constant, non-parameterized types."""
-DUCKDB_MAP: Dict[sqltypes.DuckDBPyType, exp.DType] = Dict.from_ref({
-    sqltypes.BIGINT: exp.DType.BIGINT,
-    sqltypes.BIT: exp.DType.BIT,
-    sqltypes.BLOB: exp.DType.BLOB,
-    sqltypes.BOOLEAN: exp.DType.BOOLEAN,
-    sqltypes.DATE: exp.DType.DATE,
-    sqltypes.DOUBLE: exp.DType.DOUBLE,
-    sqltypes.FLOAT: exp.DType.FLOAT,
-    sqltypes.HUGEINT: exp.DType.INT128,
-    sqltypes.INTEGER: exp.DType.INT,
-    sqltypes.INTERVAL: exp.DType.INTERVAL,
-    sqltypes.SMALLINT: exp.DType.SMALLINT,
-    sqltypes.SQLNULL: exp.DType.NULL,
-    sqltypes.TIME: exp.DType.TIME,
-    sqltypes.TIME_NS: exp.DType.TIME_NS,
-    sqltypes.TIMESTAMP: exp.DType.TIMESTAMP,
-    sqltypes.TIMESTAMP_MS: exp.DType.TIMESTAMP_MS,
-    sqltypes.TIMESTAMP_NS: exp.DType.TIMESTAMP_NS,
-    sqltypes.TIMESTAMP_S: exp.DType.TIMESTAMP_S,
-    sqltypes.TIMESTAMP_TZ: exp.DType.TIMESTAMPTZ,
-    sqltypes.TIME_TZ: exp.DType.TIMETZ,
-    sqltypes.TINYINT: exp.DType.TINYINT,
-    sqltypes.UBIGINT: exp.DType.UBIGINT,
-    sqltypes.UHUGEINT: exp.DType.UINT128,
-    sqltypes.UINTEGER: exp.DType.UINT,
-    sqltypes.USMALLINT: exp.DType.USMALLINT,
-    sqltypes.UTINYINT: exp.DType.UTINYINT,
-    sqltypes.UUID: exp.DType.UUID,
-    sqltypes.VARCHAR: exp.DType.VARCHAR,
-    sqltypes.VARIANT: exp.DType.VARIANT,
-    duckdb.type("JSON"): exp.DType.JSON,
-    duckdb.type("GEOMETRY"): exp.DType.GEOMETRY,
-    duckdb.type("BIGNUM"): exp.DType.BIGNUM,
+"""Mapping from `sqlglot::exp::DType` to `DataType` for constant, non-parameterized types."""
+DUCKDB_MAP: Dict[sqltypes.DuckDBPyType, DataType] = Dict.from_ref({
+    sqltypes.BIGINT: Int64(),
+    sqltypes.BIT: BitString(),
+    sqltypes.BLOB: Binary(),
+    sqltypes.BOOLEAN: Boolean(),
+    sqltypes.DATE: Date(),
+    sqltypes.DOUBLE: Float64(),
+    sqltypes.FLOAT: Float32(),
+    sqltypes.HUGEINT: Int128(),
+    sqltypes.INTEGER: Int32(),
+    sqltypes.INTERVAL: Duration(),
+    sqltypes.SMALLINT: Int16(),
+    sqltypes.SQLNULL: Null(),
+    sqltypes.TIME: Time(),
+    sqltypes.TIME_NS: Time(),
+    sqltypes.TIMESTAMP: Datetime(),
+    sqltypes.TIMESTAMP_MS: Datetime("ms"),
+    sqltypes.TIMESTAMP_NS: Datetime("ns"),
+    sqltypes.TIMESTAMP_S: Datetime("s"),
+    sqltypes.TIMESTAMP_TZ: DatetimeTZ(),
+    sqltypes.TIME_TZ: TimeTZ(),
+    sqltypes.TINYINT: Int8(),
+    sqltypes.UBIGINT: UInt64(),
+    sqltypes.UHUGEINT: UInt128(),
+    sqltypes.UINTEGER: UInt32(),
+    sqltypes.USMALLINT: UInt16(),
+    sqltypes.UTINYINT: UInt8(),
+    sqltypes.UUID: UUID(),
+    sqltypes.VARCHAR: String(),
+    sqltypes.VARIANT: Number(),
+    duckdb.type("JSON"): Json(),
+    duckdb.type("GEOMETRY"): Geometry(),
+    duckdb.type("BIGNUM"): Number(),
 })
-"""Mapping from `duckdb::sqltypes::DuckDBPyType` to `sqlglot::exp::DType` for constant, non-parameterized types."""
+"""Mapping from `duckdb::sqltypes::DuckDBPyType` to `DataType` for constant, non-parameterized types."""
 
 
 DUCKDB_NESTED_MAP: Dict[StrIntoPyType, Callable[[DuckDBPyType], DataType]] = (
@@ -954,4 +957,4 @@ DUCKDB_NESTED_MAP: Dict[StrIntoPyType, Callable[[DuckDBPyType], DataType]] = (
         "union": _build_union,
     })
 )
-"""Mapping from DuckDB nested type identifiers to `sqlglot::exp::DType` for parameterized, nested types."""
+"""Mapping from DuckDB nested type identifiers to `DataType` for parameterized, nested types."""
