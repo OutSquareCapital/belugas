@@ -21,14 +21,15 @@ from typing import (
 
 import duckdb
 from duckdb import sqltypes
+from duckdb.sqltypes import DuckDBPyType
 from pyochain import Dict, Iter, Seq, Vec
 from sqlglot import exp
 
 if TYPE_CHECKING:
     from _duckdb._typing import (  # pyright: ignore[reportMissingModuleSource]
+        IntoPyType,
         StrIntoPyType,
     )
-    from duckdb.sqltypes import DuckDBPyType
 
     from .typing import EpochTimeUnit, IntoDict
 # TODO: correctly benchmark the performance gain of direct duckdb -> DataType conversion instead of calling `sqlglot::exp::DataType::from_str`.
@@ -68,6 +69,26 @@ class DataType(ABC):
     raw: exp.DataType
 
     @classmethod
+    def build(cls, dtype: IntoPyType | exp.DataType) -> DataType:
+        """Build a DataType instance from any convertible value.
+
+        Args:
+            dtype (IntoPyType | exp.DataType): The value to convert.
+
+        Returns:
+            DataType
+        """
+        match dtype:
+            case str():
+                return cls.from_str(dtype)
+            case exp.DataType():
+                return cls.from_sql(dtype)
+            case DuckDBPyType():
+                return cls.from_duckdb(dtype)
+            case _:
+                return cls.from_python(dtype)
+
+    @classmethod
     def from_duckdb(cls, dtype: DuckDBPyType) -> DataType:
         """Convert a `duckdb::DuckDBPyType` to the correspond `DataType`.
 
@@ -94,7 +115,7 @@ class DataType(ABC):
         )
 
     @classmethod
-    def from_str(cls, dtype: str) -> DataType:
+    def from_str(cls, dtype: StrIntoPyType | str) -> DataType:
         """Convert a `str` representation of a data type to a `belugas::DataType`.
 
         Prefer using `DataType::{from_duckdb, from_sql}` when possible, as this will be much faster and more reliable.
@@ -106,6 +127,31 @@ class DataType(ABC):
             DataType
         """
         return exp.DataType.from_str(dtype, dialect="duckdb").pipe(DataType.from_sql)
+
+    @classmethod
+    def from_python(cls, dtype: IntoPyType) -> DataType:
+        """Convert a Python type to a `belugas::DataType`.
+
+        This constructor can convert anything that `DuckDB` handle natively, including:
+            - python built-in types (e.g. `int`, `str`, etc.)
+            - complex generic types (e.g. `dict[str, int]`, `list[float]`, etc.).
+            - string values, e.g `"MAP(INT, VARCHAR)"` or `"STRUCT<a: INT, b: VARCHAR>"`
+            - numpy dtypes (e.g. `numpy.int64`, `numpy.float32`, etc.)
+
+        Note that converting from `str` instances is possible with this constructor,
+
+        but you should strongly prefer `DataType::from_str` for performance reasons.
+
+        See Also:
+            https://duckdb.org/docs/stable/clients/python/types
+
+        Args:
+            dtype (IntoPyType): The Python type to convert.
+
+        Returns:
+            DataType
+        """
+        return cls.from_duckdb(DuckDBPyType(dtype))
 
     @classmethod
     def from_sql(cls, dtype: exp.DataType) -> DataType:
