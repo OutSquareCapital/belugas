@@ -91,6 +91,8 @@ def expr_tree(node: exp.Expr) -> RenderableType:
     from rich.text import Text
     from rich.tree import Tree
 
+    elem_style = "bright_black"
+
     def _expr_header(value: exp.Expr) -> Text:
         name = value.__class__.__name__
         match value:
@@ -104,25 +106,25 @@ def expr_tree(node: exp.Expr) -> RenderableType:
     def _handle_mapping(branch: Tree, items: Mapping[Any, object]) -> None:  # pyright: ignore[reportExplicitAny]
 
         def _add_map_item(key: object, item: object) -> None:
-            item_branch = branch.add(Text(repr(key), style="bright_black"))
+            item_branch = branch.add(Text(repr(key), style=elem_style))
             _attach(item_branch, item)
 
         if not items:
             return
 
-        _ = Iter(items.items()).for_each_star(_add_map_item)
+        Iter(items.items()).for_each_star(_add_map_item)
 
     def _handle_iterable(branch: Tree, items: Iterable[Any]) -> None:  # pyright: ignore[reportExplicitAny]
 
         def _add_iter_item(index: int, item: object) -> None:
-            item_branch = branch.add(Text(f"[{index}]", style="bright_black"))
+            item_branch = branch.add(Text(f"[{index}]", style=elem_style))
             _attach(item_branch, item)
 
         if not items:
             _ = branch.add(Pretty(items, expand_all=True))
             return
 
-        _ = Iter(items).enumerate().for_each_star(_add_iter_item)
+        Iter(items).enumerate().for_each_star(_add_iter_item)
 
     def _attach(branch: Tree, value: object) -> None:
         match value:
@@ -144,5 +146,5 @@ def expr_tree(node: exp.Expr) -> RenderableType:
                 _attach(branch, value)
 
     tree = Tree(_expr_header(node))
-    _ = Iter(node.args.items()).for_each_star(_add_arg)
+    Iter(node.args.items()).for_each_star(_add_arg)
     return tree
