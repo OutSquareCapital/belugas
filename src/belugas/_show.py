@@ -119,8 +119,8 @@ class ParsedQuery:
     def tokenize(self) -> Vec[tuple[int, duckdb.token_type]]:
         return Vec.from_ref(duckdb.tokenize(self.sql()))
 
-    def sql(self, *, pretty: bool = False) -> str:
-        return self.query.sql(dialect="duckdb", pretty=pretty)
+    def sql(self, *, pretty: bool = False, indent: int = 6) -> str:
+        return self.query.sql(dialect="duckdb", pretty=pretty, indent=indent)
 
 
 def node_tree(node: BaseNode) -> RenderableType:
