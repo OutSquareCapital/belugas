@@ -117,7 +117,6 @@ query = (
 sql = query.sql_query()
 sql.show(pretty=True)
 query.show_graph()
-
 ```
 
 ### As SQL query with syntax highlighting and pretty formatting
