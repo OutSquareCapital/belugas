@@ -35,6 +35,20 @@ The two main pillars of `belugas` are:
 - Query introspections, with syntax highlighted SQL in your terminal with +20 color themes, sql formatting, AST inspection, query plan inspection, and more.
 - A `meta` module with all the table and metadata functions provided by `DuckDB` to inspect your database schema, list functions, and more.
 
+## How it works
+
+`belugas` compiles `LazyFrame` and `Expr` operations to SQL queries that are executed by `DuckDB`.
+
+- Each `LazyFrame` operation add a new node to the IR query graph. They are fully lazy, meaning that the arguments are just stored as is in the nodes.
+
+- Each `Expr` create a sqlglot AST node that is stored in the `Expr` object.
+
+When the query is executed by any operation that requires a result (schema inspection, dataframe conversion, etc...), the IR graph is traversed, transformed in sqlglot AST nodes who are then compiled together into a single sqlglot AST tree.
+
+This tree is then transformed into a SQL query, which is then executed by `DuckDB`.
+
+This three step process allows `belugas` to concile the difference and advantages of both dataframe API and SQL queries.
+
 ## Quick Start
 
 ### Installation
@@ -84,25 +98,45 @@ Output:
 ### Inspect the generated SQL query with syntax highlighting and  pretty formatting
 
 ```python
+import polars as pl
+
 import belugas as bl
 
-query = bl.LazyFrame({"x": [1, 2, 3]}).filter(bl.col("x").gt(1))
+data = {
+    "name": ["paul", "sophie", "john"],
+    "age": [25, 30, 35],
+    "city": ["paris", "paris", "geneva"],
+}
+lf = pl.LazyFrame(data).group_by("city").agg(pl.col("age").mean().alias("age_mean"))
+query = (
+    bl
+    .LazyFrame(lf)
+    .filter(bl.col("age").gt(40).not_())
+    .with_columns(bl.col("name").list.eval(bl.element().str.to_uppercase()))
+)
 sql = query.sql_query()
-
-sql.show("friendly")
-print("---" * 10)
 sql.show(pretty=True)
+query.show_graph()
+
 ```
+
+### As SQL query with syntax highlighting and pretty formatting
 
 ![alt text](docs/sql_highlight.png)
 
-### Inspect the query graph from belugas
+### As belugas IR graph
 
-Simply print the `LazyFrame` with `rich.print` to get a nice tree visualization of the query graph, with all the expressions and their arguments.
+`show_graph` shows the query graph of the `LazyFrame` operations.
 
-This is the tree that will be forwarded to `DuckDB` for execution. It's a logical plan, before any optimization or transformation from the engine.
+This allows you to inspect data sources, and visualize the query as a tree of operations.
 
 ![alt text](docs/tree.png)
+
+### As sqlglot AST
+
+You can also pass `compiled=True` to `show_graph` to inspect the generated `sqlglot` AST after the compilation of the `LazyFrame` operations.
+
+![alt text](docs/sqlglot_ast.png)
 
 ## Dependencies
 
