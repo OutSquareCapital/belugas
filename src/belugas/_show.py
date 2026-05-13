@@ -144,10 +144,20 @@ class QueryTree:
         return Vec.from_ref(duckdb.tokenize(self.sql(optimized=True)))
 
     def sql(
-        self, *, pretty: bool = False, indent: int = 6, optimized: bool = True
+        self,
+        *,
+        pretty: bool = False,
+        indent: int = 8,
+        pad: int = 4,
+        optimized: bool = True,
     ) -> str:
         return self.logical(optimized=optimized).sql(
-            dialect="duckdb", pretty=pretty, indent=indent
+            dialect="duckdb",
+            pretty=pretty,
+            indent=indent,
+            leading_comma=False,
+            pad=pad,
+            identify=True,
         )
 
 
