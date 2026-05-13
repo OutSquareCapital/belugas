@@ -3,8 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Mapping
 from typing import TYPE_CHECKING
 
-from pyochain import Dict, Iter, Seq, Some
-from pyochain.traits import PyoIterable
+from pyochain import Dict, Iter, Seq, Some, Vec
 from sqlglot import exp
 
 from ..._core import Marker, Tables
@@ -19,8 +18,6 @@ from .._resolve import (
 )
 
 if TYPE_CHECKING:
-    from pyochain.traits import PyoIterable
-
     from ..._expr import Expr
     from ...datatypes import DataType
     from ...typing import IntoExpr, Schema, TryIter
@@ -55,26 +52,39 @@ def with_columns(
         )
 
     projections = resolve_all(schema, exprs, more_exprs, named_exprs)
-    broadcast_agg = _should_broadcast_agg(
-        include_source_cols=True, projections=projections
-    )
+    has_windowed = projections.any(_is_windowed)
+    broadcastr = _maybe_broadcast(include_source_cols=True, projections=projections)
     updates = (
         projections
         .iter()
-        .map(
-            lambda proj: (
-                proj.name,
-                _maybe_broadcast(proj.expr, broadcast_agg=broadcast_agg).alias(
-                    proj.name
-                ),
-            )
-        )
+        .map(lambda proj: (proj.name, broadcastr(proj.expr).alias(proj.name)))
         .collect(Dict)
     )
-    source = as_relation(src_ast)
-    return exp.select(*updates.into(_resolved)).from_(
-        projections.into(_into_windowed, source), copy=False
-    ), _with_columns_schema(schema, projections)
+    new_schema = _with_columns_schema(schema, projections)
+    match src_ast:
+        case exp.Select() as source if _is_inline_select(source) and not has_windowed:
+            replaced = list[exp.Expr]()
+            added = Vec[exp.Expr].new()
+            (
+                updates
+                .items()
+                .iter()
+                .for_each_star(
+                    lambda name, expr: (
+                        replaced.append(expr.inner)
+                        if name in schema
+                        else added.append(expr.inner)
+                    )
+                )
+            )
+            star = exp.Star(replace=replaced) if replaced else exp.Star()
+            new_ast = source.select(star, *added, append=False, copy=False)
+            return new_ast, new_schema
+        case _:
+            source = as_relation(src_ast)
+            source = _into_windowed(source) if has_windowed else source
+            new_ast = exp.select(*updates.into(_resolved)).from_(source, copy=False)
+            return new_ast, new_schema
 
 
 def _with_columns_schema(schema: Schema, projections: Seq[ResolvedExpr]) -> Schema:
@@ -163,34 +173,41 @@ def select(
     named_exprs: dict[str, IntoExpr],
 ) -> tuple[exp.Selectable, Schema]:
     projections = resolve_all(schema, exprs, more_exprs, named_exprs)
-    broadcast_agg = _should_broadcast_agg(
-        include_source_cols=False, projections=projections
-    )
+    has_windowed = projections.any(_is_windowed)
+    broadcaster = _maybe_broadcast(include_source_cols=False, projections=projections)
 
     match projections.then_some():
         case Some(projs):
             new_schema = _select_schema(schema, projs)
-            rel = _into_windowed(projs, as_relation(src_ast))
             select_exprs = (
                 projs
                 .iter()
                 .map(
                     lambda resolved: (
-                        _maybe_broadcast(
-                            resolved.expr,
-                            broadcast_agg=broadcast_agg,
-                        )
-                        .alias(resolved.name)
-                        .inner
+                        broadcaster(resolved.expr).alias(resolved.name).inner
                     )
                 )
                 .collect()
             )
-            if projs.all(lambda resolved: resolved.has_distinct):
-                ast = exp.select(*select_exprs).from_(rel, copy=False).distinct()
-                return ast, new_schema
-            ast = exp.select(*select_exprs).from_(rel, copy=False)
-            return ast, new_schema
+            match src_ast:
+                case exp.Select() as source if (
+                    _is_inline_select(source) and not has_windowed
+                ):
+                    ast = source.select(*select_exprs, append=False, copy=False)
+                    if projs.all(lambda resolved: resolved.has_distinct):
+                        return ast.distinct(copy=False), new_schema
+                    return ast, new_schema
+                case _:
+                    rel = as_relation(src_ast).pipe(
+                        lambda r: _into_windowed(r) if has_windowed else r
+                    )
+                    if projs.all(lambda resolved: resolved.has_distinct):
+                        ast = (
+                            exp.select(*select_exprs).from_(rel, copy=False).distinct()
+                        )
+                        return ast, new_schema
+                    ast = exp.select(*select_exprs).from_(rel, copy=False)
+                    return ast, new_schema
         case _:
             new_schema: Schema = Dict.from_ref({
                 Marker.TEMP: exp.DType.NULL.into_expr()
@@ -210,37 +227,40 @@ def _select_schema(schema: Schema, projections: Seq[ResolvedExpr]) -> Schema:
     )
 
 
-def _into_windowed(
-    cols: PyoIterable[ResolvedExpr], source: exp.Table | exp.Subquery
-) -> exp.Expr:
-    def _is_windowed(p: ResolvedExpr) -> bool:
-        return p.name != Marker.TEMP and p.expr.inner.pipe(find_all, exp.Column).any(
-            lambda col: col.parts[-1].name == Marker.TEMP
-        )
-
-    if cols.any(_is_windowed):
-        row_nb = row_number().window().sub(1).alias(Marker.TEMP).inner
-        return (
-            exp
-            .select(row_nb, exp.Star())
-            .from_(source, copy=False)
-            .subquery(Tables.SRC.name, copy=False)
-        )
-    return source
+def _is_inline_select(select: exp.Select) -> bool:
+    exprs = select.expressions
+    match exprs:
+        case [exp.Star()]:
+            return True
+        case _:
+            return False
 
 
-def _should_broadcast_agg(
-    *, include_source_cols: bool, projections: Seq[ResolvedExpr]
-) -> bool:
-    return include_source_cols or not projections.all(
-        lambda resolved: resolved.is_pure_reducer
+def _is_windowed(p: ResolvedExpr) -> bool:
+    return p.name != Marker.TEMP and p.expr.inner.pipe(find_all, exp.Column).any(
+        lambda col: col.parts[-1].name == Marker.TEMP
     )
 
 
-def _maybe_broadcast(expr: Expr, *, broadcast_agg: bool) -> Expr:
-    if broadcast_agg:
-        return broadcast_aggs(expr)
-    return expr
+def _into_windowed(source: exp.Table | exp.Subquery) -> exp.Expr:
+
+    row_nb = row_number().window().sub(1).alias(Marker.TEMP).inner
+    return (
+        exp
+        .select(row_nb, exp.Star())
+        .from_(source, copy=False)
+        .subquery(Tables.SRC.name, copy=False)
+    )
+
+
+def _maybe_broadcast(
+    *, include_source_cols: bool, projections: Seq[ResolvedExpr]
+) -> Callable[[Expr], Expr]:
+    if include_source_cols or not projections.all(
+        lambda resolved: resolved.is_pure_reducer
+    ):
+        return broadcast_aggs
+    return lambda x: x
 
 
 def broadcast_aggs(expr: Expr) -> Expr:
