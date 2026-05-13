@@ -10,6 +10,7 @@ from pygments import token
 from pygments.lexers.sql import SqlLexer  # pyright: ignore[reportMissingTypeStubs]
 from pyochain import Dict, Iter, Set, Some, Vec
 from rich.console import Console
+from rich.pretty import Pretty
 from rich.syntax import Syntax
 from sqlglot import exp
 
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
     from rich.console import RenderableType
 
     from ._frame import LazyFrame
+    from ._plan import nodes
     from ._plan.nodes import BaseNode
     from .typing import Themes
 
@@ -111,32 +113,45 @@ _POLARS_EXPRS = {"col", "when", ">", "<", ">=", "<=", "=="}
 
 @dataclass(slots=True)
 class QueryTree:
-    query: exp.Selectable
+    query: nodes.Node
+
+    def logical(self, *, optimized: bool = True) -> exp.Selectable:
+        from ._plan import compile_plan
+
+        return compile_plan(self.query, optimize=optimized).ast
 
     def show(
         self,
         theme: Themes = "github-dark",
         *,
         pretty: bool = True,
-        kind: Literal["sql", "ast", "tree"] = "sql",
+        kind: Literal["sql", "ast", "logical"] = "sql",
+        as_tree: bool = True,
+        optimized: bool = True,
     ) -> None:
         match kind:
             case "sql":
-                return CONSOLE.print(SYNTAX(self.sql(pretty=pretty), theme=theme))
-            case "tree":
-                return CONSOLE.print(expr_tree(self.query))
+                plan = SYNTAX(self.sql(pretty=pretty, optimized=optimized), theme=theme)
             case "ast":
-                return CONSOLE.print(repr(self.query))
+                fn = node_tree if as_tree else repr
+                plan = fn(self.query)
+            case "logical":
+                fn = expr_tree if as_tree else repr
+                plan = fn(self.logical(optimized=optimized))
+        return CONSOLE.print(plan)
 
     def tokenize(self) -> Vec[tuple[int, duckdb.token_type]]:
-        return Vec.from_ref(duckdb.tokenize(self.sql()))
+        return Vec.from_ref(duckdb.tokenize(self.sql(optimized=True)))
 
-    def sql(self, *, pretty: bool = False, indent: int = 6) -> str:
-        return self.query.sql(dialect="duckdb", pretty=pretty, indent=indent)
+    def sql(
+        self, *, pretty: bool = False, indent: int = 6, optimized: bool = True
+    ) -> str:
+        return self.logical(optimized=optimized).sql(
+            dialect="duckdb", pretty=pretty, indent=indent
+        )
 
 
 def node_tree(node: BaseNode) -> RenderableType:
-    from rich.pretty import Pretty
     from rich.text import Text
     from rich.tree import Tree
 
@@ -223,7 +238,6 @@ def _render_polars_plan(value: IntoPlLazyFrame) -> RenderableType:
 
 
 def expr_tree(node: exp.Expr) -> RenderableType:
-    from rich.pretty import Pretty
     from rich.text import Text
     from rich.tree import Tree
 
