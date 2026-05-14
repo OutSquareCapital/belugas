@@ -371,13 +371,12 @@ class LazyFrame(CoreHandler[nodes.Node]):
         """
         return self._cls(nodes.Rename(self._inner, mapping))
 
+    @property
     def query(self) -> QueryTree:
-        """Generate a `ParsedQuery` object.
-
-        Allow to format and display prettified `SQL`.
+        """Namespace for query introspection and visualization.
 
         Returns:
-            ParsedQuery
+            QueryTree
 
         Raises:
             ImportError: If `rich` is not installed.

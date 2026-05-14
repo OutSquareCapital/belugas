@@ -92,18 +92,16 @@ def test_clone(lf: bl.LazyFrame) -> None:
 
 
 def test_sql_query(lf: bl.LazyFrame) -> None:
-    query = lf.filter(bl_age.gt(25)).select("name", "age")
-    parsed = query.query()
-    assert parsed.sql() != parsed.sql(pretty=True)
-    assert parsed.tokenize() != parsed.sql(pretty=True)
-    assert "SELECT" in parsed.sql()
-    assert "WHERE" in parsed.sql()
-    assert parsed.sql().upper().count("WHERE") == 1
+    query = lf.filter(bl_age.gt(25)).select("name", "age").query
+    assert query.sql() != query.sql(pretty=True)
+    assert "SELECT" in query.sql()
+    assert "WHERE" in query.sql()
+    assert query.sql().upper().count("WHERE") == 1
 
 
 @pytest.mark.parametrize("theme", t.Themes.__args__)
 def test_sql_show(lf: bl.LazyFrame, theme: t.Themes) -> None:
-    lf.select(bl_salary.cast(bl.Float64())).query().show(theme)
+    lf.select(bl_salary.cast(bl.Float64())).query.show(theme)
 
 
 def test_explain(lf: bl.LazyFrame) -> None:
@@ -431,23 +429,22 @@ def test_compile_flattens_consecutive_filters(lf: bl.LazyFrame) -> None:
         .filter(pl_salary.gt(50_000), department="Sales"),
         query,
     )
-    sql = query.query().sql().upper()
-    assert sql.count(" WHERE ") == 1
+    sql = query.query.logical()
+    assert len(tuple(sql.find_all(exp.Where))) == 1
 
 
 def test_compile_flattens_consecutive_limits(lf: bl.LazyFrame) -> None:
     query = lf.limit(4).limit(2)
     assert_lf_eq(lf.lazy().limit(4).limit(2), query)
-    sql = query.query().sql().upper()
-    assert sql.count(" LIMIT ") == 1
-    assert "LIMIT 2" in sql
+    sql = query.query.logical()
+    assert len(tuple(sql.find_all(exp.Limit))) == 1
 
 
 def test_compile_flattens_consecutive_sorts(lf: bl.LazyFrame) -> None:
     query = lf.sort("age").sort("salary")
     assert_lf_eq(lf.lazy().sort("age").sort("salary"), query)
-    sql = query.query().sql().upper()
-    assert sql.count(" ORDER BY ") == 1
+    sql = query.query.logical()
+    assert len(tuple(sql.find_all(exp.Order))) == 1
 
 
 def test_compile_flattens_consecutive_drops(lf: bl.LazyFrame) -> None:
@@ -456,13 +453,11 @@ def test_compile_flattens_consecutive_drops(lf: bl.LazyFrame) -> None:
 
 
 def test_compile_flattens_consecutive_renames(lf: bl.LazyFrame) -> None:
-    query = lf.rename({"department": "dept"}).rename({"dept": "team", "age": "years"})
+    first = {"department": "dept"}
+    second = {"dept": "team", "age": "years"}
+
     assert_lf_eq(
-        lf
-        .lazy()
-        .rename({"department": "dept"})
-        .rename({"dept": "team", "age": "years"}),
-        query,
+        lf.lazy().rename(first).rename(second), lf.rename(first).rename(second)
     )
 
 

@@ -6,12 +6,19 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, override
 
 import duckdb
-from pygments import token
-from pygments.lexers.sql import SqlLexer  # pyright: ignore[reportMissingTypeStubs]
-from pyochain import Dict, Iter, Set, Some, Vec
-from rich.console import Console
-from rich.pretty import Pretty
-from rich.syntax import Syntax
+
+try:
+    from pygments import token
+    from pygments.lexers.sql import SqlLexer  # pyright: ignore[reportMissingTypeStubs]
+    from pyochain import Dict, Iter, Set, Some, Vec
+    from rich.console import Console
+    from rich.pretty import Pretty
+    from rich.syntax import Syntax
+    from rich.text import Text
+    from rich.tree import Tree
+except ImportError as e:
+    msg = "The `rich` and `pygments` libraries are required for query visualization. Please install them with `uv add rich pygments`."
+    raise ImportError(msg) from e
 from sqlglot import exp
 
 from . import meta
@@ -113,6 +120,8 @@ _POLARS_EXPRS = {"col", "when", ">", "<", ">=", "<=", "=="}
 
 @dataclass(slots=True)
 class QueryTree:
+    """A class representing a query tree for introspection and visualization."""
+
     query: nodes.Node
 
     def logical(self, *, optimized: bool = True) -> exp.Selectable:
@@ -162,8 +171,6 @@ class QueryTree:
 
 
 def node_tree(node: BaseNode) -> RenderableType:
-    from rich.text import Text
-    from rich.tree import Tree
 
     from ._plan.nodes import BaseNode
 
@@ -248,9 +255,6 @@ def _render_polars_plan(value: IntoPlLazyFrame) -> RenderableType:
 
 
 def expr_tree(node: exp.Expr) -> RenderableType:
-    from rich.text import Text
-    from rich.tree import Tree
-
     elem_style = "bright_black"
 
     def _expr_header(value: exp.Expr) -> Text:
