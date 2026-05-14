@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 def group_by_all(
-    ast: exp.Selectable,
+    ast: exp.Select | exp.Union,
     schema: Schema,
     exprs: TryIter[IntoExpr],
     more_exprs: Iterable[IntoExpr],
@@ -48,7 +48,7 @@ def group_by_all(
 
 
 def agg_columns(
-    ast: exp.Selectable,
+    ast: exp.Select | exp.Union,
     schema: Schema,
     keys: Seq[Expr],
     func: Callable[[Expr], Expr],
@@ -69,7 +69,7 @@ def agg_columns(
 
 
 def agg(  # noqa: PLR0913, PLR0917
-    ast: exp.Selectable,
+    ast: exp.Select | exp.Union,
     schema: Schema,
     keys: Seq[Expr],
     aggs: TryIter[IntoExpr],

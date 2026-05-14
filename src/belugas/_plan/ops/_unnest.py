@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 def unnest(
-    ast: exp.Selectable,
+    ast: exp.Select | exp.Union,
     schema: Schema,
     columns: TryIter[IntoExprColumn],
     more_columns: Iterable[IntoExprColumn],

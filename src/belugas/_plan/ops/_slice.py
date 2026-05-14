@@ -12,8 +12,8 @@ MAX_I64 = 9_223_372_036_854_775_807
 
 
 def slice(
-    ast: exp.Selectable, lf_length: Option[int], offset: int
-) -> Result[exp.Selectable, ValueError]:
+    ast: exp.Select | exp.Union, lf_length: Option[int], offset: int
+) -> Result[exp.Select, ValueError]:
 
     match (lf_length, offset):
         case (Some(length), _) if length < 0:

@@ -21,8 +21,8 @@ type JoinKeysRes[T: Seq[str] | str] = Result[JoinKeys[T], ValueError]
 
 
 def join(  # noqa: PLR0913, PLR0917
-    lhs_ast: exp.Selectable,
-    rhs_ast: exp.Selectable,
+    lhs_ast: exp.Select | exp.Union,
+    rhs_ast: exp.Select | exp.Union,
     schema: Schema,
     other: Schema,
     on: TryIter[str],
@@ -48,8 +48,8 @@ def join(  # noqa: PLR0913, PLR0917
 
 
 def join_asof(  # noqa: PLR0913, PLR0917
-    lhs_ast: exp.Selectable,
-    rhs_ast: exp.Selectable,
+    lhs_ast: exp.Select | exp.Union,
+    rhs_ast: exp.Select | exp.Union,
     schema: Schema,
     other: Schema,
     left_on: Option[str],
@@ -122,8 +122,8 @@ def join_asof(  # noqa: PLR0913, PLR0917
 
 
 def join_cross(
-    lhs_ast: exp.Selectable,
-    rhs_ast: exp.Selectable,
+    lhs_ast: exp.Select | exp.Union,
+    rhs_ast: exp.Select | exp.Union,
     schema: Schema,
     other: Schema,
     suffix: str = "_right",

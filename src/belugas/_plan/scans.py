@@ -53,7 +53,7 @@ class ScanResult:
 
 
 def run_query(
-    query: exp.Selectable, relations: Mapping[str, DuckDBPyRelation]
+    query: exp.Select | exp.Union, relations: Mapping[str, DuckDBPyRelation]
 ) -> ScanResult:
     try:
         parsed = query.sql(dialect="duckdb", identify=True)

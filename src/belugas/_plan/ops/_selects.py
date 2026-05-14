@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 def with_columns(
-    src_ast: exp.Selectable | exp.Table,
+    src_ast: exp.Select | exp.Union,
     schema: Schema,
     exprs: TryIter[IntoExpr],
     more_exprs: Iterable[IntoExpr],
@@ -100,8 +100,8 @@ def _with_columns_schema(schema: Schema, projections: Seq[ResolvedExpr]) -> Sche
 
 
 def rename(
-    src_ast: exp.Selectable, schema: Schema, mapping: Mapping[str, str]
-) -> tuple[exp.Selectable, Schema]:
+    src_ast: exp.Select | exp.Union, schema: Schema, mapping: Mapping[str, str]
+) -> tuple[exp.Select, Schema]:
     exprs = schema.iter().map(lambda c: exp.column(c).as_(mapping.get(c, c)))
     new_schema = (
         schema
@@ -114,8 +114,8 @@ def rename(
 
 
 def with_row_index(
-    src_ast: exp.Selectable, schema: Schema, name: str, order_by: TryIter[str]
-) -> tuple[exp.Selectable, Schema]:
+    src_ast: exp.Select | exp.Union, schema: Schema, name: str, order_by: TryIter[str]
+) -> tuple[exp.Select, Schema]:
     row_nb = row_number().window(order_by=order_by).sub(1).alias(name).inner
     new_schema = (
         Iter
@@ -129,7 +129,9 @@ def with_row_index(
     )
 
 
-def union(lhs_ast: exp.Selectable, rhs_ast: exp.Selectable) -> exp.Union:
+def union(
+    lhs_ast: exp.Select | exp.Union, rhs_ast: exp.Select | exp.Union
+) -> exp.Union:
     slct = exp.select(exp.Star()).from_
     lhs = slct(as_relation(lhs_ast, Tables.LHS.name), copy=False)
     rhs = slct(as_relation(rhs_ast, Tables.RHS.name), copy=False)
@@ -137,8 +139,10 @@ def union(lhs_ast: exp.Selectable, rhs_ast: exp.Selectable) -> exp.Union:
 
 
 def cast(
-    src_ast: exp.Selectable, schema: Schema, dtypes: Mapping[str, DataType] | DataType
-) -> tuple[exp.Selectable, Schema]:
+    src_ast: exp.Select | exp.Union,
+    schema: Schema,
+    dtypes: Mapping[str, DataType] | DataType,
+) -> tuple[exp.Select, Schema]:
     match dtypes:
         case Mapping():
             dtype_map = Dict(dtypes)
@@ -157,8 +161,8 @@ def cast(
 
 
 def select_all(
-    src_ast: exp.Selectable, schema: Schema, func: Callable[[Expr], Expr]
-) -> tuple[exp.Selectable, Schema]:
+    src_ast: exp.Select | exp.Union, schema: Schema, func: Callable[[Expr], Expr]
+) -> tuple[exp.Select, Schema]:
 
     exprs = schema.iter().map(lambda c: col(c).pipe(func).alias(c).inner)
 
@@ -166,12 +170,12 @@ def select_all(
 
 
 def select(
-    src_ast: exp.Selectable,
+    src_ast: exp.Select | exp.Union,
     schema: Schema,
     exprs: TryIter[IntoExpr],
     more_exprs: Iterable[IntoExpr],
     named_exprs: dict[str, IntoExpr],
-) -> tuple[exp.Selectable, Schema]:
+) -> tuple[exp.Select, Schema]:
     projections = resolve_all(schema, exprs, more_exprs, named_exprs)
     has_windowed = projections.any(_is_windowed)
     broadcaster = _maybe_broadcast(include_source_cols=False, projections=projections)

@@ -29,7 +29,7 @@ PIVOT_AGG: dict[PivotAgg, Callable[[Expr], Expr]] = {
 
 
 def pivot(  # noqa: PLR0913, PLR0914, PLR0917
-    ast: exp.Selectable,
+    ast: exp.Select | exp.Union,
     schema: Schema,
     on: TryIter[str],
     on_columns: Sequence[PythonLiteral],
@@ -39,7 +39,7 @@ def pivot(  # noqa: PLR0913, PLR0914, PLR0917
     *,
     maintain_order: bool,
     separator: str,
-) -> tuple[exp.Selectable, Schema]:
+) -> tuple[exp.Select, Schema]:
     def _cols_not_in(cols: Iterable[str]) -> Seq[str]:
         return (
             schema
@@ -102,21 +102,8 @@ def pivot(  # noqa: PLR0913, PLR0914, PLR0917
         expressions=pivot_exprs, fields=[pivot_field], group=group, columns=pivot_cols
     )
 
-    match as_relation(ast):
-        case exp.Table() as table:
-            table = exp.Table(
-                this=exp.to_identifier(table.name),
-                db=table.args.get("db"),
-                catalog=table.args.get("catalog"),
-                alias=table.args.get("alias"),
-                pivots=[pivot_node],
-            )
-        case exp.Subquery(this=exp.Selectable() as inner):
-            alias = exp.TableAlias(this=exp.to_identifier(Tables.SRC.name))
-            table = exp.Subquery(this=inner, alias=alias, pivots=[pivot_node])
-        case _:
-            msg = f"Unexpected AST node type for pivot input: {ast.__class__.__name__}"
-            raise ValueError(msg)
+    alias = exp.TableAlias(this=exp.to_identifier(Tables.SRC.name))
+    table = exp.Subquery(this=ast, alias=alias, pivots=[pivot_node])
 
     selected = (
         pivoted_cols
@@ -230,7 +217,7 @@ def _select(exprs: Iterable[exp.Expr | str]) -> exp.Select:
 
 
 def unpivot(  # noqa: PLR0913, PLR0917
-    ast: exp.Selectable,
+    ast: exp.Select | exp.Union,
     schema: Schema,
     on: TryIter[str],
     index: TryIter[str],

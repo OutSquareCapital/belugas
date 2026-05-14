@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 
 class CompiledPlan(NamedTuple):
-    ast: exp.Selectable
+    ast: exp.Select | exp.Union
     schema: Schema
     sources: Dict[str, DuckDBPyRelation]
 
@@ -124,7 +124,7 @@ def _resolve_scan(node: nodes.Scan) -> scans.ScanResult:
 
 
 def _compile_tree(  # noqa: PLR0915
-    src_ast: exp.Selectable, schema: Schema, node: nodes.Node
+    src_ast: exp.Select | exp.Union, schema: Schema, node: nodes.Node
 ) -> Result[CompiledPlan, CompilationError]:
     from . import ops
 
@@ -317,7 +317,9 @@ def _compile_tree(  # noqa: PLR0915
             return Err(CompilationError(msg))
 
 
-def _apply_filter_clause(src_ast: exp.Selectable, predicate: exp.Expr) -> exp.Select:
+def _apply_filter_clause(
+    src_ast: exp.Select | exp.Union, predicate: exp.Expr
+) -> exp.Select:
     match has_window_projection(src_ast):
         case Some(_):
             return (
@@ -335,7 +337,7 @@ def _apply_filter_clause(src_ast: exp.Selectable, predicate: exp.Expr) -> exp.Se
                     return ast.where(predicate, copy=False)
 
 
-def has_window_projection(source: exp.Selectable) -> Option[exp.Window]:
+def has_window_projection(source: exp.Select | exp.Union) -> Option[exp.Window]:
     match source:
         case exp.Select():
             exprs: list[exp.Expr] = source.expressions
@@ -344,7 +346,7 @@ def has_window_projection(source: exp.Selectable) -> Option[exp.Window]:
             return NONE
 
 
-def _into_select(src_ast: exp.Selectable) -> exp.Select:
+def _into_select(src_ast: exp.Select | exp.Union) -> exp.Select:
     match src_ast:
         case exp.Select():
             return src_ast

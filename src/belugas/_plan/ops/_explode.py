@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 def explode(
-    src_ast: exp.Selectable,
+    src_ast: exp.Select | exp.Union,
     schema: Schema,
     columns: TryIter[IntoExprColumn],
     more_columns: Iterable[IntoExprColumn],

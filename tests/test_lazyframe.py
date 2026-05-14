@@ -6,7 +6,6 @@ from pyochain import ResultUnwrapError
 from sqlglot import exp
 
 import belugas as bl
-import belugas._plan as m  # noqa: PLC2701
 import belugas.typing as t
 
 from ._utils import assert_lf_eq
@@ -289,19 +288,6 @@ def test_rename(lf: bl.LazyFrame, mapping: dict[str, str]) -> None:
     result = lf.rename(mapping)
     expected = lf.lazy().rename(mapping)
     assert_lf_eq(expected, result)
-
-
-def test_with_columns_star_exprs(lf: bl.LazyFrame) -> None:
-    from belugas._plan import ops  # noqa: PLC2701
-
-    cols = m.compile_plan(lf.inner).schema
-
-    def _plan(expr: bl.Expr) -> exp.Star | None:
-        ast, _ = ops.with_columns(exp.to_table("src"), cols, expr, (), {})
-        return ast.find(exp.Star)
-
-    assert _plan(bl_age) is None
-    assert _plan(bl_age.alias("age2")) is not None
 
 
 def test_with_columns_single_expr(lf: bl.LazyFrame) -> None:
