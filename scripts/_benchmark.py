@@ -14,7 +14,7 @@ from rich.table import Table
 import belugas as bl
 
 type BenchFn = Callable[[], bl.LazyFrame]
-N_COLS = 25
+N_COLS = 500
 N_GROUPS = Range(0, 10)
 
 
@@ -78,21 +78,6 @@ AGG: Seq[bl.Expr] = (
     .collect()
 )
 
-PL_AGG: Seq[pl.Expr] = (
-    COLS
-    .iter()
-    .map(
-        lambda c: (
-            pl
-            .when(pl.col(c).gt(pl.lit(0)))
-            .then(pl.col(c).add(1))
-            .otherwise(pl.lit(0))
-            .mean()
-            .alias(f"{c}_agg")
-        )
-    )
-    .collect()
-)
 MUL: Seq[bl.Expr] = (
     COLS
     .iter()
@@ -109,26 +94,16 @@ MUL: Seq[bl.Expr] = (
     )
     .collect()
 )
-PL_MUL: Seq[pl.Expr] = (
-    COLS
-    .iter()
-    .enumerate()
-    .map_star(
-        lambda i, c: (
-            pl.col(c).mul(pl.col("c0")).add(pl.lit(i)).cast(pl.UInt32).alias(f"{c}_mul")
-        )
-    )
-    .collect()
-)
+PREDS = COLS.iter().map(lambda c: bl.col(c).eq(1)).collect()
 UNPIVOT_ON = COLS.iter().skip(1).collect()
 COLS_UNIQUE = COLS.iter().take(10).collect()
 
 BENCHS = Dict[str, BenchFn].from_ref({
     "with_columns": lambda: BASE.with_columns(MUL),
-    "filter": lambda: BASE.filter(bl.col("c1").gt(0)),
+    "filter": lambda: BASE.filter(PREDS),
     "group_by": lambda: BASE.group_by("c0").agg(AGG),
     "join": lambda: BASE.join(RHS, on="c0", how="left"),
-    "drop": lambda: BASE.drop("c1"),
+    "drop": lambda: BASE.drop(COLS),
     "unnest": lambda: STRUCT_BL.unnest("s"),
     "join_asof": lambda: ASOF_L_BL.join_asof(ASOF_R_BL, on="key"),
     "pivot": lambda: PIVOT_BL.pivot(
