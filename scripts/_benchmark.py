@@ -21,25 +21,25 @@ N_GROUPS = 10
 
 COLS: Seq[str] = Range(0, N_COLS).iter().map(lambda i: f"c{i}").collect()
 
-_DATA: dict[str, list[int]] = {
+_DATA = pl.DataFrame({
     "c0": list(range(N_GROUPS)),
     **Range(1, N_COLS).iter().map(lambda i: (f"c{i}", [1] * N_GROUPS)).collect(Dict),
-}
-_RHS_DATA: dict[str, list[int]] = {
+}).to_arrow()
+_RHS_DATA = pl.DataFrame({
     "c0": list(range(5)),
     "k": list(range(5, 10)),
     "l": list(range(10, 15)),
     "m": list(range(15, 20)),
-}
-_STRUCT_DATA: dict[str, list[dict[str, int]]] = {"s": [{"x": 1, "y": 2}]}
-_ASOF_L_DATA: dict[str, list[int]] = {"key": [1, 2, 3], "val": [10, 20, 30]}
-_ASOF_R_DATA: dict[str, list[int]] = {"key": [1, 2, 3], "rval": [100, 200, 300]}
-_PIVOT_DATA: dict[str, list[int] | list[str]] = {
+}).to_arrow()
+_STRUCT_DATA = pl.DataFrame({"s": [{"x": 1, "y": 2}]}).to_arrow()
+_ASOF_L_DATA = pl.DataFrame({"key": [1, 2, 3], "val": [10, 20, 30]}).to_arrow()
+_ASOF_R_DATA = pl.DataFrame({"key": [1, 2, 3], "rval": [100, 200, 300]}).to_arrow()
+_PIVOT_DATA = pl.DataFrame({
     "idx": [1, 1],
     "col": ["a", "b"],
     "val": [10, 20],
-}
-_EXPLODE_DATA = {
+}).to_arrow()
+_EXPLODE_DATA = pl.DataFrame({
     "id": tuple(range(N_GROUPS)),
     **Range(1, N_COLS)
     .iter()
@@ -50,22 +50,22 @@ _EXPLODE_DATA = {
         )
     )
     .collect(Dict),
-}
-
-BASE = bl.LazyFrame(_DATA)
-PL_BASE = pl.LazyFrame(_DATA)
-RHS = bl.LazyFrame(_RHS_DATA)
-PL_RHS = pl.LazyFrame(_RHS_DATA)
-STRUCT_BL = bl.LazyFrame(_STRUCT_DATA)
-STRUCT_PL = pl.LazyFrame(_STRUCT_DATA)
-ASOF_L_BL = bl.LazyFrame(_ASOF_L_DATA)
-ASOF_R_BL = bl.LazyFrame(_ASOF_R_DATA)
-ASOF_L_PL = pl.LazyFrame(_ASOF_L_DATA)
-ASOF_R_PL = pl.LazyFrame(_ASOF_R_DATA)
-PIVOT_BL = bl.LazyFrame(_PIVOT_DATA)
-PIVOT_PL = pl.LazyFrame(_PIVOT_DATA)
-EXPLODE_BL = bl.LazyFrame(_EXPLODE_DATA)
-EXPLODE_PL = pl.LazyFrame(_EXPLODE_DATA)
+}).to_arrow()
+# NOTE: arrow is badly typed, so polars best-effort can't go beyong Series | DataFrame when converting from arrow, even if we know it's a DataFrame. Hence the pyright ignores below.
+BASE = bl.from_arrow(_DATA)
+PL_BASE: pl.LazyFrame = pl.from_arrow(_DATA).lazy()  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue, reportUnknownVariableType]
+RHS = bl.from_arrow(_RHS_DATA)
+PL_RHS: pl.LazyFrame = pl.from_arrow(_RHS_DATA).lazy()  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue, reportUnknownVariableType]
+STRUCT_BL = bl.from_arrow(_STRUCT_DATA)
+STRUCT_PL: pl.LazyFrame = pl.from_arrow(_STRUCT_DATA).lazy()  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue, reportUnknownVariableType]
+ASOF_L_BL = bl.from_arrow(_ASOF_L_DATA)
+ASOF_R_BL = bl.from_arrow(_ASOF_R_DATA)
+ASOF_L_PL: pl.LazyFrame = pl.from_arrow(_ASOF_L_DATA).lazy()  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue, reportUnknownVariableType]
+ASOF_R_PL: pl.LazyFrame = pl.from_arrow(_ASOF_R_DATA).lazy()  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue, reportUnknownVariableType]
+PIVOT_BL = bl.from_arrow(_PIVOT_DATA)
+PIVOT_PL: pl.LazyFrame = pl.from_arrow(_PIVOT_DATA).lazy()  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue, reportUnknownVariableType]
+EXPLODE_BL = bl.from_arrow(_EXPLODE_DATA)
+EXPLODE_PL: pl.LazyFrame = pl.from_arrow(_EXPLODE_DATA).lazy()  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue, reportUnknownVariableType]
 
 AGG: Seq[bl.Expr] = (
     COLS
