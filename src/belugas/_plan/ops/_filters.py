@@ -3,16 +3,16 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING
 
-from pyochain import Dict, Iter, Option, Set
+from pyochain import Iter, Option
 from sqlglot import exp
 
 from ..._core import into_expr
-from ..._expr import Expr
 from ..._funcs import all, col
 from ...utils import try_iter
 from .._common import as_relation
 
 if TYPE_CHECKING:
+    from ..._expr import Expr
     from ...typing import IntoExpr, IntoExprColumn, Schema, TryIter
 
 
@@ -20,24 +20,23 @@ def filter(
     predicates: TryIter[IntoExprColumn],
     more_predicates: Iterable[IntoExprColumn],
     constraints: dict[str, IntoExpr],
-) -> exp.Expr:
+) -> exp.Condition:
 
-    def _constraint(k: str, val: IntoExpr) -> Expr:
-        return col(k).eq(into_expr(val, as_col=False))
+    def _constraint(k: str, val: IntoExpr) -> exp.Expr:
+        return exp.column(k).eq(into_expr(val, as_col=False))
 
     return (
         try_iter(predicates)
         .chain(more_predicates)
-        .map(lambda value: Expr.new(value, as_col=True))
+        .map(lambda value: into_expr(value, as_col=True))
         .chain(Iter(constraints.items()).map_star(_constraint))
-        .reduce(Expr.and_)
-        .inner
+        .unpack_into(exp.and_)
     )
 
 
 def drop_rows(
     schema: Schema, subset: TryIter[str], fn: Callable[[Expr], Expr]
-) -> exp.Expr:
+) -> exp.Condition:
     return (
         Option(subset)
         .map(try_iter)
@@ -54,21 +53,14 @@ def drop(
     more_columns: Iterable[IntoExprColumn],
 ) -> tuple[exp.Select, Schema]:
 
-    cols = (
-        try_iter(columns)
-        .chain(more_columns)
-        .map(lambda e: Expr.new(e, as_col=True))
-        .collect()
-    )
-    to_drop = cols.iter().map(lambda e: e.inner.output_name).collect(Set)
-    new_schema = (
-        schema
-        .items()
-        .iter()
-        .filter_star(lambda name, _: name not in to_drop)
-        .collect(Dict)
-    )
+    def _process(e: IntoExprColumn) -> exp.Expr:
+        expr = into_expr(e, as_col=True)
+        name = expr.output_name
+        _ = schema.pop(name)
+        return expr
+
+    selected = try_iter(columns).chain(more_columns).map(_process).into(all).inner
     return (
-        exp.select(cols.into(all).inner).from_(as_relation(src_ast), copy=False),
-        new_schema,
+        exp.select(selected).from_(as_relation(src_ast), copy=False),
+        schema,
     )
