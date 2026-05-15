@@ -61,7 +61,21 @@ def assert_eq(
 
 
 def assert_lf_eq(polars_lf: pl.LazyFrame, bl_lf: bl.LazyFrame) -> None:
-    _assert(polars_lf, bl_lf.collect())
+    try:
+        _assert(polars_lf, bl_lf.collect())
+    except AssertionError as e:
+        sql = bl_lf.query.sql(pretty=True)
+        ast = bl_lf.query.logical()
+        msg = f"""
+Not equal error!
+----SQL----
+{sql}
+----AST----
+{ast}
+----Error----
+{e}
+"""
+        raise AssertionError(msg) from None
 
 
 def _assert(
