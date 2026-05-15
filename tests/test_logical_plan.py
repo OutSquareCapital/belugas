@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import polars as pl
+import pytest
 from pyochain import Seq
 from sqlglot import exp
 
 import belugas as bl
 
+from ._data import LF_TEST
 from ._utils import assert_lf_eq
 
 bl_age = bl.col("age")
@@ -13,6 +15,11 @@ bl_text = bl.col("text")
 bl_salary = bl.col("salary")
 pl_age = pl.col("age")
 pl_salary = pl.col("salary")
+
+
+@pytest.fixture
+def lf() -> bl.LazyFrame:
+    return LF_TEST
 
 
 def test_drop_inline(lf: bl.LazyFrame) -> None:
