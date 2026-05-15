@@ -768,14 +768,34 @@ class Struct(NestedType, ComplexDataType):
     def fields(self) -> Dict[str, DataType]:
         """Get the fields of the struct type."""
         return (
-            Iter(self.raw.expressions)
-            .map(
-                lambda col_def: (  # pyright: ignore[reportAny]
-                    col_def.this.this,  # pyright: ignore[reportAny]
-                    self.from_sql(col_def.kind),  # pyright: ignore[reportAny]
-                )
-            )
+            self
+            .fields_from_raw(self.raw)
+            .map_star(lambda k, v: (k, self.from_sql(v)))
             .collect(Dict)
+        )
+
+    @staticmethod
+    def fields_from_raw(dtype: exp.DataType) -> Iter[tuple[str, exp.DataType]]:
+        """Extract the fields of a struct type from a raw sqlglot DataType expression.
+
+        Useful if you want to extract the fields of a struct type but don't need to convert them to `DataType` instances, i.e for flattening nested structs.
+
+        This allows to bypass the conversion `sqlglot` -> `belugas` for the field types, which can be a significant performance boost when dealing with large nested structs.
+
+        Warning:
+            We assume that the provided `exp.DataType` is a struct type, and that its expressions are all `exp.ColumnDef` with `kind` being the field type.
+
+            This is done for performance reasons, but can result in unexpected behavior if the provided `exp.DataType` does not conform to these assumptions.
+
+        Args:
+            dtype (exp.DataType): The raw sqlglot `DataType` expression to extract the fields from.
+
+        Returns:
+            Iter[tuple[str, exp.DataType]]: An `Iterator` over the field names and types of the struct type.
+        """
+        exprs: list[exp.ColumnDef] = dtype.expressions
+        return (  # pyright: ignore[reportReturnType]
+            Iter(exprs).map(lambda col_def: (col_def.this.this, col_def.kind))  # pyright: ignore[reportAny]
         )
 
 
