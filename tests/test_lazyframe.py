@@ -467,12 +467,20 @@ def test_drop_nulls(lf: bl.LazyFrame, subset: list[str]) -> None:
 
 @pytest.mark.parametrize("columns", ["vals1", "vals2", ["vals1", "vals2"]])
 def test_explode(columns: list[str] | str) -> None:
+    """Frame-level explode follows native UNNEST semantics.
+
+    Unlike Polars' default explode behavior, empty and NULL lists are dropped
+    instead of being preserved as a single NULL row.
+    """
     data = bl.LazyFrame({
         "id": [1, 2, 3],
         "vals1": [[10, 11], [], None, [70]],
         "vals2": [[100, 110], [], None, [700]],
     })
-    assert_lf_eq(data.lazy().explode(columns), data.explode(columns))
+    assert_lf_eq(
+        data.lazy().explode(columns, empty_as_null=False, keep_nulls=False),
+        data.explode(columns),
+    )
 
 
 def test_gather_every(lf: bl.LazyFrame) -> None:
