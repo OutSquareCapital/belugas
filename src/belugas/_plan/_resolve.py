@@ -228,7 +228,8 @@ def _compile_tree(  # noqa: PLR0915
             )
             return Ok(CompiledPlan(ast, new_schema, empty))
         case nodes.Rename():
-            ast, new_schema = ops.rename(src_ast, schema, node.mapping)
+            exprs, new_schema = ops.rename(schema, node.mapping)
+            ast = _maybe_inline(*exprs, ast=src_ast)
             return Ok(CompiledPlan(ast, new_schema, empty))
         case nodes.Cast():
             ast, new_schema = ops.cast(src_ast, schema, node.dtypes)

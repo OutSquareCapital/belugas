@@ -1,3 +1,11 @@
+"""Tests for the logical plan generation and optimization.
+
+Note:
+    - The expected results are what we currently get, not necessarily what we should/would get.
+    - If the test breaks, check if the new plan is actually better than the old one before updating the expected results.
+    - This is currently far from exhaustive
+"""
+
 from __future__ import annotations
 
 import polars as pl
@@ -38,7 +46,7 @@ def test_drop_inline(lf: bl.LazyFrame) -> None:
     assert selects_nb == 3
 
 
-def test_compile_flattens_consecutive_filters(lf: bl.LazyFrame) -> None:
+def test_flattens_consecutive_filters(lf: bl.LazyFrame) -> None:
     query = lf.filter(bl_age.gt(25)).filter(bl_salary.gt(50_000), department="Sales")
     assert_lf_eq(
         lf
@@ -51,26 +59,26 @@ def test_compile_flattens_consecutive_filters(lf: bl.LazyFrame) -> None:
     assert len(tuple(sql.find_all(exp.Where))) == 1
 
 
-def test_compile_flattens_consecutive_limits(lf: bl.LazyFrame) -> None:
+def test_flattens_consecutive_limits(lf: bl.LazyFrame) -> None:
     query = lf.limit(4).limit(2)
     assert_lf_eq(lf.lazy().limit(4).limit(2), query)
     sql = query.query.logical()
     assert len(tuple(sql.find_all(exp.Limit))) == 1
 
 
-def test_compile_flattens_consecutive_sorts(lf: bl.LazyFrame) -> None:
+def test_flattens_consecutive_sorts(lf: bl.LazyFrame) -> None:
     query = lf.sort("age").sort("salary")
     assert_lf_eq(lf.lazy().sort("age").sort("salary"), query)
     sql = query.query.logical()
     assert len(tuple(sql.find_all(exp.Order))) == 1
 
 
-def test_compile_flattens_consecutive_drops(lf: bl.LazyFrame) -> None:
+def test_flattens_consecutive_drops(lf: bl.LazyFrame) -> None:
     query = lf.drop("value").drop("category")
     assert_lf_eq(lf.lazy().drop("value").drop("category"), query)
 
 
-def test_compile_flattens_consecutive_renames(lf: bl.LazyFrame) -> None:
+def test_flattens_consecutive_renames(lf: bl.LazyFrame) -> None:
     first = {"department": "dept"}
     second = {"dept": "team", "age": "years"}
 
@@ -79,16 +87,38 @@ def test_compile_flattens_consecutive_renames(lf: bl.LazyFrame) -> None:
     )
 
 
-def test_compile_flattens_consecutive_slices(lf: bl.LazyFrame) -> None:
+def test_flattens_consecutive_slices(lf: bl.LazyFrame) -> None:
     query = lf.slice(2, 5).slice(1, 2)
     assert_lf_eq(lf.lazy().slice(2, 5).slice(1, 2), query)
 
 
-def test_compile_flattens_limit_then_slice(lf: bl.LazyFrame) -> None:
+def test_flattens_limit_then_slice(lf: bl.LazyFrame) -> None:
     query = lf.limit(6).slice(2, 3)
     assert_lf_eq(lf.lazy().limit(6).slice(2, 3), query)
 
 
-def test_compile_flattens_slice_then_limit(lf: bl.LazyFrame) -> None:
+def test_flattens_slice_then_limit(lf: bl.LazyFrame) -> None:
     query = lf.slice(2, 5).limit(3)
     assert_lf_eq(lf.lazy().slice(2, 5).limit(3), query)
+
+
+def test_rename_inline() -> None:
+    """This should inline the original `SELECT *` from the scan.
+
+    ```sql
+    SELECT
+        "a" AS "new_a",
+        "b" AS "b",
+        "c" AS "c"
+    FROM "foo"
+    ```
+    """
+    lf = bl.LazyFrame({"a": [1, 1, 2], "b": [1, 2, 2], "c": [1, 2, 3]})
+    selects_nb = (
+        lf
+        .rename({"a": "new_a"})
+        .query.logical()
+        .pipe(lambda e: Seq(e.find_all(exp.Select)))
+        .length()
+    )
+    assert selects_nb == 1
