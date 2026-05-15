@@ -223,9 +223,8 @@ def _compile_tree(  # noqa: PLR0915
             ast = ops.explode(src_ast, schema, node.columns, node.more_columns)
             return Ok(CompiledPlan(ast, schema, empty))
         case nodes.Unnest():
-            ast, new_schema = ops.unnest(
-                src_ast, schema, node.columns, node.more_columns
-            )
+            exprs, new_schema = ops.unnest(schema, node.columns, node.more_columns)
+            ast = _maybe_inline(*exprs, ast=src_ast)
             return Ok(CompiledPlan(ast, new_schema, empty))
         case nodes.Rename():
             exprs, new_schema = ops.rename(schema, node.mapping)

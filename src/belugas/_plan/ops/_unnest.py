@@ -7,7 +7,6 @@ from pyochain import Dict, Iter, Set
 from sqlglot import exp
 
 from ... import datatypes as dt
-from ..._core import Tables
 from ..._funcs import col, unnest as unnest_fn
 from ...utils import try_iter
 
@@ -16,11 +15,10 @@ if TYPE_CHECKING:
 
 
 def unnest(
-    ast: exp.Select,
     schema: Schema,
     columns: TryIter[IntoExprColumn],
     more_columns: Iterable[IntoExprColumn],
-) -> tuple[exp.Select, Schema]:
+) -> tuple[Iter[exp.Expr], Schema]:
 
     targets = try_iter(columns).chain(more_columns).collect(Set)
 
@@ -51,6 +49,4 @@ def unnest(
 
     new_schema = schema.items().iter().map_star(_schema_proj).flatten().collect(Dict)
     exprs = schema.iter().flat_map(_proj)
-    return exp.select(*exprs).from_(
-        ast.subquery(Tables.SRC, copy=False), copy=False
-    ), new_schema
+    return exprs, new_schema

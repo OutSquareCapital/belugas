@@ -122,3 +122,28 @@ def test_rename_inline() -> None:
         .length()
     )
     assert selects_nb == 1
+
+
+def test_struct_inline() -> None:
+    """This should inline the original `SELECT *` from the scan.
+
+    ```sql
+    SELECT
+        UNNEST("a") AS "a",
+        "b"
+    FROM "bl_scan_1296621563952"
+    ```
+    """
+    nested = {
+        "a": [[1, 2], [3, 4]],
+        "b": [["a", "b"], ["c", "d"]],
+    }
+    selects_nb = (
+        bl
+        .LazyFrame(nested)
+        .unnest("a")
+        .query.logical()
+        .pipe(lambda e: Seq(e.find_all(exp.Select)))
+        .length()
+    )
+    assert selects_nb == 1
