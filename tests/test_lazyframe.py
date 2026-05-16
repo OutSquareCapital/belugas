@@ -318,13 +318,18 @@ def test_drop_single_column(lf: bl.LazyFrame, cols: list[str]) -> None:
     assert_lf_eq(lf.lazy().drop(*cols), lf.drop(*cols))
 
 
+def test_drop_then_with_columns(lf: bl.LazyFrame) -> None:
+    assert_lf_eq(
+        lf.lazy().drop("age").with_columns(pl.col("id").alias("id_2")),
+        lf.drop("age").with_columns(bl.col("id").alias("id_2")),
+    )
+
+
 @pytest.mark.parametrize(
     "mapping", [{"age": "years"}, {"age": "years", "name": "full_name"}]
 )
 def test_rename(lf: bl.LazyFrame, mapping: dict[str, str]) -> None:
-    result = lf.rename(mapping)
-    expected = lf.lazy().rename(mapping)
-    assert_lf_eq(expected, result)
+    assert_lf_eq(lf.lazy().rename(mapping), lf.rename(mapping))
 
 
 def test_with_columns_single_expr(lf: bl.LazyFrame) -> None:

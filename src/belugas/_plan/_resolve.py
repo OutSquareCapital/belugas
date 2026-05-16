@@ -211,9 +211,8 @@ def _compile_tree(  # noqa: PLR0915
             ast = ops.slice(src_ast, node.length, node.offset).unwrap()
             return Ok(CompiledPlan(ast, schema, empty))
         case nodes.Drop():
-            expr, new_schema = ops.drop(schema, node.columns, node.more_columns)
-            ast = _maybe_inline(expr, ast=src_ast)
-            return Ok(CompiledPlan(ast, new_schema, empty))
+            ast = ops.drop(src_ast, schema, node.columns, node.more_columns)
+            return Ok(CompiledPlan(ast, schema, empty))
         case nodes.DropRows():
             ast = _apply_filter_clause(
                 src_ast, ops.drop_rows(schema, node.subset, node.fn)
@@ -325,7 +324,7 @@ def _apply_filter_clause(src_ast: exp.Select, predicate: exp.Expr) -> exp.Select
         case _ if (
             src_ast.args.get("limit") is not None
             or src_ast.args.get("offset") is not None
-            or not Iter(src_ast.selects).all(_is_passthrough_projection)
+            or not src_ast.is_star
         ):
             return (
                 exp
@@ -346,22 +345,10 @@ def _maybe_inline(*exprs: exp.Expr, ast: exp.Select) -> exp.Select:
 # TODO: we should factorise those two funcs and check if we can do it more efficiently
 def can_inline_select(select: exp.Select) -> bool:
     match select.selects:
-        case [exp.Star()]:
-            return True
+        case [exp.Star() as star]:
+            return not star.args
         case _:
             return False
-
-
-def _is_passthrough_projection(expr: exp.Expr) -> bool:
-    match expr:
-        case exp.Star():
-            return True
-        case _:
-            match expr.unalias():
-                case exp.Column() as col:
-                    return expr.output_name == col.output_name
-                case _:
-                    return False
 
 
 def lookup_type(inner: exp.Expr, schema: Schema) -> exp.DataType:

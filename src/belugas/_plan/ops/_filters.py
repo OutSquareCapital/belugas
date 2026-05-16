@@ -3,10 +3,10 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING
 
-from pyochain import Dict, Option
+from pyochain import Dict, Iter, Option, Set
 from sqlglot import exp
 
-from ..._core import into_expr
+from ..._core import Tables, into_expr
 from ..._funcs import col
 from ...utils import try_iter
 
@@ -46,10 +46,11 @@ def drop_rows(
 
 
 def drop(
+    ast: exp.Select,
     schema: Schema,
     columns: TryIter[IntoExprColumn],
     more_columns: Iterable[IntoExprColumn],
-) -> tuple[exp.Star, Schema]:
+) -> exp.Select:
 
     def _process(e: IntoExprColumn) -> exp.Expr:
         expr = into_expr(e, as_col=True)
@@ -57,6 +58,26 @@ def drop(
         _ = schema.pop(name)
         return expr
 
-    selected = try_iter(columns).chain(more_columns).map(_process).collect(list)
+    excluded = try_iter(columns).chain(more_columns).map(_process)
 
-    return exp.Star(except_=selected), schema
+    def _as_subquery() -> exp.Select:
+        return exp.select(exp.Star(except_=excluded.collect(list))).from_(
+            ast.subquery(Tables.SRC, copy=False), copy=False
+        )
+
+    match ast.args.get("distinct"), ast.selects:
+        case None, [exp.Star()]:
+            return ast.select(
+                exp.Star(except_=excluded.collect(list)), copy=False, append=False
+            )
+        case None, current_cols if not ast.is_star:
+            excluded_names = excluded.map(lambda expr: expr.output_name).collect(Set)
+            exprs = (
+                Iter(current_cols)
+                .filter(lambda expr: expr.output_name not in excluded_names)
+                .collect(list)
+            )
+            ast.set("expressions", exprs)
+            return ast
+        case _:
+            return _as_subquery()
