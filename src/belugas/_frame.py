@@ -148,7 +148,9 @@ class LazyFrame(CoreHandler[nodes.Node]):
         Returns:
             Self: A new LazyFrame with the selected columns.
         """
-        return self._cls(nodes.Select(self._inner, exprs, more_exprs, named_exprs))
+        return self._cls(
+            nodes.Select(self._inner, exprs, more_exprs, Dict.from_ref(named_exprs))
+        )
 
     def with_columns(
         self,
@@ -166,7 +168,11 @@ class LazyFrame(CoreHandler[nodes.Node]):
         Returns:
             Self: A new LazyFrame with the added or replaced columns.
         """
-        return self._cls(nodes.WithColumns(self._inner, exprs, more_exprs, named_exprs))
+        return self._cls(
+            nodes.WithColumns(
+                self._inner, exprs, more_exprs, Dict.from_ref(named_exprs)
+            )
+        )
 
     def filter(
         self,
@@ -185,7 +191,9 @@ class LazyFrame(CoreHandler[nodes.Node]):
             Self: A new LazyFrame with the filtered rows.
         """
         return self._cls(
-            nodes.Filter(self._inner, predicates, more_predicates, constraints)
+            nodes.Filter(
+                self._inner, predicates, more_predicates, Dict.from_ref(constraints)
+            )
         )
 
     def group_by(
@@ -235,7 +243,9 @@ class LazyFrame(CoreHandler[nodes.Node]):
         Returns:
             Self: A new LazyFrame with the aggregated rows.
         """
-        return self._cls(nodes.GroupByAll(self._inner, exprs, more_exprs, named_exprs))
+        return self._cls(
+            nodes.GroupByAll(self._inner, exprs, more_exprs, Dict.from_ref(named_exprs))
+        )
 
     def sort(
         self,

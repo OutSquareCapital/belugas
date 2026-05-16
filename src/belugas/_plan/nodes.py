@@ -4,7 +4,7 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, fields
 from typing import TYPE_CHECKING, override
 
-from pyochain import Seq
+from pyochain import Dict, Seq
 
 from ..typing import DescConds, FileGlob, PathOrBuffer
 
@@ -152,7 +152,7 @@ class LogicalNode(BaseNode):
 class _Expressions(LogicalNode):
     exprs: TryIter[IntoExpr]
     more_exprs: Iterable[IntoExpr]
-    named: dict[str, IntoExpr]
+    named: Dict[str, IntoExpr]
 
 
 _LogicalNode = LogicalNode
@@ -176,7 +176,7 @@ class WithColumns(_Expressions):
 class Filter(LogicalNode):
     predicates: TryIter[IntoExprColumn]
     more_predicates: Iterable[IntoExprColumn]
-    constraints: dict[str, IntoExpr]
+    constraints: Dict[str, IntoExpr]
 
 
 @dataclass(slots=True, repr=False)

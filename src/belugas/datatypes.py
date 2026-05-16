@@ -32,7 +32,6 @@ if TYPE_CHECKING:
     )
 
     from .typing import EpochTimeUnit, IntoDict
-# TODO: correctly benchmark the performance gain of direct duckdb -> DataType conversion instead of calling `sqlglot::exp::DataType::from_str`.
 
 
 @dataclass(slots=True)

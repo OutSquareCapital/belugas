@@ -28,7 +28,7 @@ def with_columns(
     schema: Schema,
     exprs: TryIter[IntoExpr],
     more_exprs: Iterable[IntoExpr],
-    named_exprs: dict[str, IntoExpr],
+    named_exprs: Dict[str, IntoExpr],
 ) -> tuple[exp.Select, Schema]:
     def _resolved(updates: Dict[str, Expr]) -> Iter[exp.Expr]:
         update_iter = updates.items().iter()
@@ -157,7 +157,7 @@ def select_all(
 
     exprs = schema.iter().map(lambda c: col(c).pipe(func).alias(c).inner)
 
-    return select(src_ast, schema, exprs, (), {})
+    return select(src_ast, schema, exprs, (), Dict(()))
 
 
 def select(
@@ -165,7 +165,7 @@ def select(
     schema: Schema,
     exprs: TryIter[IntoExpr],
     more_exprs: Iterable[IntoExpr],
-    named_exprs: dict[str, IntoExpr],
+    named_exprs: Dict[str, IntoExpr],
 ) -> tuple[exp.Select, Schema]:
     projections = resolve_all(schema, exprs, more_exprs, named_exprs)
     has_windowed = projections.any(_is_windowed)

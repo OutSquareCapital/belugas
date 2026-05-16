@@ -448,7 +448,7 @@ def resolve_all(
     schema: Schema,
     exprs: TryIter[IntoExpr],
     more_exprs: Iterable[IntoExpr],
-    named_exprs: dict[str, IntoExpr],
+    named_exprs: Dict[str, IntoExpr],
 ) -> Seq[ResolvedExpr]:
 
     def _alias_named_expr(name: str, val: IntoExpr) -> IntoExpr:
@@ -463,7 +463,7 @@ def resolve_all(
     return (
         try_iter(exprs)
         .chain(more_exprs)
-        .chain(Iter(named_exprs.items()).map_star(_alias_named_expr))
+        .chain(named_exprs.items().iter().map_star(_alias_named_expr))
         .flat_map(lambda val: _resolve(val, schema))
         .collect()
     )

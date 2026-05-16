@@ -19,7 +19,7 @@ def group_by_all(
     schema: Schema,
     exprs: TryIter[IntoExpr],
     more_exprs: Iterable[IntoExpr],
-    named_exprs: dict[str, IntoExpr],
+    named_exprs: Dict[str, IntoExpr],
 ) -> tuple[Vec[exp.Expr], Schema]:
     # TODO: determine if this is really the best approach.
     # What can DuckDB do automatically here? What to consider VS our group_by.agg?
@@ -59,7 +59,7 @@ def agg_columns(
         .map(lambda name: col(name).pipe(func).alias(name))
     )
     return agg(
-        ast, schema, keys, agg_exprs, (), {}, None, drop_null_keys=drop_null_keys
+        ast, schema, keys, agg_exprs, (), Dict(()), None, drop_null_keys=drop_null_keys
     )
 
 
@@ -69,7 +69,7 @@ def agg(  # noqa: PLR0913, PLR0917
     keys: Seq[Expr],
     aggs: TryIter[IntoExpr],
     more_aggs: Iterable[IntoExpr],
-    named_aggs: dict[str, IntoExpr],
+    named_aggs: Dict[str, IntoExpr],
     strategy: GroupByClause | None,
     *,
     drop_null_keys: bool,

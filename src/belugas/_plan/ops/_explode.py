@@ -25,7 +25,7 @@ def explode(
 ) -> exp.Select:
 
     to_explode = (
-        resolve_all(schema, columns, more_columns, {})
+        resolve_all(schema, columns, more_columns, Dict(()))
         .iter()
         .enumerate()
         .map_star(lambda idx, r: (r.name, IndexedExpr(idx + 1, col(r.name))))

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING
 
-from pyochain import Iter, Option
+from pyochain import Dict, Option
 from sqlglot import exp
 
 from ..._core import into_expr
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 def filter(
     predicates: TryIter[IntoExprColumn],
     more_predicates: Iterable[IntoExprColumn],
-    constraints: dict[str, IntoExpr],
+    constraints: Dict[str, IntoExpr],
 ) -> exp.Condition:
 
     def _constraint(k: str, val: IntoExpr) -> exp.Expr:
@@ -28,7 +28,7 @@ def filter(
         try_iter(predicates)
         .chain(more_predicates)
         .map(lambda value: into_expr(value, as_col=True))
-        .chain(Iter(constraints.items()).map_star(_constraint))
+        .chain(constraints.items().iter().map_star(_constraint))
         .unpack_into(exp.and_)
     )
 
@@ -41,7 +41,7 @@ def drop_rows(
         .map(try_iter)
         .unwrap_or_else(schema.iter)
         .map(lambda name: col(name).pipe(fn))
-        .into(lambda predicates: filter(predicates, (), {}))
+        .into(lambda predicates: filter(predicates, (), Dict(())))
     )
 
 

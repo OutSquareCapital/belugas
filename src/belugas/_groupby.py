@@ -4,7 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from pyochain import Option
+from pyochain import Dict, Option
 
 from ._expr import Expr
 from ._frame import LazyFrame
@@ -64,7 +64,7 @@ class LazyGroupBy:
         *more_aggs: IntoExpr,
         **named_aggs: IntoExpr,
     ) -> LazyFrame:
-        node = nodes.Agg(self._inner, aggs, more_aggs, named_aggs)
+        node = nodes.Agg(self._inner, aggs, more_aggs, Dict.from_ref(named_aggs))
         return _from_node(node)
 
 

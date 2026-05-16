@@ -134,11 +134,11 @@ def _merge_filters(lhs: nodes.Filter, rhs: nodes.Filter) -> nodes.Filter:
 
 
 def _constraints_to_predicates(
-    constraints: dict[str, IntoExpr],
+    constraints: Dict[str, IntoExpr],
 ) -> Iter[IntoExprColumn]:
     from .._funcs import col
 
-    return Iter(constraints.items()).map_star(lambda key, value: col(key).eq(value))
+    return constraints.items().iter().map_star(lambda key, value: col(key).eq(value))
 
 
 def _merge_drops(lhs: nodes.Drop, rhs: nodes.Drop) -> nodes.Drop:
