@@ -317,14 +317,17 @@ def _compile_tree(  # noqa: PLR0915
             return Err(CompilationError(msg))
 
 
-def _apply_filter_clause(src_ast: exp.Select, predicate: exp.Expr) -> exp.Select:
+def _apply_filter_clause(src_ast: exp.Select, predicate: exp.Condition) -> exp.Select:
+    if predicate.find(exp.Window) is not None or _is_window_filter(src_ast, predicate):
+        return src_ast.qualify(predicate, copy=False)
+
     match src_ast.args.get("group"):
         case exp.Group():
             return src_ast.having(predicate, copy=False)
         case _ if (
             src_ast.args.get("limit") is not None
             or src_ast.args.get("offset") is not None
-            or not src_ast.is_star
+            or not Iter(src_ast.selects).all(_is_passthrough_projection)
         ):
             return (
                 exp
@@ -334,6 +337,19 @@ def _apply_filter_clause(src_ast: exp.Select, predicate: exp.Expr) -> exp.Select
             )
         case _:
             return src_ast.where(predicate, copy=False)
+
+
+def _is_window_filter(src_ast: exp.Select, predicate: exp.Condition) -> bool:
+    predicate_names = (
+        Iter(predicate.find_all(exp.Column))
+        .map(lambda col: col.output_name)
+        .collect(Set)
+    )
+    return (
+        Iter(src_ast.selects)
+        .filter(lambda expr: expr.find(exp.Window) is not None)
+        .any(lambda expr: expr.output_name in predicate_names)
+    )
 
 
 def _maybe_inline(*exprs: exp.Expr, ast: exp.Select) -> exp.Select:
@@ -349,6 +365,18 @@ def can_inline_select(select: exp.Select) -> bool:
             return not star.args
         case _:
             return False
+
+
+def _is_passthrough_projection(expr: exp.Expr) -> bool:
+    match expr:
+        case exp.Star():
+            return True
+        case _:
+            match expr.unalias():
+                case exp.Column() as col:
+                    return expr.output_name == col.output_name
+                case _:
+                    return False
 
 
 def lookup_type(inner: exp.Expr, schema: Schema) -> exp.DataType:

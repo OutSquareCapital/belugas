@@ -556,6 +556,13 @@ def test_unnest_then_filter_then_select_all() -> None:
     )
 
 
+def test_filter_window(lf: bl.LazyFrame) -> None:
+    assert_lf_eq(
+        lf.lazy().filter(pl.col("salary").mean().over("department").gt(2)),
+        lf.filter(bl.col("salary").mean().over("department").gt(2)),
+    )
+
+
 @pytest.mark.parametrize("strategy", t.UniqueKeepStrategy.__args__)
 @pytest.mark.parametrize("subset", [None, "department", ["department", "sex"]])
 def test_unique(

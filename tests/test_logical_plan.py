@@ -52,6 +52,30 @@ def test_drop_inline(lf: bl.LazyFrame) -> None:
     )
 
 
+def test_window_filter_uses_qualify(lf: bl.LazyFrame) -> None:
+    """This should use a `QUALIFY` instead of a `WHERE` since the filter references window functions.
+
+    ```sql
+    SELECT
+    *,
+    AVG("salary") OVER (PARTITION BY "department") AS "avg_salary"
+    FROM "bl_scan_2606307767280"
+    QUALIFY
+    (
+        "max_salary" > 2
+    ) AND (
+        "avg_salary" > 2
+    )
+    ```
+    """
+    qry = lf.with_columns(
+        bl.col("salary").max().over("department").alias("max_salary"),
+        bl.col("salary").mean().over("department").alias("avg_salary"),
+    ).filter(bl.col("max_salary").gt(2), bl.col("avg_salary").gt(2))
+    qry.pipe(assert_plan, 2, exp.Qualify, exp.Select)
+    qry.pipe(assert_plan, 0, exp.Where, exp.Filter)
+
+
 def test_flattens_consecutive_filters(lf: bl.LazyFrame) -> None:
     query = lf.filter(bl_age.gt(25)).filter(bl_salary.gt(50_000), department="Sales")
     assert_lf_eq(
