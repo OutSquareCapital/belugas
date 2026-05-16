@@ -42,8 +42,44 @@ RENAME_RULES = Dict.from_ref({
     "array_unique": "array_n_unique",
 })
 """Explicit SQL function name -> generated Python method name mapping."""
-
-
+# TODO: handle order_by arguments for those
+AGG_ORDER_SENSITIVE = Set({
+    "any_value",
+    "arg_max",
+    "arg_max_null",
+    "arg_max_nulls_last",
+    "arg_min",
+    "arg_min_null",
+    "arg_min_nulls_last",
+    "avg",
+    "favg",
+    "fsum",
+    "geometric_mean",
+    "first",
+    "last",
+    "list",
+    "mode",
+    "product",
+    "string_agg",
+    "group_concat",
+    "listagg",
+    "sum",
+    "weighted_avg",
+})
+# TODO: currently we handle SOME of those manually. need to check if available in duckdb, sqlglot, or implement this correctly
+WINDOW_FUNC = Set({
+    "fill",
+    "row_number",
+    "rank",
+    "cume_dist",
+    "percent_rank",
+    "lag",
+    "lead",
+    "first_value",
+    "last_value",
+    "nth_value",
+    "ntile",
+})
 SPECIAL_CASES = Set({
     # "raw" operators
     "+",

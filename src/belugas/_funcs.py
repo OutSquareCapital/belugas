@@ -31,6 +31,7 @@ def reduce(
     return Iter(exprs).map(lambda value: Expr.new(value, as_col=True)).reduce(function)
 
 
+# TODO: handle this correctly and in an unified way with the corresponding expr method
 def row_number() -> Expr:
     """Create a ROW_NUMBER() expression.
 

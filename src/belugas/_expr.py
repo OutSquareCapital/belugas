@@ -1231,6 +1231,7 @@ class Expr(Fns):
             case "ordinal":
                 return self.row_number().pipe(_over)
 
+    # TODO: handle this correctly
     def row_number(
         self,
         *,
