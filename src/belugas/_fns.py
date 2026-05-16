@@ -6453,7 +6453,7 @@ class StringFns[T: Fns](NameSpaceHandler[T]):
         **SQL name**: *strftime*
 
         Args:
-            format_arg (IntoExprColumn | date | datetime): `DATE | TIMESTAMP | TIMESTAMP_NS | VARCHAR` expression
+            format_arg (IntoExprColumn | date | datetime): `DATE | TIMESTAMP | TIMESTAMP WITH TIME ZONE | TIMESTAMP_NS | VARCHAR` expression
 
         Examples:
             ```sql
@@ -10199,6 +10199,30 @@ class GeoSpatialFns[T: Fns](NameSpaceHandler[T]):
         """
         return self._cls(anon("ST_ConvexHull", self.inner))
 
+    def coverageclean(
+        self,
+        snapping_distance: IntoExprColumn | float | None = None,
+        gap_maximum_width: IntoExprColumn | float | None = None,
+    ) -> T:
+        """Aligns the edges of a list of polygons whose edges are meant to align but are in fact exact matches.
+
+        Returns a collection of fixed polygons with the same size and order as the input polygons.
+
+        EMPTY will be used in place of collapsed polygons.
+
+        **SQL name**: *ST_CoverageClean*
+
+        Args:
+            snapping_distance (IntoExprColumn | float | None): `DOUBLE` expression
+            gap_maximum_width (IntoExprColumn | float | None): `DOUBLE` expression
+
+        Returns:
+            T
+        """
+        return self._cls(
+            anon("ST_CoverageClean", self.inner, snapping_distance, gap_maximum_width)
+        )
+
     def coverageinvalidedges(
         self, tolerance: IntoExprColumn | float | None = None
     ) -> T:
@@ -12098,6 +12122,19 @@ class GeoSpatialFns[T: Fns](NameSpaceHandler[T]):
             T
         """
         return self._cls(anon("ST_StartPoint", self.inner))
+
+    def symdifference(self, geom2: IntoExprColumn) -> T:
+        """Returns the symmetric difference of two geometries.
+
+        **SQL name**: *ST_SymDifference*
+
+        Args:
+            geom2 (IntoExprColumn): `GEOMETRY` expression
+
+        Returns:
+            T
+        """
+        return self._cls(anon("ST_SymDifference", self.inner, geom2))
 
     def tileenvelope(
         self, tile_x: IntoExprColumn | int, tile_y: IntoExprColumn | int
