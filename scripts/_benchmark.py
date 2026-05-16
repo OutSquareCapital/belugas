@@ -126,6 +126,7 @@ BENCHS = Dict[str, BenchFn].from_ref({
     "explode": lambda: EXPLODE_BL.explode(UNPIVOT_ON),
     "unique": lambda: BASE.unique(COLS_UNIQUE),
     "slice": lambda: BASE.slice(1, 5),
+    "drop_nulls": lambda: BASE.drop_nulls(COLS),
 })
 
 

@@ -40,8 +40,8 @@ def drop_rows(
         Option(subset)
         .map(try_iter)
         .unwrap_or_else(schema.iter)
-        .map(lambda name: col(name).pipe(fn))
-        .into(lambda predicates: filter(predicates, (), Dict(())))
+        .map(lambda name: col(name).pipe(fn).inner)
+        .unpack_into(exp.and_)
     )
 
 
