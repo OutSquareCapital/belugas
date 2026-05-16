@@ -118,8 +118,8 @@ class MethodInfo:
 class ComparisonInfos:
     """Holds MethodInfo for Polars and belugas."""
 
-    polars: Option[MethodInfo] = field(default_factory=lambda: NONE)
-    belugas_info: Option[MethodInfo] = field(default_factory=lambda: NONE)
+    polars: Option[MethodInfo] = field(default=NONE)
+    belugas_info: Option[MethodInfo] = field(default=NONE)
     ignored_params: Set[str] = field(default_factory=Set[str].new)
 
     def has_reference(self) -> bool:

@@ -159,7 +159,7 @@ class AliasMapper:
 @dataclass(slots=True)
 class MultiAliasMapper(AliasMapper):
     resolver: Resolver
-    alias_name: Option[AliasFn] = field(default_factory=lambda: NONE)
+    alias_name: Option[AliasFn] = field(default=NONE)
 
     def with_mapper(self, mapper: AliasFn) -> Self:
         def _get_mapper() -> AliasFn:
