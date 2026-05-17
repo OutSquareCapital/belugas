@@ -488,6 +488,30 @@ def test_over_nested() -> None:
     assert_eq(bl_x.rolling_max(2).over("a"), pl_x.rolling_max(2).over("a"))
 
 
+@pytest.mark.xfail(reason="We generate wrong SQL ATM for this case")
+def test_filter_agg() -> None:
+    """Filter before mean will reduce, filter AFTER mean won't have an effect."""
+    assert_eq(
+        bl_age.mean().filter(bl_age.gt(30)),
+        pl_age.mean().filter(pl_age.gt(30)),
+        with_cols=False,
+    )
+    assert_eq(
+        bl_age.filter(bl_age.gt(30)).mean(),
+        pl_age.filter(pl_age.gt(30)).mean(),
+        with_cols=False,
+    )
+
+
+@pytest.mark.xfail(reason="We generate wrong SQL ATM for this case")
+def test_filter_agg_with_window() -> None:
+    assert_eq(
+        bl_age.filter(bl_age.gt(30)).mean().over("department"),
+        pl_age.filter(pl_age.gt(30)).mean().over("department"),
+        with_cols=False,
+    )
+
+
 @pytest.mark.parametrize("nulls_last", [True, False])
 def test_over_with_nulls_last(*, nulls_last: bool) -> None:
     assert_eq(

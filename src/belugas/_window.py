@@ -71,18 +71,6 @@ class OverBuilder:
             case _:
                 return self
 
-    def handle_filter(self, filter_cond: Option[IntoExprColumn]) -> Self:
-        return (
-            filter_cond
-            .map(
-                lambda c: exp.Filter(
-                    this=self.expr, expression=exp.Where(this=into_expr(c))
-                )
-            )
-            .map(self.__class__)
-            .unwrap_or(self)
-        )
-
     def handle_clauses(self, **kwargs: Unpack[ClauseArgs]) -> Self:
         match self.expr.find(exp.Window):
             case None:

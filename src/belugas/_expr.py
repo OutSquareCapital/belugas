@@ -1068,6 +1068,26 @@ class Expr(Fns):
         expr = exp.Least(this=self.inner, expressions=into_expr_list(args))
         return self._cls(expr)
 
+    def filter(
+        self,
+        predicates: TryIter[IntoExprColumn],
+        *more_predicates: IntoExprColumn,
+        **constraints: IntoExpr,
+    ) -> Self:
+        def _constraint(key: str, value: IntoExpr) -> exp.Expr:
+            return exp.column(key).eq(into_expr(value, as_col=False))
+
+        condition = (
+            try_iter(predicates)
+            .chain(more_predicates)
+            .map(lambda x: into_expr(x, as_col=True))
+            .chain(Iter(constraints.items()).map_star(_constraint))
+            .unpack_into(exp.and_)
+        )
+        return self._cls(
+            exp.Filter(this=self.inner, expression=exp.Where(this=condition))
+        )
+
     def window(  # noqa: PLR0913, PLR0917
         self,
         partition_by: TryIter[IntoExprColumn] | None = None,
@@ -1076,7 +1096,6 @@ class Expr(Fns):
         frame_end: FrameBound | None = None,
         frame_mode: FrameMode = "ROWS",
         exclude: WindowExclude | None = None,
-        filter_cond: IntoExprColumn | None = None,
         fn_order_by: TryIter[IntoExprColumn] | None = None,
         *,
         descending: TryIter[bool] = False,
@@ -1105,7 +1124,6 @@ class Expr(Fns):
                 fn_descending=fn_descending,
                 fn_nulls_last=fn_nulls_last,
             )
-            .handle_filter(Option(filter_cond))
             .handle_clauses(
                 partition_by=get_partition(Option(partition_by)),
                 order=order,
