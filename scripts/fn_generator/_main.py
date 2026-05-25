@@ -44,6 +44,7 @@ def _try_scan(source: Path, *, regenerate: bool) -> pl.LazyFrame:
     conn.install_extension("delta")
     conn.load_extension("delta")
     df = conn.table_function("duckdb_functions").pl().cast(TableSchema)
+    source.parent.mkdir(parents=True, exist_ok=True)
     df.write_parquet(source)
     return df.lazy()
 

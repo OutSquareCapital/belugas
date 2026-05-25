@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from pyochain import NONE, Option, Seq, Some
+from pyochain import Seq, option
 
 from .._utils import CollectionsABC, DateTime, From, Pql, Typing
 from ._rules import NAMESPACE_SPECS, NamespaceSpec
@@ -13,7 +13,7 @@ from ._rules import NAMESPACE_SPECS, NamespaceSpec
 class FunctionInfo:
     """Container for pre-formatted function parts."""
 
-    namespace: Option[str]
+    namespace: str | None
     python_name: str
     func: str
 
@@ -29,9 +29,9 @@ def build_file(fns: Seq[FunctionInfo], path: Path) -> str:
         doc: str,
         funcs: Seq[FunctionInfo],
         base: str,
-        type_params: Option[str] = NONE,
+        type_params: str | None = None,
     ) -> str:
-        params = type_params.map(lambda tp: f"[{tp}]").unwrap_or("")
+        params = option(type_params).map(lambda tp: f"[{tp}]").unwrap_or("")
         return f'''
 @dataclass(slots=True, repr=False)
 class {name}{params}({base}):
@@ -45,10 +45,10 @@ class {name}{params}({base}):
             spec.doc,
             fns.iter().filter(lambda f: f.namespace == spec.name).collect(),
             "NameSpaceHandler[T]",
-            Some("T: Fns"),
+            "T: Fns",
         )
 
-    base_fns = fns.iter().filter(lambda f: f.namespace.is_some()).collect()
+    base_fns = fns.iter().filter(lambda f: f.namespace is None).collect()
     doc = "Mixin providing auto-generated DuckDB functions as methods."
     return (
         f"{_header(path)}"
