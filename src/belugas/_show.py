@@ -9,7 +9,7 @@ import duckdb
 
 from ._funcs import lit
 
-try:
+try:  # noqa: PLW0717
     from pygments import token
     from pygments.lexers.sql import SqlLexer  # pyright: ignore[reportMissingTypeStubs]
     from pyochain import Dict, Iter, Set, Some, Vec

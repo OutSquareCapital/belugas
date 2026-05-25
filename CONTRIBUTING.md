@@ -28,7 +28,9 @@ Before submitting a PR, ensure that the code is properly formatted and type-chec
 To do so, run at the repo root:
 
 ```shell
-uv run ruff check . --fix --unsafe-fixes; uv run ruff format .; uv run basedpyright .
+uv run ruff check . --fix --unsafe-fixes; 
+uv run ruff format . --preview; 
+uv run basedpyright .
 ```
 
 Note that the repo rules are VERY pedantic. We use all rules for basedpyright and Ruff (including experimental ones), only desactivating a few ones.
