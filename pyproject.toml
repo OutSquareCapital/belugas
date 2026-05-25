@@ -28,60 +28,6 @@
 [build-system]
     build-backend = "uv_build"
     requires      = ["uv_build>=0.8.15,<0.9.0"]
-[tool.ruff]
-    lint.ignore = [
-        "A001",
-        "A004",
-        "C417",
-        "C901",
-        "COM812",
-        "COM812",
-        "CPY001",
-        "D401",
-        "E501",
-        "FIX002",
-        "PD003",
-        "PLC0415",
-        "PLC1901",
-        "PLC2801",
-        "PLR0904",
-        "PLR0911",
-        "PLR0912",
-        "PLR2004",
-        "S101",
-        "S102",
-        "S404",
-        "S608",
-        "SLF001",
-        "T201",
-        "T203",
-        "TC003",
-        "TC006",
-        "TD002",
-        "TD003",
-        "TID252",
-    ]
-    lint.select = ["ALL"]
-    preview = true
-    [tool.ruff.format]
-        docstring-code-format = true
-    [tool.ruff.lint.pydocstyle]
-        convention = "google"
-    [tool.ruff.lint.per-file-ignores]
-        "src/belugas/_fns.py" = [
-            "A002",
-            "ANN401",
-            "FBT001",
-            "FBT002",
-            "PLR0913",
-            "PLW1641",
-        ]
-        "src/belugas/meta.py" = ["FBT001"]
-        "src/belugas/typing.py" = ["ANN401", "D102", "D105", "PLW3201"]
-        "t.py" = ["ANN201", "D100", "D101", "D103"]
-        "tests/*" = ["D100", "D101", "D102", "D103", "D104", "DTZ001", "FBT001"]
-    [tool.ruff.lint.isort]
-        combine-as-imports = true
 [tool.coverage.run]
     omit = ["src/belugas/_types.py"]
 [tool.basedpyright]
@@ -89,20 +35,7 @@
     reportMissingSuperCall = false
     typeCheckingMode       = "all"
 [tool.pyrefly]
-    search-path               = ["."]
-    strict-callable-subtyping = true
-
-    [tool.pyrefly.errors]
-        implicit-abstract-class      = "error"
-        implicit-any                 = "error"
-        implicitly-defined-attribute = "error"
-        missing-override-decorator   = "error"
-        missing-source               = "error"
-        not-required-key-access      = "error"
-        open-unpacking               = "error"
-        unannotated-attribute        = "error"
-        unannotated-parameter        = "error"
-        unannotated-return           = "error"
-        unused-ignore                = "error"
+    preset      = "strict"
+    search-path = ["."]
 [tool.pytest.ini_options]
     testpaths = ["tests"]
