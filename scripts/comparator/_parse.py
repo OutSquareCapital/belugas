@@ -1,11 +1,17 @@
+from __future__ import annotations
+
 import ast
 import re
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from pyochain import NONE, Dict, Iter, Option, Seq, Some
 
 from .._utils import Builtins, CollectionsABC, Pql, Pyochain, Typing
 from ._rules import CONTAINER_SUPERTYPES, TYPE_SUPERTYPES, ContainerType
+
+if TYPE_CHECKING:
+    from pyochain.abc import PyoIterable
 
 GENERIC_SYMBOL_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
@@ -58,7 +64,7 @@ def extract_last_name(annotation: str) -> str:
 def _annotation_accepts(target: ast.expr, reference: ast.expr) -> bool:
     target_members = _union_members(target).collect()
     return _union_members(reference).all(
-        lambda reference_member: target_members.any(
+        lambda reference_member: target_members.iter().any(
             lambda target_member: _member_accepts(target_member, reference_member)
         )
     )
@@ -124,7 +130,7 @@ def _generic_base_accepts(
         )
         .unwrap_or(
             target_base == reference_base
-            and target_args.length() == reference_args.length()
+            and target_args.len() == reference_args.len()
             and target_args
             .iter()
             .zip(reference_args)
@@ -135,7 +141,7 @@ def _generic_base_accepts(
 
 
 def _collection_item_type(base: str, args: Seq[ast.expr]) -> Option[ast.expr]:
-    match (base, args.length()):
+    match (base, args.len()):
         case (
             CollectionsABC.ITERABLE
             | CollectionsABC.COLLECTION
@@ -201,9 +207,9 @@ def _canonicalize_unions(node: ast.expr) -> ast.expr:
     match visited:
         case ast.BinOp(op=ast.BitOr()):
             members_as_text = _union_members(visited).map(ast.unparse).collect()
-            has_float = members_as_text.any(lambda text: text == Builtins.FLOAT)
+            has_float = members_as_text.iter().any(lambda text: text == Builtins.FLOAT)
 
-            def _build_union_expr(parts: Seq[str]) -> ast.expr:
+            def _build_union_expr(parts: PyoIterable[str]) -> ast.expr:
                 def _union_expr(left: ast.expr, right: ast.expr) -> ast.expr:
                     return ast.BinOp(left=left, op=ast.BitOr(), right=right)
 
@@ -252,7 +258,7 @@ def _make_generic_canonicalizer() -> Callable[[ast.expr], ast.expr]:
             } and bool(GENERIC_SYMBOL_PATTERN.match(name)):
                 return ast.copy_location(
                     ast.Name(
-                        id=mapping.setdefault(name, f"__GENERIC_{mapping.length()}__"),
+                        id=mapping.setdefault(name, f"__GENERIC_{mapping.len()}__"),
                         ctx=node.ctx,
                     ),
                     node,

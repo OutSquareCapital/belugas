@@ -240,8 +240,11 @@ def _compile_tree(  # noqa: PLR0915
             exprs, new_schema = ops.group_by_all(
                 schema, node.exprs, node.more_exprs, node.named
             )
-            ast = exprs.unpack_into(_maybe_inline, ast=src_ast).group_by(
-                "ALL", copy=False
+            ast = (
+                exprs
+                .iter()
+                .unpack_into(_maybe_inline, ast=src_ast)
+                .group_by("ALL", copy=False)
             )
             return Ok(CompiledPlan(ast, new_schema, empty))
         case nodes.Unique():

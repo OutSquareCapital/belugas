@@ -74,7 +74,7 @@ def node_structure(node: object, level: int = 0) -> str:
     match node:
         case BaseNode():
             node_fields = Seq(fields(node))
-            is_leaf = node_fields.all(
+            is_leaf = node_fields.iter().all(
                 lambda field: not _is_nested_node(node, field.name)
             )
 

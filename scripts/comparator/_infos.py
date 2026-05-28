@@ -157,12 +157,13 @@ def _mismatch_against(target: MapInfo, other: MapInfo, ignored: Set[str]) -> boo
     target_filtered = _without_ignored_params(target, ignored)
     other_filtered = _without_ignored_params(other, ignored)
     on_params = (
-        other_filtered.keys().symmetric_difference(target_filtered.keys()).length() > 0
+        other_filtered.keys().symmetric_difference(target_filtered.keys()).len() > 0
     )
     on_ann = (
         other_filtered
         .keys()
         .intersection(target_filtered.keys())
+        .iter()
         .any(
             lambda name: annotations_differ(
                 other_filtered.get_item(name).unwrap(),

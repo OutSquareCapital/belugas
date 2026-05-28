@@ -64,7 +64,7 @@ def pivot(  # noqa: PLR0913, PLR0914, PLR0917
     idx_cols, val_cols = _get_idx_and_vals().unwrap()
     on_values = try_iter(on_columns).map(str).collect()
 
-    multi = val_cols.length() > 1
+    multi = val_cols.len() > 1
     agg = PIVOT_AGG[aggregate_function]
 
     def _aliased(name: str) -> Expr:

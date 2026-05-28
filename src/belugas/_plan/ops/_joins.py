@@ -315,7 +315,7 @@ class JoinKeys[T: Seq[str] | str](NamedTuple):
             case (Some(vals), Null(), Null()):
                 return Ok(JoinKeys(vals, vals))
             case (Null(), Some(left_vals), Some(right_vals)):
-                if left_vals.length() == right_vals.length():
+                if left_vals.len() == right_vals.len():
                     return Ok(JoinKeys(left_vals, right_vals))
                 msg = "`by_left` and `by_right` must have the same length."
                 return Err(ValueError(msg))
@@ -336,7 +336,7 @@ class JoinKeys[T: Seq[str] | str](NamedTuple):
         match (on, left_on, right_on):
             case (Some(on_vals), Null(), Null()):
                 return Ok(JoinKeys(on_vals, on_vals))
-            case (Null(), Some(lv), Some(rv)) if lv.length() == rv.length():
+            case (Null(), Some(lv), Some(rv)) if lv.len() == rv.len():
                 return Ok(JoinKeys(lv, rv))
             case (Null(), Some(_), Some(_)):
                 msg = "`left_on` and `right_on` must have the same length."

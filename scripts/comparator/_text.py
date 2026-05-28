@@ -215,7 +215,7 @@ def _format(results: Vec[ComparisonResult], title: str, *, status: Status) -> st
         .into(_by_status, status)
         .then(
             lambda items: (
-                Iter((f"\n### {title} ({items.length()})\n",))
+                Iter((f"\n### {title} ({items.len()})\n",))
                 .chain(items.iter().flat_map(lambda r: r.to_format(status=status)))
                 .join("\n")
             )

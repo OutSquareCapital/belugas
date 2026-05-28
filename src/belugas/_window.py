@@ -154,8 +154,8 @@ def _ordered(
         cols
         .iter()
         .zip(
-            _expand_clauses(clauses=kwargs["descending"], n=cols.length()),
-            _expand_clauses(clauses=kwargs["nulls_last"], n=cols.length()),
+            _expand_clauses(clauses=kwargs["descending"], n=cols.len()),
+            _expand_clauses(clauses=kwargs["nulls_last"], n=cols.len()),
         )
         .map_star(
             lambda item, desc, nl: exp.Ordered(

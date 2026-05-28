@@ -262,10 +262,10 @@ def _simplify_generated_union(type_hint: str) -> str:
         .filter(lambda type_name: type_name != "")
         .collect()
     )
-    if tokens.any(lambda type_name: type_name == Pql.INTO_EXPR):
+    if tokens.iter().any(lambda type_name: type_name == Pql.INTO_EXPR):
         return Pql.INTO_EXPR.value
 
-    has_into_expr_column = tokens.any(
+    has_into_expr_column = tokens.iter().any(
         lambda type_name: type_name == Pql.INTO_EXPR_COLUMN
     )
     return (

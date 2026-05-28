@@ -598,7 +598,7 @@ class LazyFrame(CoreHandler[nodes.Node]):
     @property
     def width(self) -> int:
         """Get number of columns."""
-        return compile_plan(self._inner).schema.length()
+        return compile_plan(self._inner).schema.len()
 
     @property
     def schema(self) -> Dict[str, dt.DataType]:

@@ -32,7 +32,7 @@ def with_columns(
 ) -> tuple[exp.Select, Schema]:
     def _resolved(updates: Dict[str, Expr]) -> Iter[exp.Expr]:
         update_iter = updates.items().iter()
-        if not updates.any(lambda name: name in schema):
+        if not updates.iter().any(lambda name: name in schema):
             return update_iter.map_star(lambda _name, expr: expr.inner).insert(
                 exp.Star()
             )
@@ -52,7 +52,7 @@ def with_columns(
         )
 
     projections = resolve_all(schema, exprs, more_exprs, named_exprs)
-    has_windowed = projections.any(_is_windowed)
+    has_windowed = projections.iter().any(_is_windowed)
     broadcastr = _maybe_broadcast(include_source_cols=True, projections=projections)
     updates = (
         projections
@@ -168,7 +168,7 @@ def select(
     named_exprs: Dict[str, IntoExpr],
 ) -> tuple[exp.Select, Schema]:
     projections = resolve_all(schema, exprs, more_exprs, named_exprs)
-    has_windowed = projections.any(_is_windowed)
+    has_windowed = projections.iter().any(_is_windowed)
     broadcaster = _maybe_broadcast(include_source_cols=False, projections=projections)
 
     match projections.then_some():
@@ -187,14 +187,14 @@ def select(
             match src_ast:
                 case source if can_inline_select(source) and not has_windowed:
                     ast = source.select(*select_exprs, append=False, copy=False)
-                    if projs.all(lambda resolved: resolved.has_distinct):
+                    if projs.iter().all(lambda resolved: resolved.has_distinct):
                         return ast.distinct(copy=False), new_schema
                     return ast, new_schema
                 case _:
                     rel = src_ast.subquery(Tables.SRC, copy=False).pipe(
                         lambda r: _into_windowed(r) if has_windowed else r
                     )
-                    if projs.all(lambda resolved: resolved.has_distinct):
+                    if projs.iter().all(lambda resolved: resolved.has_distinct):
                         ast = (
                             exp.select(*select_exprs).from_(rel, copy=False).distinct()
                         )
@@ -241,7 +241,7 @@ def _into_windowed(source: exp.Expr) -> exp.Expr:
 def _maybe_broadcast(
     *, include_source_cols: bool, projections: Seq[ResolvedExpr]
 ) -> Callable[[Expr], Expr]:
-    if include_source_cols or not projections.all(
+    if include_source_cols or not projections.iter().all(
         lambda resolved: resolved.is_pure_reducer
     ):
         return broadcast_aggs

@@ -82,8 +82,8 @@ def generate_nodes(caller: Path) -> tuple[int, Path]:
         .iter()
         .partition(lambda name: name.startswith("Scan"))
     )
-    scan_content = f"type Scan = ({scan_content.join(' | ')})"
-    node_content = f"Node = ({node_content.join(' | ')})"
+    scan_content = f"type Scan = ({scan_content.iter().join(' | ')})"
+    node_content = f"Node = ({node_content.iter().join(' | ')})"
 
     _ = _build_content(
         dest,

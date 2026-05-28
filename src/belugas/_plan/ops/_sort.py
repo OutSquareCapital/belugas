@@ -75,7 +75,7 @@ def check_by_arg(
 def check_by_arg(
     compared: Seq[Expr], name: str, *, arg: TrySeq[bool], broadcast_nones: bool
 ) -> CheckRes[bool] | CheckRes[None]:
-    length = compared.length()
+    length = compared.len()
     match arg:
         case Sequence():
             len_arg = len(arg)

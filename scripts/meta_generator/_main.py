@@ -92,7 +92,7 @@ def {self.final_name}({self._signature()}) -> LazyFrame:
                 ).unwrap_or_else(lambda: Iter(()))
             )
             .collect()
-            .then(lambda docs: f"\n\n    Args:\n{docs.join(chr(10))}")
+            .then(lambda docs: f"\n\n    Args:\n{docs.iter().join(chr(10))}")
             .unwrap_or("")
         )
 
@@ -107,7 +107,7 @@ def {self.final_name}({self._signature()}) -> LazyFrame:
                 )
             )
             .collect()
-            .then(lambda a: f", {a.join(', ')}")
+            .then(lambda a: f", {a.iter().join(', ')}")
             .unwrap_or("")
         )
 
@@ -121,9 +121,7 @@ def run_pipeline(caller: Path, source: Path) -> str:
         .pipe(lambda df: Iter[MetaFnInfo](df.to_series()))
         .collect()
         .inspect(
-            lambda x: print(
-                Text(f"Generated {x.length()} meta functions", style="yellow")
-            )
+            lambda x: print(Text(f"Generated {x.len()} meta functions", style="yellow"))
         )
         .into(_build_file, caller)
     )

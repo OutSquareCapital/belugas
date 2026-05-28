@@ -98,9 +98,7 @@ def _compute_results(table: Table, n: int) -> None:
         return Range(0, n).iter().map(lambda _: _once()).into(statistics.median)
 
     with Progress() as progress:
-        task = progress.add_task(
-            "benchmarking...", total=CASES.length() * VARIANTS.length()
-        )
+        task = progress.add_task("benchmarking...", total=CASES.len() * VARIANTS.len())
         _ = (
             CASES
             .iter()

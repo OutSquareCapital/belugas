@@ -27,7 +27,7 @@ pl_salary = pl.col("salary")
 
 def assert_plan(lf: bl.LazyFrame, expected: int, *exprs: type[exp.Expr]) -> None:
     plan = lf.query.logical()
-    expr_nb = plan.pipe(lambda e: Seq(e.find_all(*exprs))).length()
+    expr_nb = plan.pipe(lambda e: Seq(e.find_all(*exprs))).len()
     try:
         assert expr_nb == expected
     except AssertionError as e:

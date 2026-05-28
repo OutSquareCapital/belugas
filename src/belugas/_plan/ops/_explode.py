@@ -31,7 +31,7 @@ def explode(
         .map_star(lambda idx, r: (r.name, IndexedExpr(idx + 1, col(r.name))))
         .collect(Dict)
     )
-    is_single_explode = to_explode.length() == 1
+    is_single_explode = to_explode.len() == 1
     target = (
         to_explode
         .values()

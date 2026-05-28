@@ -26,7 +26,7 @@ _DATA = pl.DataFrame({
     "c0": N_GROUPS,
     **Range(1, N_COLS)
     .iter()
-    .map(lambda i: (f"c{i}", [1] * N_GROUPS.length()))
+    .map(lambda i: (f"c{i}", [1] * N_GROUPS.len()))
     .collect(Dict),
 })
 _RHS_DATA = pl.DataFrame({
@@ -61,7 +61,7 @@ _EXPLODE_DATA = pl.DataFrame({
     .map(
         lambda i: (
             f"c{i}",
-            Range(0, 3).iter().cycle().take(N_GROUPS.length()).collect(),
+            Range(0, 3).iter().cycle().take(N_GROUPS.len()).collect(),
         )
     )
     .collect(Dict),
@@ -151,7 +151,7 @@ def _run_all(
     descr = f"[cyan]Running benchmarks on {runs} runs per test..."
 
     tracker = benchmarks.items().into(
-        progress.track, benchmarks.length(), description=descr
+        progress.track, benchmarks.len(), description=descr
     )
     return (
         Iter(tracker)

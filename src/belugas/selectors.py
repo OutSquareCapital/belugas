@@ -325,7 +325,9 @@ def contains(*substring: str) -> Selector:
         Selector: A selector for columns with names containing any of the given substrings.
     """
     subs = Seq(substring)
-    return Resolver.name(lambda name: subs.any(lambda s: s in name)).into_selector()
+    return Resolver.name(
+        lambda name: subs.iter().any(lambda s: s in name)
+    ).into_selector()
 
 
 __all__ = [
