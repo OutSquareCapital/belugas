@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, NamedTuple
 
 from duckdb import DuckDBPyRelation
 from pyochain import Dict, Err, Iter, Null, Ok, Result, Seq, Set, Some, option
-from pyochain.abc import Pipeable
+from pyochain.abc import Pipeable, PyoIterator
 from sqlglot import exp
 
 from belugas.typing import (
@@ -483,11 +483,11 @@ def resolve_all(
         .chain(more_exprs)
         .chain(named_exprs.items().iter().map_star(_alias_named_expr))
         .flat_map(lambda val: _resolve(val, schema))
-        .collect()
+        .collect(Seq)
     )
 
 
-def _resolve(val: IntoExpr, schema: Schema) -> Iter[ResolvedExpr]:
+def _resolve(val: IntoExpr, schema: Schema) -> PyoIterator[ResolvedExpr]:
     from .._expr import Expr, MultiAliasMapper
 
     def _get_inner_node(inner_node: exp.Star | list[exp.Expr]) -> Cols:
@@ -495,7 +495,7 @@ def _resolve(val: IntoExpr, schema: Schema) -> Iter[ResolvedExpr]:
             case exp.Star():
                 return schema.keys()
             case list() as cols:
-                return Iter(cols).map(lambda c: c.name).collect()
+                return Iter(cols).map(lambda c: c.name).collect(Seq)
 
     match val:
         case Expr():
@@ -508,7 +508,7 @@ def _resolve(val: IntoExpr, schema: Schema) -> Iter[ResolvedExpr]:
                         case exp.Alias() as inner, Null():
                             output_names = Seq((inner.output_name,))
                         case _, Some(alias_fn):
-                            output_names = base_names.iter().map(alias_fn).collect()
+                            output_names = base_names.iter().map(alias_fn).collect(Seq)
                         case _:
                             output_names = base_names
                     return _expand_columns(val, base_names, output_names)
@@ -531,7 +531,7 @@ def _resolve(val: IntoExpr, schema: Schema) -> Iter[ResolvedExpr]:
                                         schema
                                         .iter()
                                         .filter(lambda n: n not in excluded)
-                                        .collect()
+                                        .collect(Seq)
                                     )
                             return _expand_columns(val, base_names, base_names)
                         case _ as columns_node:
@@ -548,7 +548,7 @@ def _resolve(val: IntoExpr, schema: Schema) -> Iter[ResolvedExpr]:
 
 def _expand_columns(
     expr: Expr, base_names: Cols, output_names: Cols
-) -> Iter[ResolvedExpr]:
+) -> PyoIterator[ResolvedExpr]:
     def _resolved(src: Expr, col_name: str, name: str) -> ResolvedExpr:
         target = exp.column(col_name)
 

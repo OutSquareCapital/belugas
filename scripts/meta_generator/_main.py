@@ -47,7 +47,7 @@ class MetaFnInfo:
             name,
             final_name,
             option(description),
-            Iter(params).zip(py_types, strict=True).collect(),
+            Iter(params).zip(py_types, strict=True).collect(Seq),
             option(varargs_type),
         )
 
@@ -93,7 +93,7 @@ def {self.final_name}({self._signature()}) -> LazyFrame:
                     lambda t: Iter.once(f"        *args ({t}): Variable arguments")
                 ).unwrap_or_else(lambda: Iter(()))
             )
-            .collect()
+            .collect(Seq)
             .then(lambda docs: f"\n\n    Args:\n{docs.iter().join(chr(10))}")
             .unwrap_or("")
         )
@@ -108,7 +108,7 @@ def {self.final_name}({self._signature()}) -> LazyFrame:
                     lambda: Iter(())
                 )
             )
-            .collect()
+            .collect(Seq)
             .then(lambda a: f", {a.iter().join(', ')}")
             .unwrap_or("")
         )
@@ -121,7 +121,7 @@ def run_pipeline(caller: Path, source: Path) -> str:
         .collect()
         .map_rows(lambda x: MetaFnInfo.from_row(*x), return_dtype=pl.Object)  # pyright: ignore[reportAny]
         .pipe(lambda df: Iter[MetaFnInfo](df.to_series()))
-        .collect()
+        .collect(Seq)
         .inspect(
             lambda x: print(Text(f"Generated {x.len()} meta functions", style="yellow"))
         )

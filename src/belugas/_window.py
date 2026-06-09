@@ -109,7 +109,7 @@ class OverBuilder:
 
         return (
             kwargs["fn_order_by"]
-            .map(lambda x: try_iter(x).collect().into(_build))
+            .map(lambda x: try_iter(x).collect(Seq).into(_build))
             .map(self.__class__)
             .unwrap_or(self)
         )
@@ -135,7 +135,7 @@ def rolling_agg(expr: exp.Expr, order_by: str, spec: BoundsValues) -> exp.Expr:
 def get_order(
     order_by: Option[TryIter[IntoExprColumn]], **kwargs: Unpack[DirectionArgs]
 ) -> Option[exp.Order]:
-    return order_by.map(lambda x: try_iter(x).collect()).map(
+    return order_by.map(lambda x: try_iter(x).collect(Seq)).map(
         lambda cols: exp.Order(expressions=_ordered(cols, **kwargs))
     )
 

@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass, field
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 from pyochain import NONE, Dict, Iter, Null, Option, Seq, Set, Some, option
 
 from .._utils import Builtins, Pql, get_attr
 from ._parse import annotations_compatible, extract_last_name
 from ._rules import IGNORED_PARAMS, Status
+
+if TYPE_CHECKING:
+    from pyochain.abc import PyoIterator
 
 type MapInfo = Dict[str, ParamInfo]
 
@@ -75,7 +78,7 @@ class MethodInfo:
             name=name,
             params=Iter(sig.parameters.values())
             .map(ParamInfo.from_signature)
-            .collect(),
+            .collect(Seq),
             return_annotation=_get_annotation_str(sig.return_annotation),  # pyright: ignore[reportAny]
         )
 
@@ -208,7 +211,7 @@ class ComparisonResult:
         self.classification = infos.to_status()
         self.infos = infos
 
-    def to_format(self, *, status: Status) -> Iter[str]:
+    def to_format(self, *, status: Status) -> PyoIterator[str]:
         """Format a single comparison result as markdown lines.
 
         Args:

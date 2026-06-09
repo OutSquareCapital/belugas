@@ -110,7 +110,7 @@ def _compute_results(table: Table, n: int) -> None:
                     .iter()
                     .map(lambda v: _bench(v.fn, case))
                     .inspect(lambda _: progress.advance(task))
-                    .collect(),
+                    .collect(Seq),
                 )
             )
             .collect_into(results)

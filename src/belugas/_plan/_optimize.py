@@ -3,12 +3,14 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import TYPE_CHECKING
 
-from pyochain import NONE, Dict, Iter, Null, Option, Some
+from pyochain import NONE, Dict, Iter, Null, Option, Seq, Some
 
 from ..utils import try_iter
 from . import nodes
 
 if TYPE_CHECKING:
+    from pyochain.abc import PyoIterator
+
     from ..typing import IntoExpr, IntoExprColumn
 
 type NewNode = Option[nodes.Node]
@@ -135,7 +137,7 @@ def _merge_filters(lhs: nodes.Filter, rhs: nodes.Filter) -> nodes.Filter:
 
 def _constraints_to_predicates(
     constraints: Dict[str, IntoExpr],
-) -> Iter[IntoExprColumn]:
+) -> PyoIterator[IntoExprColumn]:
     from .._funcs import col
 
     return constraints.items().iter().map_star(lambda key, value: col(key).eq(value))
@@ -152,7 +154,7 @@ def _merge_drops(lhs: nodes.Drop, rhs: nodes.Drop) -> nodes.Drop:
 
 
 def _merge_renames(lhs: nodes.Rename, rhs: nodes.Rename) -> nodes.Rename:
-    names = Iter(lhs.mapping.keys()).chain(rhs.mapping.keys()).collect()
+    names = Iter(lhs.mapping.keys()).chain(rhs.mapping.keys()).collect(Seq)
     mapping = (
         names
         .iter()

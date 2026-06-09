@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, final
 
-from pyochain import Iter, option
+from pyochain import Iter, Seq, option
 from sqlglot import exp
 
 from ._core import Marker, func, into_expr, into_expr_list
@@ -235,7 +235,7 @@ def _horizontal_reduce(
     more_exprs: Iterable[IntoExpr],
     fn: Callable[[Expr, IntoExpr], Expr],
 ) -> Expr:
-    all_exprs = try_iter(exprs).chain(more_exprs).map(_into_col).collect()
+    all_exprs = try_iter(exprs).chain(more_exprs).map(_into_col).collect(Seq)
     return all_exprs.iter().reduce(fn).alias(all_exprs.first().inner.output_name)
 
 
@@ -267,7 +267,7 @@ def mean_horizontal(exprs: TryIter[IntoExpr], *more_exprs: IntoExpr) -> Expr:
         try_iter(exprs)
         .chain(more_exprs)
         .map(_into_col)
-        .collect()
+        .collect(Seq)
         .then(
             lambda vals: (
                 vals
@@ -349,7 +349,7 @@ def _agg_expr(
     return (
         try_iter(cols)
         .chain(more_cols)
-        .collect()
+        .collect(Seq)
         .then_some()
         .map(lambda inner_cols: exp.Columns(this=inner_cols.into(into_expr_list)))
         .unwrap_or_else(lambda: exp.Columns(this=exp.Star()))

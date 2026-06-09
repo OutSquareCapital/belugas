@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import polars as pl
 from polars.exceptions import ComputeError
-from pyochain import Iter
+from pyochain import Iter, Seq
 from rich import print
 from rich.text import Text
 
@@ -28,7 +28,7 @@ def run_pipeline(
         .collect()
         .map_rows(lambda x: FunctionInfo(*x), return_dtype=pl.Object)  # pyright: ignore[reportAny]
         .pipe(lambda df: Iter[FunctionInfo](df.to_series()))
-        .collect()
+        .collect(Seq)
         .inspect(
             lambda x: print(Text(f"Generated {x.len()} functions", style="yellow"))
         )

@@ -18,6 +18,8 @@ from .._resolve import (
 )
 
 if TYPE_CHECKING:
+    from pyochain.abc import PyoIterator
+
     from ..._expr import Expr
     from ...datatypes import DataType
     from ...typing import IntoExpr, Schema, TryIter
@@ -30,7 +32,7 @@ def with_columns(
     more_exprs: Iterable[IntoExpr],
     named_exprs: Dict[str, IntoExpr],
 ) -> tuple[exp.Select, Schema]:
-    def _resolved(updates: Dict[str, Expr]) -> Iter[exp.Expr]:
+    def _resolved(updates: Dict[str, Expr]) -> PyoIterator[exp.Expr]:
         update_iter = updates.items().iter()
         if not updates.iter().any(lambda name: name in schema):
             return update_iter.map_star(lambda _name, expr: expr.inner).insert(
@@ -99,7 +101,9 @@ def _with_columns_schema(schema: Schema, projections: Seq[ResolvedExpr]) -> Sche
     )
 
 
-def rename(schema: Schema, mapping: Mapping[str, str]) -> tuple[Iter[exp.Expr], Schema]:
+def rename(
+    schema: Schema, mapping: Mapping[str, str]
+) -> tuple[PyoIterator[exp.Expr], Schema]:
     exprs = schema.iter().map(lambda c: exp.column(c).as_(mapping.get(c, c)))
     new_schema = (
         schema
@@ -182,7 +186,7 @@ def select(
                         broadcaster(resolved.expr).alias(resolved.name).inner
                     )
                 )
-                .collect()
+                .collect(Seq)
             )
             match src_ast:
                 case source if can_inline_select(source) and not has_windowed:

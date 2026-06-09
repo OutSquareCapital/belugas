@@ -109,7 +109,7 @@ def from_numpy(data: AnyArray, orient: Orientation = "col") -> ScanResult:
 
             axis, arr_getter = _array_strategy()
             names_nb: int = arr.shape[axis]  # pyright: ignore[reportAny]
-            cols = Range(0, names_nb).iter().map(_named).collect()
+            cols = Range(0, names_nb).iter().map(_named).collect(Seq)
             return from_query(_named_array(cols))
 
 
@@ -216,7 +216,9 @@ def from_parquet(
             target = path
         case Iterable():
             target = (
-                Iter(path).map(lambda x: x if isinstance(x, str) else str(x)).collect()
+                Iter(path)
+                .map(lambda x: x if isinstance(x, str) else str(x))
+                .collect(Seq)
             )
     rel = _get_conn(connection).from_parquet(target, **options)
     return from_query(rel)

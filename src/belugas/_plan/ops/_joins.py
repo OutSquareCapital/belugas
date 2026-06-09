@@ -12,7 +12,7 @@ from ..._funcs import col
 from ...utils import try_seq
 
 if TYPE_CHECKING:
-    from pyochain.abc import PyoCollection
+    from pyochain.abc import PyoCollection, PyoIterator
 
     from ...typing import AsofJoinStrategy, JoinStrategy, Schema, TryIter
 type OptSeq = Option[Seq[str]]
@@ -189,7 +189,7 @@ class JoinBuilder:
     def _aliased(self, name: str) -> Expr:
         return self.rhs(name).alias(f"{name}{self.suffix}")
 
-    def get_join_cols_cross(self) -> Iter[exp.Expr]:
+    def get_join_cols_cross(self) -> PyoIterator[exp.Expr]:
         return (
             self.left
             .iter()
@@ -259,7 +259,7 @@ class JoinBuilder:
 
     def get_join_cols(
         self, other: Schema, join_keys: JoinKeys[Seq[str]], how: JoinStrategy
-    ) -> Iter[exp.Expr | str]:
+    ) -> PyoIterator[exp.Expr | str]:
         left = self.left.iter()
         right = other.iter()
         match how:

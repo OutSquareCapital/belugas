@@ -148,7 +148,7 @@ def _to_array(base: exp.DataType, *, is_pure_reducer: bool) -> exp.DataType:
 
 
 def _group_by_clause(
-    strategy: GroupByClause | None, key_glots: Iter[exp.Expr]
+    strategy: GroupByClause | None, key_glots: Iterable[exp.Expr]
 ) -> Iterable[exp.Expr]:
     match strategy:
         case "CUBE":

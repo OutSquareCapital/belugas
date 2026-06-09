@@ -6,8 +6,21 @@ from dataclasses import dataclass, field
 from functools import partial
 from typing import TYPE_CHECKING, Self, override
 
-from pyochain import NONE, Err, Iter, Null, Ok, Option, Range, Result, Set, Some, option
-from pyochain.abc import PyoCollection
+from pyochain import (
+    NONE,
+    Err,
+    Iter,
+    Null,
+    Ok,
+    Option,
+    Range,
+    Result,
+    Seq,
+    Set,
+    Some,
+    option,
+)
+from pyochain.abc import PyoCollection, PyoIterator
 from sqlglot import exp
 
 from . import datatypes as dt
@@ -92,14 +105,14 @@ class Resolver:
     @classmethod
     def ordered_name(cls, names: Iterable[str]) -> Self:
         def _ordered(schema: Schema) -> Cols:
-            return Iter(names).filter(lambda name: name in schema).collect()
+            return Iter(names).filter(lambda name: name in schema).collect(Seq)
 
         return cls(_ordered)
 
     @classmethod
     def name(cls, predicate: Callable[[str], bool]) -> Self:
         def _name(schema: Schema) -> Cols:
-            return schema.iter().filter(predicate).collect()
+            return schema.iter().filter(predicate).collect(Seq)
 
         return cls(_name)
 
@@ -114,7 +127,7 @@ class Resolver:
                     lambda _name, dtype: predicate(dt.DataType.from_sql(dtype))
                 )
                 .map_star(lambda name, _dtype: name)
-                .collect()
+                .collect(Seq)
             )
 
         return cls(_dtype)
@@ -122,28 +135,28 @@ class Resolver:
     def difference(self, right_fn: Self) -> Self:
         def _difference(schema: Schema) -> Cols:
             right = right_fn(schema)
-            return self(schema).iter().filter(lambda n: n not in right).collect()
+            return self(schema).iter().filter(lambda n: n not in right).collect(Seq)
 
         return self.__class__(_difference)
 
     def complement(self) -> Self:
         def _complement(schema: Schema) -> Cols:
             excluded = self(schema)
-            return schema.iter().filter(lambda n: n not in excluded).collect()
+            return schema.iter().filter(lambda n: n not in excluded).collect(Seq)
 
         return self.__class__(_complement)
 
     def intersection(self, right: Self) -> Self:
         def _intersection(schema: Schema) -> Cols:
             right_set = right(schema)
-            return self(schema).iter().filter(lambda n: n in right_set).collect()
+            return self(schema).iter().filter(lambda n: n in right_set).collect(Seq)
 
         return self.__class__(_intersection)
 
     def union(self, right: Self) -> Self:
         def _union(schema: Schema) -> Cols:
             selected = self(schema).iter().chain(right(schema)).collect(Set)
-            return schema.iter().filter(lambda n: n in selected).collect()
+            return schema.iter().filter(lambda n: n in selected).collect(Seq)
 
         return self.__class__(_union)
 
@@ -678,7 +691,7 @@ class Expr(Fns):
                     iterator = Range(1, lim + 1).iter()
                     match strat.value:
                         case "forward":
-                            exprs: Iter[Expr] = iterator.map(self.shift)
+                            exprs: PyoIterator[Expr] = iterator.map(self.shift)
                         case _:
                             exprs = iterator.map(lambda offset: self.shift(-offset))
                     return Ok(exprs.insert(self).reduce(self.coalesce))

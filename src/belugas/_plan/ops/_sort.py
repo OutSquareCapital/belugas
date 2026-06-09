@@ -4,6 +4,7 @@ from collections.abc import Iterable, Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
 from pyochain import Err, Iter, Ok, Result, Seq
+from pyochain.abc import PyoIterator
 
 from ..._expr import Expr
 from ...utils import try_iter
@@ -20,13 +21,13 @@ def sort(
     *,
     descending: DescConds,
     nulls_last: TrySeq[bool],
-) -> Iter[exp.Expr]:
+) -> PyoIterator[exp.Expr]:
 
     return (
         try_iter(by)
         .chain(more_by)
         .map(lambda v: Expr.new(v, as_col=True))
-        .collect()
+        .collect(Seq)
         .into(
             lambda sort_exprs: sort_exprs.iter().zip(
                 check_by_arg(
@@ -55,7 +56,7 @@ Current expr:
         super().__init__(msg)
 
 
-type CheckRes[T] = Result[Iter[T], SortArgsError]
+type CheckRes[T] = Result[PyoIterator[T], SortArgsError]
 """Ouptut after checking the sorting arguments (`descending` and `nulls_last`) against the length of the `by` expressions,
 and handling broadcasting of single `None` or `bool` values if necessary."""
 

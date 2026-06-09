@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, NamedTuple
 
-from pyochain import Dict, Iter
+from pyochain import Dict
 from sqlglot import exp
 
 from ..._core import Tables
@@ -12,7 +12,7 @@ from .._resolve import resolve_all
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from pyochain.abc import PyoIterable
+    from pyochain.abc import PyoIterable, PyoIterator
 
     from ..._expr import Expr
     from ...typing import IntoExprColumn, Schema, TryIter
@@ -47,7 +47,7 @@ def explode(
     )
 
 
-def _get_target(exprs: Iter[IndexedExpr], *, is_single_explode: bool) -> Expr:
+def _get_target(exprs: PyoIterator[IndexedExpr], *, is_single_explode: bool) -> Expr:
 
     first_expr = exprs.next().unwrap().expr
     if is_single_explode:
@@ -66,7 +66,7 @@ def transform(
     target: Expr,
     *,
     is_single: bool,
-) -> Iter[exp.Expr]:
+) -> PyoIterator[exp.Expr]:
 
     def _project_col(name: str) -> Expr:
         if name in to_explode:

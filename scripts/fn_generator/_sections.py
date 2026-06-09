@@ -46,12 +46,12 @@ class {name}{params}({base}):
         return _class_block(
             spec.name,
             spec.doc,
-            fns.iter().filter(lambda f: f.namespace == spec.name).collect(),
+            fns.iter().filter(lambda f: f.namespace == spec.name).collect(Seq),
             "NameSpaceHandler[T]",
             "T: Fns",
         )
 
-    base_fns = fns.iter().filter(lambda f: f.namespace is None).collect()
+    base_fns = fns.iter().filter(lambda f: f.namespace is None).collect(Seq)
     doc = "Mixin providing auto-generated DuckDB functions as methods."
     return (
         f"{_header(path)}"

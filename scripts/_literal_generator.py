@@ -3,6 +3,7 @@ from types import ModuleType
 from typing import NamedTuple, Self
 
 from pyochain import Iter
+from pyochain.abc import PyoIterator
 
 SCAN_DOC = """All nodes that represent logical scan sources.
 
@@ -61,7 +62,7 @@ def generate_nodes(caller: Path) -> tuple[int, Path]:
 
     dest = _resolve_module_path(node_module)
 
-    def all_subclasses(cls: type) -> Iter[type]:
+    def all_subclasses(cls: type) -> PyoIterator[type]:
         def _subcls() -> Iter[type]:
             return Iter(cls.__subclasses__())
 

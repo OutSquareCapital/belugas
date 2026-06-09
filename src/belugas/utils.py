@@ -10,6 +10,8 @@ from pyochain import Iter, Option, Seq
 from sqlglot import exp
 
 if TYPE_CHECKING:
+    from pyochain.abc import PyoIterator
+
     from .typing import TryIter
 
 
@@ -33,17 +35,17 @@ def try_seq[T](val: TryIter[T]) -> Option[Seq[T]]:
     Returns:
         Option[Seq[T]]: `Some(Seq)` if the value is iterable, otherwise `None`.
     """
-    return try_iter(val).collect().then_some()
+    return try_iter(val).collect(Seq).then_some()
 
 
-def try_iter[T](val: TryIter[T]) -> Iter[T]:
+def try_iter[T](val: TryIter[T]) -> PyoIterator[T]:
     """Try to iterate over a value that may or may not be iterable.
 
     Args:
         val (TryIter[T]): The value to try to iterate over.
 
     Returns:
-        Iter[T]: An iterator over the value if it is iterable, otherwise an iterator over a single element.
+        PyoIterator[T]: An iterator over the value if it is iterable, otherwise an iterator over a single element.
     """
     match val:
         case None:

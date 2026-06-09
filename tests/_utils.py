@@ -7,7 +7,7 @@ from typing import Any, NamedTuple, override
 import polars as pl
 from polars.testing import assert_frame_equal
 from pyochain import Iter, Seq
-from pyochain.abc import PyoIterable
+from pyochain.abc import PyoIterable, PyoIterator
 
 import belugas as bl
 
@@ -27,7 +27,9 @@ class Fns(NamedTuple):
         return self.bl_fn(*args, **kwargs), self.pl_fn(*args, **kwargs)
 
 
-def into_ids(fns: Seq[tuple[Callable[..., Any], Callable[..., Any]]]) -> Iter[str]:  # pyright: ignore[reportExplicitAny]
+def into_ids(
+    fns: Seq[tuple[Callable[..., Any], Callable[..., Any]]],  # pyright: ignore[reportExplicitAny]
+) -> PyoIterator[str]:
     return fns.iter().map_star(lambda f1, _f2: f1.__name__)
 
 
@@ -41,13 +43,13 @@ class FnsCat(PyoIterable[Fns]):
     fns: Seq[Fns]
 
     def __init__(self, *fns: tuple[PqlFn, PlFn]) -> None:
-        self.fns = Iter(fns).map_star(Fns).collect()
+        self.fns = Iter(fns).map_star(Fns).collect(Seq)
 
     @override
     def __iter__(self) -> Iterator[Fns]:
         return self.fns.iter()
 
-    def into_ids(self) -> Iter[str]:
+    def into_ids(self) -> PyoIterator[str]:
         return self.fns.iter().map(lambda x: x.bl_fn.__name__)
 
 

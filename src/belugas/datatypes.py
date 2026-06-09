@@ -30,6 +30,7 @@ if TYPE_CHECKING:
         IntoPyType,
         StrIntoPyType,
     )
+    from pyochain.abc import PyoIterator
 
     from .typing import EpochTimeUnit, IntoDict
 
@@ -624,7 +625,7 @@ class Enum(StringType, ComplexDataType):
         """
         match categories:
             case type():
-                values: Iter[str] = Iter(categories).map(lambda i: i.value)  # pyright: ignore[reportAny]
+                values: PyoIterator[str] = Iter(categories).map(lambda i: i.value)  # pyright: ignore[reportAny]
             case Iterable():
                 values = Iter(categories)
         exprs = values.map(exp.Literal.string).collect(list)
@@ -647,7 +648,7 @@ class Enum(StringType, ComplexDataType):
         """Get the categories of the enum type."""
         exprs: list[exp.Expr] = self.raw.expressions
         return (
-            Iter(exprs).map(lambda lit: lit.this).collect()  # pyright: ignore[reportAny]
+            Iter(exprs).map(lambda lit: lit.this).collect(Seq)  # pyright: ignore[reportAny]
         )
 
 
@@ -689,7 +690,7 @@ class Union(NestedType, ComplexDataType):
         return (
             Iter(self.raw.expressions)
             .map(lambda col_def: self.from_sql(col_def.kind))  # pyright: ignore[reportAny]
-            .collect()
+            .collect(Seq)
         )
 
 

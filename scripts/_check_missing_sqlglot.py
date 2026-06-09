@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from pyochain import Seq
+
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
@@ -49,7 +51,7 @@ def _run_qry() -> str:
     return (
         original
         .iter()
-        .collect()
+        .collect(Seq)
         .into(pl.Series)
         .str.to_uppercase()
         .alias("glot_name")
@@ -78,7 +80,7 @@ def _run_qry() -> str:
                     Dict
                     .from_ref(DUCKDB_FUNCTIONS)
                     .iter()
-                    .collect()
+                    .collect(Seq)
                     .into(pl.Series)
                     .str.to_uppercase()
                     .alias("function_name")
@@ -156,7 +158,10 @@ def _check_no_overlap(original: Mapping[str, object]) -> None:
     )
 
     res = (
-        Iter(_missing_from_glot()).filter(lambda k: k in original).collect().then_some()
+        Iter(_missing_from_glot())
+        .filter(lambda k: k in original)
+        .collect(Seq)
+        .then_some()
     )
     if res.is_some():
         msg = f"Some of the functions in _MISSING_FROM_GLOT are already defined in DuckDBParser.FUNCTIONS: {res.unwrap()}"

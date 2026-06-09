@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, Self, SupportsInt, overload, override
 
-from pyochain import Dict, Vec, option
+from pyochain import Dict, Seq, Vec, option
 
 from . import datatypes as dt
 from ._core import CoreHandler, Marker
@@ -221,7 +221,7 @@ class LazyFrame(CoreHandler[nodes.Node]):
             try_iter(keys)
             .chain(more_keys)
             .map(lambda key: Expr.new(key, as_col=True))
-            .collect()
+            .collect(Seq)
         )
         node = nodes.GroupBy(self._inner, key_exprs, strategy, drop_null_keys)
         return LazyGroupBy(node)
@@ -809,7 +809,7 @@ class LazyFrame(CoreHandler[nodes.Node]):
                 case bool():
                     return not reverse
                 case _:
-                    return try_iter(reverse).map(op.not_).collect()
+                    return try_iter(reverse).map(op.not_).collect(Seq)
 
         return self.sort(by, descending=_descending()).head(k)
 

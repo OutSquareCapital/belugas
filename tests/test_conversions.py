@@ -7,7 +7,7 @@ import numpy as np
 import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
-from pyochain import Iter
+from pyochain import Iter, Seq
 
 import belugas as bl
 import belugas.typing as t
@@ -152,14 +152,14 @@ def test_from_numpy_4d(orient: t.Orientation) -> None:
 
 
 def test_from_seq_of_dicts() -> None:
-    dicts = Iter(range(10)).map(lambda _: _get_data()).collect()
+    dicts = Iter(range(10)).map(lambda _: _get_data()).collect(Seq)
     assert_eq(bl.LazyFrame(dicts).collect(), pl.DataFrame(dicts))
     assert_eq(bl.from_records(dicts).collect(), pl.from_records(dicts))
     assert_eq(bl.from_dicts(dicts).collect(), pl.from_dicts(dicts))
 
 
 def test_from_seq_of_seqs() -> None:
-    seqs = Iter(range(10)).map(lambda _: tuple(range(5))).collect()
+    seqs = Iter(range(10)).map(lambda _: tuple(range(5))).collect(Seq)
     assert_eq(bl.LazyFrame(seqs).collect(), pl.DataFrame(seqs))
     assert_eq(bl.from_records(seqs).collect(), pl.from_records(seqs))
 
@@ -178,7 +178,7 @@ def test_from_seq_of_seqs_orient(orient: t.Orientation) -> None:
 
 
 def test_from_seq_of_vals() -> None:
-    vals = Iter(range(10)).map(lambda _: 42).collect()
+    vals = Iter(range(10)).map(lambda _: 42).collect(Seq)
     assert_eq(bl.LazyFrame(vals).collect(), pl.DataFrame(vals))
     assert_eq(bl.from_records(vals).collect(), pl.from_records(vals))
 

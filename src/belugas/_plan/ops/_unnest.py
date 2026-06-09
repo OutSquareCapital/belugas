@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyochain import Dict, Iter, Set, Vec
+from pyochain import Dict, Set, Vec
 from sqlglot import exp
 
 from ... import datatypes as dt
@@ -12,6 +12,8 @@ from ...utils import try_iter
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+    from pyochain.abc import PyoIterator
+
     from ...typing import IntoExprColumn, Schema, TryIter
 
 
@@ -19,7 +21,7 @@ def unnest(
     schema: Schema,
     columns: TryIter[IntoExprColumn],
     more_columns: Iterable[IntoExprColumn],
-) -> tuple[Iter[exp.Expr], Schema]:
+) -> tuple[PyoIterator[exp.Expr], Schema]:
 
     def _project(name: str, raw: exp.DataType) -> None:
         def _project_field(field_name: str, field_dtype: exp.DataType) -> exp.Expr:

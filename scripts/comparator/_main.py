@@ -2,7 +2,7 @@
 
 import polars as pl
 from polars.lazyframe.group_by import LazyGroupBy as plLazyGroupBy
-from pyochain import Iter
+from pyochain import Iter, Seq
 
 import belugas as bl
 from belugas import typing as t
@@ -62,7 +62,7 @@ def get_comparisons() -> str:
             ClassComparison(pl.Schema, t.Schema, Pql.SCHEMA),
         ))
         .map(lambda comp: comp.to_report())
-        .collect()
+        .collect(Seq)
         .into(
             lambda comps: (
                 header()

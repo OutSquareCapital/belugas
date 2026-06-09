@@ -12,7 +12,7 @@ from ._rules import CONTAINER_SUPERTYPES, TYPE_SUPERTYPES, ContainerType
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from pyochain.abc import PyoIterable
+    from pyochain.abc import PyoIterable, PyoIterator
 
 GENERIC_SYMBOL_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
@@ -63,7 +63,7 @@ def extract_last_name(annotation: str) -> str:
 
 
 def _annotation_accepts(target: ast.expr, reference: ast.expr) -> bool:
-    target_members = _union_members(target).collect()
+    target_members = _union_members(target).collect(Seq)
     return _union_members(reference).all(
         lambda reference_member: target_members.iter().any(
             lambda target_member: _member_accepts(target_member, reference_member)
@@ -207,7 +207,7 @@ def _canonicalize_unions(node: ast.expr) -> ast.expr:
     visited = _transform_children(_canonicalize_unions, node)
     match visited:
         case ast.BinOp(op=ast.BitOr()):
-            members_as_text = _union_members(visited).map(ast.unparse).collect()
+            members_as_text = _union_members(visited).map(ast.unparse).collect(Seq)
             has_float = members_as_text.iter().any(lambda text: text == Builtins.FLOAT)
 
             def _build_union_expr(parts: PyoIterable[str]) -> ast.expr:
@@ -239,7 +239,7 @@ def _canonicalize_unions(node: ast.expr) -> ast.expr:
             return visited
 
 
-def _union_members(reference: ast.expr) -> Iter[ast.expr]:
+def _union_members(reference: ast.expr) -> PyoIterator[ast.expr]:
     match reference:
         case ast.BinOp(left=left, op=ast.BitOr(), right=right):
             return _union_members(left).chain(_union_members(right))

@@ -20,7 +20,7 @@ _META_FNS: Seq[Callable[[], bl.LazyFrame]] = (
     Iter(dir(meta))
     .map(_get_fn)
     .filter(lambda fn: callable(fn) and fn.__name__ != "LazyFrame")
-    .collect()
+    .collect(Seq)
 )
 
 

@@ -19,8 +19,10 @@ N_UNNEST_COLS = 250
 N_GROUPS = Range(0, 10)
 
 
-COLS: Seq[str] = Range(0, N_COLS).iter().map(lambda i: f"c{i}").collect()
-UNNEST_COLS: Seq[str] = Range(0, N_UNNEST_COLS).iter().map(lambda i: f"s{i}").collect()
+COLS: Seq[str] = Range(0, N_COLS).iter().map(lambda i: f"c{i}").collect(Seq)
+UNNEST_COLS: Seq[str] = (
+    Range(0, N_UNNEST_COLS).iter().map(lambda i: f"s{i}").collect(Seq)
+)
 
 _DATA = pl.DataFrame({
     "c0": N_GROUPS,
@@ -61,7 +63,7 @@ _EXPLODE_DATA = pl.DataFrame({
     .map(
         lambda i: (
             f"c{i}",
-            Range(0, 3).iter().cycle().take(N_GROUPS.len()).collect(),
+            Range(0, 3).iter().cycle().take(N_GROUPS.len()).collect(tuple),
         )
     )
     .collect(Dict),
@@ -88,7 +90,7 @@ AGG: Seq[bl.Expr] = (
             .alias(f"{c}_agg")
         )
     )
-    .collect()
+    .collect(Seq)
 )
 
 MUL: Seq[bl.Expr] = (
@@ -105,11 +107,11 @@ MUL: Seq[bl.Expr] = (
             .alias(f"{c}_mul")
         )
     )
-    .collect()
+    .collect(Seq)
 )
-PREDS = COLS.iter().map(lambda c: bl.col(c).eq(1)).collect()
-UNPIVOT_ON = COLS.iter().skip(1).collect()
-COLS_UNIQUE = COLS.iter().take(10).collect()
+PREDS = COLS.iter().map(lambda c: bl.col(c).eq(1)).collect(Seq)
+UNPIVOT_ON = COLS.iter().skip(1).collect(Seq)
+COLS_UNIQUE = COLS.iter().take(10).collect(Seq)
 
 BENCHS = Dict[str, BenchFn].from_ref({
     "with_columns": lambda: BASE.with_columns(MUL),

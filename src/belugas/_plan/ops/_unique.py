@@ -57,7 +57,7 @@ def unique(
 
 def _none_on_subset(ast: exp.Select, subset_names: Seq[str]) -> exp.Select:
 
-    subset_exprs = subset_names.iter().map(exp.column).collect()
+    subset_exprs = subset_names.iter().map(exp.column).collect(Seq)
     rhs = (
         exp
         .select(*subset_exprs)

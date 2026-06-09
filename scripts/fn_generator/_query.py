@@ -4,7 +4,7 @@ import re
 from typing import TYPE_CHECKING
 
 import polars as pl
-from pyochain import Iter
+from pyochain import Iter, Seq
 
 from .._utils import Pql, Typing
 from ._dtypes import DuckDbTypes, FuncTypes
@@ -265,7 +265,7 @@ def _simplify_generated_union(type_hint: str) -> str:
         Iter(type_hint.split("|"))
         .map(str.strip)
         .filter(lambda type_name: type_name != "")
-        .collect()
+        .collect(Seq)
     )
     if tokens.iter().any(lambda type_name: type_name == Pql.INTO_EXPR):
         return Pql.INTO_EXPR.value

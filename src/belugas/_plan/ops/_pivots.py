@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyochain import Dict, Err, Iter, Null, Ok, Result, Seq, Some
+from pyochain import Dict, Err, Null, Ok, Result, Seq, Some
 from sqlglot import exp
 
 from ..._core import Tables
@@ -12,6 +12,8 @@ from ...utils import try_iter, try_seq
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
+
+    from pyochain.abc import PyoIterator
 
     from ...typing import PivotAgg, PythonLiteral, Schema, TryIter
 
@@ -46,7 +48,7 @@ def pivot(  # noqa: PLR0913, PLR0914, PLR0917
             .keys()
             .iter()
             .filter(lambda c: c not in on_cols and c not in cols)
-            .collect()
+            .collect(Seq)
         )
 
     def _get_idx_and_vals() -> Result[tuple[Seq[str], Seq[str]], ValueError]:
@@ -61,9 +63,9 @@ def pivot(  # noqa: PLR0913, PLR0914, PLR0917
                 msg = "`pivot` needs either `index` or `values` to be specified"
                 return Err(ValueError(msg))
 
-    on_cols = try_iter(on).collect()
+    on_cols = try_iter(on).collect(Seq)
     idx_cols, val_cols = _get_idx_and_vals().unwrap()
-    on_values = try_iter(on_columns).map(str).collect()
+    on_values = try_iter(on_columns).map(str).collect(Seq)
 
     multi = val_cols.len() > 1
     agg = PIVOT_AGG[aggregate_function]
@@ -110,7 +112,7 @@ def pivot(  # noqa: PLR0913, PLR0914, PLR0917
         .pipe(
             lambda selected: (
                 try_iter(idx_cols if maintain_order else None)
-                .collect()
+                .collect(Seq)
                 .then(
                     lambda cols: selected.order_by(
                         *cols.iter().map(exp.column), copy=False
@@ -128,7 +130,7 @@ def pivot(  # noqa: PLR0913, PLR0914, PLR0917
         def _idx_expr(name: str) -> exp.Expr:
             return exp.column(name)
 
-        def _rename(vc: str) -> Iter[exp.Expr]:
+        def _rename(vc: str) -> PyoIterator[exp.Expr]:
             def _renamed(ov: str) -> exp.Expr:
                 return exp.column(f"{ov}_{vc}", quoted=True).as_(
                     f"{vc}{separator}{ov}", quoted=True

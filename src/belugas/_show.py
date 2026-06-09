@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from pygments.token import (
         _TokenType as TokenType,  # pyright: ignore[reportPrivateUsage]
     )
+    from pyochain.abc import PyoIterator
     from rich.console import RenderableType
 
     from ._frame import LazyFrame
@@ -79,7 +80,7 @@ _POLARS_EXPRS = {"col", "when", ">", "<", ">=", "<=", "=="}
 
 class DuckDbSqlLexer(SqlLexer):
     @override
-    def get_tokens_unprocessed(self, text: str) -> Iter[ProcessedToken]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_tokens_unprocessed(self, text: str) -> PyoIterator[ProcessedToken]:  # pyright: ignore[reportIncompatibleMethodOverride]
         duck_tokens = Dict(duckdb.tokenize(text))
         process = partial(_process_token, duck_tokens)
         return Iter(super().get_tokens_unprocessed(text)).map_star(process)

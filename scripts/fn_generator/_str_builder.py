@@ -1,7 +1,7 @@
 from string import Formatter
 
 import polars as pl
-from pyochain import Dict, Iter, option
+from pyochain import Dict, Iter, Seq, option
 
 EMPTY_STR = pl.lit("")
 
@@ -16,7 +16,7 @@ def format_kwords(
     return (
         Iter(Formatter().parse(txt))
         .map_star(lambda lit, field, _fmt, _conv: (lit, option(field)))
-        .collect()
+        .collect(Seq)
         .into(
             lambda parts: pl.format(
                 parts

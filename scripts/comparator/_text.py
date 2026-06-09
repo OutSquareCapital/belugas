@@ -4,6 +4,7 @@ from types import ModuleType
 
 import polars as pl
 from pyochain import Iter, Seq, Set, Vec
+from pyochain.abc import PyoIterator
 
 from .._utils import Dunders, Pql, get_attr
 from ._infos import ComparisonResult
@@ -53,7 +54,7 @@ class ComparisonReport:
         ))
 
 
-def header() -> Iter[str]:
+def header() -> PyoIterator[str]:
     txt = """
 # belugas vs Polars API Comparison Report.
 
@@ -125,7 +126,7 @@ class ClassComparison:
         return _module_public_names().iter().filter(_predicate).collect(Set)
 
 
-def render_summary_table(comps: Seq[ComparisonReport]) -> Iter[str]:
+def render_summary_table(comps: Seq[ComparisonReport]) -> PyoIterator[str]:
     from .._utils import set_pl_config
 
     set_pl_config()
@@ -156,7 +157,7 @@ def render_summary_table(comps: Seq[ComparisonReport]) -> Iter[str]:
                 )
             )
         )
-        .collect()
+        .collect(Seq)
         .into(
             lambda rows: pl.LazyFrame(
                 rows,
@@ -225,4 +226,4 @@ def _format(results: Vec[ComparisonResult], title: str, *, status: Status) -> st
 
 
 def _by_status(results: Vec[ComparisonResult], status: Status) -> Seq[ComparisonResult]:
-    return results.iter().filter(lambda r: r.classification == status).collect()
+    return results.iter().filter(lambda r: r.classification == status).collect(Seq)
