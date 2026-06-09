@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import polars as pl
 import pytest
-from pyochain import Iter
+from pyochain import Iter, Seq
 
 import belugas as bl
 import belugas.typing as t
@@ -93,7 +93,7 @@ def test_pivot_multiple_value_columns(sample_df: pl.DataFrame) -> None:
 
 
 @pytest.mark.parametrize(
-    "agg", Iter[str](t.PivotAgg.__args__).filter(lambda agg: agg != "sum").collect()
+    "agg", Iter[str](t.PivotAgg.__args__).filter(lambda agg: agg != "sum").collect(Seq)
 )
 def test_pivot_aggregate_fns(sample_df: pl.DataFrame, agg: t.PivotAgg) -> None:
     """The `count` option is currently deprecated for polars, but `len` is NOT the right func to call in `SqlExpr`.
