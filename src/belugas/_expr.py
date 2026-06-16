@@ -569,7 +569,7 @@ class Expr(Fns):
         return self._cls(expr)
 
     def is_in(self, args: TryIter[IntoExpr], *more_args: IntoExpr) -> Self:
-        exprs = into_expr_list(try_iter(args).chain(more_args))
+        exprs = try_iter(args).chain(more_args).collect(into_expr_list)
         return self._cls(exp.In(this=self.inner, expressions=exprs))
 
     def is_not_in(self, args: TryIter[IntoExpr], *more_args: IntoExpr) -> Self:

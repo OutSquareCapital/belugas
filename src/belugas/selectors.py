@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 @final
-class Selector(Expr):
+class Selector(Expr):  # pyright: ignore[reportUninitializedInstanceVariable]
     """Column selector based on dtype predicates."""
 
     aliaser: MultiAliasMapper  # pyright: ignore[reportIncompatibleVariableOverride]

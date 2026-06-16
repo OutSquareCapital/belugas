@@ -2,15 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum, auto
-from typing import TYPE_CHECKING, Concatenate, Self, override
+from typing import TYPE_CHECKING, Self, override
 
 from pyochain import Iter, option
+from pyochain.abc import Pipe
 from sqlglot import exp
 
 from ._sqlglot_patch import DUCKDB_FUNCTIONS
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Iterable
 
     from .typing import IntoExpr
 
@@ -55,7 +56,7 @@ class Marker(StrEnum):
 
 
 @dataclass(slots=True, repr=False)
-class CoreHandler[T]:
+class CoreHandler[T](Pipe):
     """A wrapper for an inner value.
 
     Is used as a base class for Expressions, Relation, LazyFrame, and namespaces, since they all share the same pattern of wrapping an inner value and forwarding method calls to it.
@@ -70,30 +71,6 @@ class CoreHandler[T]:
     @override
     def __str__(self) -> str:
         return self.inner.__str__()
-
-    def pipe[**P, R](
-        self,
-        function: Callable[Concatenate[Self, P], R],
-        *args: P.args,
-        **kwargs: P.kwargs,
-    ) -> R:
-        """Apply a *function* to *Self* with *args* and *kwargs*.
-
-        Allow to do `x.pipe(func, ...)` instead of `func(x, ...)`.
-
-        This keep a fluent style for UDF, and is shared across `Expr` and `LazyFrame` objects.
-
-        This is similar to **polars** `.pipe` method.
-
-        Args:
-            function (Callable[Concatenate[Self, P], R]): The *function* to apply.
-            *args (P.args): Positional arguments to pass to *function*.
-            **kwargs (P.kwargs): Keyword arguments to pass to *function*.
-
-        Returns:
-            R: The result of applying the *function*.
-        """
-        return function(self, *args, **kwargs)
 
     def _cls(self, value: T) -> Self:
         """Create a new instance of *Self* with the given value.
