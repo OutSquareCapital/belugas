@@ -52,7 +52,7 @@ def _run_qry() -> str:
         original
         .iter()
         .collect(Seq)
-        .into(pl.Series)
+        .pipe(pl.Series)
         .str.to_uppercase()
         .alias("glot_name")
         .to_frame()
@@ -81,7 +81,7 @@ def _run_qry() -> str:
                     .from_ref(DUCKDB_FUNCTIONS)
                     .iter()
                     .collect(Seq)
-                    .into(pl.Series)
+                    .pipe(pl.Series)
                     .str.to_uppercase()
                     .alias("function_name")
                     .to_frame()

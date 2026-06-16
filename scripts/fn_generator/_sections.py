@@ -39,7 +39,7 @@ def build_file(fns: Seq[FunctionInfo], path: Path) -> str:
 @dataclass(slots=True, repr=False)
 class {name}{params}({base}):
     """{doc}"""
-    {funcs.into(_body)}
+    {funcs.pipe(_body)}
 '''
 
     def _namespace_block(spec: NamespaceSpec) -> str:

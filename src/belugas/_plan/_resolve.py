@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, NamedTuple
 
 from duckdb import DuckDBPyRelation
 from pyochain import Dict, Err, Iter, Null, Ok, Result, Seq, Set, Some, option
-from pyochain.abc import Pipeable, PyoIterator
+from pyochain.abc import Fluent, PyoIterator
 from sqlglot import exp
 
 from belugas.typing import (
@@ -396,7 +396,7 @@ def lookup_type(inner: exp.Expr, schema: Schema) -> exp.DataType:
 
 
 @dataclass(slots=True, init=False)
-class ResolvedExpr(Pipeable):
+class ResolvedExpr(Fluent):
     """A fully resolved expression ready for SQL emission."""
 
     expr: Expr
@@ -517,7 +517,7 @@ def _resolve(val: IntoExpr, schema: Schema) -> PyoIterator[ResolvedExpr]:
                     match val.inner.find(exp.Columns, exp.Star):
                         case None:
                             name = extract_root_name(val.inner)
-                            return ResolvedExpr(val, name).into(Iter.once)
+                            return ResolvedExpr(val, name).pipe(Iter.once)
                         case exp.Star() as star:
                             excepts: list[exp.Expr] | None = star.args.get("except_")
                             match excepts:
@@ -542,7 +542,7 @@ def _resolve(val: IntoExpr, schema: Schema) -> PyoIterator[ResolvedExpr]:
                 Expr
                 .new(val, as_col=True)
                 .pipe(lambda e: ResolvedExpr(e, e.inner.output_name))
-                .into(Iter.once)
+                .pipe(Iter.once)
             )
 
 

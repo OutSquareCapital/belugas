@@ -84,7 +84,7 @@ def with_columns(
         source = src_ast.subquery(Tables.SRC, copy=False)
         source = _into_windowed(source) if has_windowed else source
         new_ast = (
-            updates.into(_resolved).unpack_into(exp.select).from_(source, copy=False)
+            updates.pipe(_resolved).unpack_into(exp.select).from_(source, copy=False)
         )
     return new_ast, new_schema
 

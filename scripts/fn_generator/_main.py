@@ -29,10 +29,8 @@ def run_pipeline(
         .map_rows(lambda x: FunctionInfo(*x), return_dtype=pl.Object)  # pyright: ignore[reportAny]
         .pipe(lambda df: Iter[FunctionInfo](df.to_series()))
         .collect(Seq)
-        .inspect(
-            lambda x: print(Text(f"Generated {x.len()} functions", style="yellow"))
-        )
-        .into(build_file, caller)
+        .tap(lambda x: print(Text(f"Generated {x.len()} functions", style="yellow")))
+        .pipe(build_file, caller)
     )
 
 

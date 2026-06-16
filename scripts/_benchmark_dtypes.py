@@ -96,7 +96,7 @@ def _compute_results(table: Table, n: int) -> None:
             _ = fn(dtype)
             return (time.perf_counter() - t0) * 1e6
 
-        return Range(0, n).iter().map(lambda _: _once()).into(statistics.median)
+        return Range(0, n).iter().map(lambda _: _once()).pipe(statistics.median)
 
     with Progress() as progress:
         task = progress.add_task("benchmarking...", total=CASES.len() * VARIANTS.len())
@@ -109,7 +109,7 @@ def _compute_results(table: Table, n: int) -> None:
                     VARIANTS
                     .iter()
                     .map(lambda v: _bench(v.fn, case))
-                    .inspect(lambda _: progress.advance(task))
+                    .tap(lambda _: progress.advance(task))
                     .collect(Seq),
                 )
             )

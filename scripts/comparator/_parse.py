@@ -233,7 +233,7 @@ def _canonicalize_unions(node: ast.expr) -> ast.expr:
                 .filter(lambda text: not (has_float and text == Builtins.INT))
                 .unique()
                 .sort()
-                .into(_build_union_expr)
+                .pipe(_build_union_expr)
             )
         case _:
             return visited

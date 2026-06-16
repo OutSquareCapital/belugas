@@ -1377,7 +1377,7 @@ class Expr(Fns):
         Returns:
             Expr: An expression representing the `COALESCE` operation.
         """
-        exprs_lst = try_iter(exprs).chain(more_exprs).into(into_expr_list, as_col=True)
+        exprs_lst = try_iter(exprs).chain(more_exprs).pipe(into_expr_list, as_col=True)
         return self._cls(exp.Coalesce(this=self.inner, expressions=exprs_lst))
 
     def arctan(self) -> Self:

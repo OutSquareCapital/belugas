@@ -37,7 +37,7 @@ def explode(
         to_explode
         .values()
         .iter()
-        .into(_get_target, is_single_explode=is_single_explode)
+        .pipe(_get_target, is_single_explode=is_single_explode)
     )
 
     return (

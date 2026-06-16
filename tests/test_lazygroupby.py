@@ -92,7 +92,7 @@ _GROUP_BY_METHODS = Seq((
 ))
 
 
-@pytest.mark.parametrize("fns", _GROUP_BY_METHODS, ids=_GROUP_BY_METHODS.into(into_ids))
+@pytest.mark.parametrize("fns", _GROUP_BY_METHODS, ids=_GROUP_BY_METHODS.pipe(into_ids))
 def test_lazygroupby_simple_computations(
     sample_df: pl.DataFrame,
     fns: tuple[

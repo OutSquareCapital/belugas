@@ -28,7 +28,7 @@ def sort(
         .chain(more_by)
         .map(lambda v: Expr.new(v, as_col=True))
         .collect(Seq)
-        .into(
+        .pipe(
             lambda sort_exprs: sort_exprs.iter().zip(
                 check_by_arg(
                     sort_exprs, "descending", arg=descending, broadcast_nones=False

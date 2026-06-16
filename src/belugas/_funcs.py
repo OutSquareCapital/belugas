@@ -351,7 +351,7 @@ def _agg_expr(
         .chain(more_cols)
         .collect(Seq)
         .then_some()
-        .map(lambda inner_cols: exp.Columns(this=inner_cols.into(into_expr_list)))
+        .map(lambda inner_cols: exp.Columns(this=inner_cols.pipe(into_expr_list)))
         .unwrap_or_else(lambda: exp.Columns(this=exp.Star()))
         .pipe(Expr)
         .pipe(agg)

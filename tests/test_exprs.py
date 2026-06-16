@@ -209,7 +209,7 @@ _SIMPLE_FNS = Seq((
 ))
 
 
-@pytest.mark.parametrize("fn", _SIMPLE_FNS, ids=_SIMPLE_FNS.into(into_ids))
+@pytest.mark.parametrize("fn", _SIMPLE_FNS, ids=_SIMPLE_FNS.pipe(into_ids))
 def test_simple_methods_on_x(fn: Fns) -> None:
     assert_eq(fn[0](), fn[1]())
 
@@ -220,7 +220,7 @@ _SIMPLE_FN_AGE = Seq((
 ))
 
 
-@pytest.mark.parametrize("fn", _SIMPLE_FN_AGE, ids=_SIMPLE_FN_AGE.into(into_ids))
+@pytest.mark.parametrize("fn", _SIMPLE_FN_AGE, ids=_SIMPLE_FN_AGE.pipe(into_ids))
 def test_simple_methods_on_age(fn: Fns) -> None:
     assert_eq(fn[0](), fn[1]())
 
@@ -360,7 +360,7 @@ def test_last() -> None:
 _MIN_MAX_BY_FNS = Seq(((bl_x.min_by, pl_x.min_by), (bl_x.max_by, pl_x.max_by)))
 
 
-@pytest.mark.parametrize("fns", _MIN_MAX_BY_FNS, ids=_MIN_MAX_BY_FNS.into(into_ids))
+@pytest.mark.parametrize("fns", _MIN_MAX_BY_FNS, ids=_MIN_MAX_BY_FNS.pipe(into_ids))
 def test_min_max_by(
     fns: tuple[Callable[[str | bl.Expr], bl.Expr], Callable[[str | pl.Expr], pl.Expr]],
 ) -> None:
@@ -413,7 +413,7 @@ class RollingFn[T: bl.Expr | pl.Expr](Protocol):
 @pytest.mark.parametrize("center", [True, False])
 @pytest.mark.parametrize("window_size", [2, 4])
 @pytest.mark.parametrize("min_samples", [None, 1, 2])
-@pytest.mark.parametrize("method", _ROLLING_FNS, ids=_ROLLING_FNS.into(into_ids))
+@pytest.mark.parametrize("method", _ROLLING_FNS, ids=_ROLLING_FNS.pipe(into_ids))
 def test_rolling(
     method: tuple[RollingFn[bl.Expr], RollingFn[pl.Expr]],
     window_size: int,

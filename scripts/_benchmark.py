@@ -152,7 +152,7 @@ def _run_all(
 
     descr = f"[cyan]Running benchmarks on {runs} runs per test..."
 
-    tracker = benchmarks.items().into(
+    tracker = benchmarks.items().pipe(
         progress.track, benchmarks.len(), description=descr
     )
     return (
@@ -184,5 +184,5 @@ def _get_timing(runs: int, fn: BenchFn) -> float:
         Range(0, runs)
         .iter()
         .map(lambda _: timeit.timeit(fn().query.logical, number=1) * 1000)
-        .into(statistics.median)
+        .pipe(statistics.median)
     )

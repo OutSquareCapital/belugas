@@ -340,10 +340,7 @@ def _without_ignored_params(mapping: MapInfo, ignored: Set[str]) -> MapInfo:
         .iter()
         .filter_star(lambda k, _v: not ignored.contains(k))
         .map_star(lambda _name, param: param)
-        .fold(
-            Dict[str, ParamInfo](()),
-            lambda acc, param: acc.inspect(_get_fn, param),
-        )
+        .fold(Dict[str, ParamInfo](()), lambda acc, param: acc.tap(_get_fn, param))
     )
 
 

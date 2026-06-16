@@ -122,10 +122,10 @@ def run_pipeline(caller: Path, source: Path) -> str:
         .map_rows(lambda x: MetaFnInfo.from_row(*x), return_dtype=pl.Object)  # pyright: ignore[reportAny]
         .pipe(lambda df: Iter[MetaFnInfo](df.to_series()))
         .collect(Seq)
-        .inspect(
+        .tap(
             lambda x: print(Text(f"Generated {x.len()} meta functions", style="yellow"))
         )
-        .into(_build_file, caller)
+        .pipe(_build_file, caller)
     )
 
 

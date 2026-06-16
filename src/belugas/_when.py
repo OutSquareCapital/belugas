@@ -21,7 +21,7 @@ def when(predicates: TryIter[IntoExpr], *more_predicates: IntoExpr) -> When:
 
 
 def _into_pred(preds: TryIter[IntoExpr], more_preds: Iterable[IntoExpr]) -> Expr:
-    return try_iter(preds).chain(more_preds).into(reduce, function=Expr.and_)
+    return try_iter(preds).chain(more_preds).pipe(reduce, function=Expr.and_)
 
 
 @dataclass(slots=True)

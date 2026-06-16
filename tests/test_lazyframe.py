@@ -27,7 +27,7 @@ def test_properties(lf: bl.LazyFrame) -> None:
     df = lf.collect()
     schema = lf.collect_schema()
     assert lf.width == df.width
-    assert schema.keys().into(list) == df.columns
+    assert schema.keys().pipe(list) == df.columns
     assert lf.shape == df.shape
     assert isinstance(lf.lazy(), pl.LazyFrame)
     assert isinstance(df, pl.DataFrame)
@@ -46,8 +46,8 @@ def test_schema_columns_follow_derived_frame(lf: bl.LazyFrame) -> None:
         "value",
         "category",
     ]
-    assert renamed.columns.into(list) == expected_cols
-    assert renamed.filter(bl.col("years").gt(20)).columns.into(list) == expected_cols
+    assert renamed.columns.pipe(list) == expected_cols
+    assert renamed.filter(bl.col("years").gt(20)).columns.pipe(list) == expected_cols
 
 
 def test_show(lf: bl.LazyFrame) -> None:
@@ -527,7 +527,7 @@ pl_unnested = pl_nested.unnest("nested")
 
 
 def test_unnest_columns_property() -> None:
-    assert bl_unnested.columns.into(list) == pl_unnested.collect_schema().names()
+    assert bl_unnested.columns.pipe(list) == pl_unnested.collect_schema().names()
 
 
 def test_unnest_then_select_all() -> None:

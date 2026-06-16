@@ -157,7 +157,7 @@ def from_records(data: SeqIntoVals, orient: Orientation = "col") -> ScanResult:
 
 
 def from_dicts(data: Sequence[Mapping[str, PythonLiteral]]) -> ScanResult:
-    return Iter(data[0]).map(lambda key: (key, _into_tup(data, key))).into(from_dict)
+    return Iter(data[0]).map(lambda key: (key, _into_tup(data, key))).pipe(from_dict)
 
 
 def from_seq_lit(data: LitSeq) -> ScanResult:
@@ -174,7 +174,7 @@ def _to_expr(k: str, v: PythonLiteral) -> duckdb.Expression:
 
 
 def from_seq_col(data: NestedSeq) -> ScanResult:
-    return Iter(data).enumerate().map_star(lambda k, v: (_named(k), v)).into(from_dict)
+    return Iter(data).enumerate().map_star(lambda k, v: (_named(k), v)).pipe(from_dict)
 
 
 def from_seq_row(data: NestedSeq) -> ScanResult:
@@ -182,7 +182,7 @@ def from_seq_row(data: NestedSeq) -> ScanResult:
     return (
         Iter(range(width))
         .map(lambda j: (_named(j), _into_tup(data, j)))
-        .into(from_dict)
+        .pipe(from_dict)
     )
 
 

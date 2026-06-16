@@ -148,7 +148,7 @@ def _py_name(raw_name: pl.Expr, py: PyCols) -> pl.Expr:
                 NAMESPACE_SPECS
                 .iter()
                 .flat_map(lambda spec: spec.strip_prefixes.iter().map(re.escape))
-                .into(lambda p: f"^(?:{p.join('|')})")
+                .pipe(lambda p: f"^(?:{p.join('|')})")
             ),
             EMPTY_STR,
             literal=False,
@@ -294,11 +294,11 @@ def _namespace_specs(cats: pl.Expr, fn_name: pl.Expr) -> pl.Expr:
                 spec.prefixes
                 .iter()
                 .map(fn_name.str.starts_with)
-                .into(pl.any_horizontal)
+                .pipe(pl.any_horizontal)
                 .or_(fn_name.is_in(spec.explicit_names))
             ).then(pl.lit(spec.name))
         )
-        .into(pl.coalesce)
+        .pipe(pl.coalesce)
         .pipe(
             lambda prefix_ns: pl.when(prefix_ns.is_not_null()).then(
                 pl.concat_list(prefix_ns)
@@ -312,12 +312,12 @@ def _namespace_specs(cats: pl.Expr, fn_name: pl.Expr) -> pl.Expr:
                     spec.categories
                     .iter()
                     .map(lambda c: c.value)
-                    .into(lambda x: cats.list.set_intersection(x.collect(tuple)))
+                    .pipe(lambda x: cats.list.set_intersection(x.collect(tuple)))
                     .list.len()
                     .gt(0)
                 ).then(pl.lit(spec.name))
             )
-            .into(pl.concat_list)
+            .pipe(pl.concat_list)
         )
         .list.drop_nulls()
         .alias("namespace")

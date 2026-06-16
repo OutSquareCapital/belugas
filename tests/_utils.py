@@ -7,7 +7,7 @@ from typing import Any, NamedTuple, override
 import polars as pl
 from polars.testing import assert_frame_equal
 from pyochain import Iter, Seq
-from pyochain.abc import PyoIterable, PyoIterator
+from pyochain.abc import PyoCollection, PyoIterator
 
 import belugas as bl
 
@@ -39,7 +39,7 @@ class ExprPair(NamedTuple):
 
 
 @dataclass(slots=True, init=False)
-class FnsCat(PyoIterable[Fns]):
+class FnsCat(PyoCollection[Fns]):
     fns: Seq[Fns]
 
     def __init__(self, *fns: tuple[PqlFn, PlFn]) -> None:
@@ -49,8 +49,16 @@ class FnsCat(PyoIterable[Fns]):
     def __iter__(self) -> Iterator[Fns]:
         return self.fns.iter()
 
-    def into_ids(self) -> PyoIterator[str]:
-        return self.fns.iter().map(lambda x: x.bl_fn.__name__)
+    @override
+    def __len__(self) -> int:
+        return len(self.fns)
+
+    @override
+    def __contains__(self, item: Fns) -> bool:
+        return item in self.fns
+
+    def into_ids(self) -> tuple[str, ...]:
+        return self.fns.iter().map(lambda x: x.bl_fn.__name__).collect(tuple)
 
 
 def assert_eq(

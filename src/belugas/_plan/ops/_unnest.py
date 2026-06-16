@@ -34,7 +34,7 @@ def unnest(
                     dt
                     .extract_struct_fields(raw)
                     .map_star(_project_field)
-                    .into(exprs.extend)
+                    .pipe(exprs.extend)
                 )
             case (True, exp.DType.ARRAY | exp.DType.LIST):
                 _ = new_schema.insert(name, raw)

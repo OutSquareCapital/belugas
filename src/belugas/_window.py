@@ -109,7 +109,7 @@ class OverBuilder:
 
         return (
             kwargs["fn_order_by"]
-            .map(lambda x: try_iter(x).collect(Seq).into(_build))
+            .map(lambda x: try_iter(x).collect(Seq).pipe(_build))
             .map(self.__class__)
             .unwrap_or(self)
         )

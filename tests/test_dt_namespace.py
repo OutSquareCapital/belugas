@@ -40,7 +40,7 @@ _SIMPLE_FNS = Seq((
 ))
 
 
-@pytest.mark.parametrize("fn", _SIMPLE_FNS, ids=_SIMPLE_FNS.into(into_ids))
+@pytest.mark.parametrize("fn", _SIMPLE_FNS, ids=_SIMPLE_FNS.pipe(into_ids))
 def test_simple_fns(fn: tuple[Callable[[], bl.Expr], Callable[[], pl.Expr]]) -> None:
     assert_eq(fn[0](), fn[1]())
 

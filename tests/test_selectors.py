@@ -160,7 +160,7 @@ def test_selector_in_group_by_agg() -> None:
 )
 def test_named_selector(lf: bl.LazyFrame) -> None:
     assert_lf_eq(lf.lazy(), lf)
-    assert lf.columns.into(list) == ["a", "total"]
+    assert lf.columns.pipe(list) == ["a", "total"]
 
 
 def test_empty_selector() -> None:
@@ -188,7 +188,7 @@ _SELECTOR_FNS = Seq((
 ))
 
 
-@pytest.mark.parametrize("fns", _SELECTOR_FNS, ids=_SELECTOR_FNS.into(into_ids))
+@pytest.mark.parametrize("fns", _SELECTOR_FNS, ids=_SELECTOR_FNS.pipe(into_ids))
 def test_dtype_selector(
     fns: tuple[Callable[[], cs.Selector], Callable[[], cs_pl.Selector]],
 ) -> None:
@@ -204,7 +204,7 @@ def test_duration_selector() -> None:
     col_names = ["dur"]
     pl_lf = pl.LazyFrame({"x": [1, 2], "dur": [timedelta(hours=1), timedelta(days=2)]})
     bl_lf = bl.LazyFrame(pl_lf)
-    assert bl_lf.select(cs.duration()).columns.into(list) == col_names
+    assert bl_lf.select(cs.duration()).columns.pipe(list) == col_names
     assert pl_lf.select(cs_pl.duration()).collect_schema().names() == col_names
 
 
@@ -372,7 +372,7 @@ def test_selector_after_agg() -> None:
     bl_lf = bl.LazyFrame(data).group_by("k").agg(bl.col("x").sum(), bl.col("f").sum())
     pl_lf = pl.LazyFrame(data).group_by("k").agg(pl.col("x").sum(), pl.col("f").sum())
     assert_lf_eq(pl_lf.sort("k"), bl_lf.sort("k"))
-    assert bl_lf.select(cs.integer()).columns.into(list) == ["x"]
+    assert bl_lf.select(cs.integer()).columns.pipe(list) == ["x"]
 
 
 def test_selector_after_unpivot() -> None:

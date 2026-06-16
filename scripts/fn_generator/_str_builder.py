@@ -17,7 +17,7 @@ def format_kwords(
         Iter(Formatter().parse(txt))
         .map_star(lambda lit, field, _fmt, _conv: (lit, option(field)))
         .collect(Seq)
-        .into(
+        .pipe(
             lambda parts: pl.format(
                 parts
                 .iter()

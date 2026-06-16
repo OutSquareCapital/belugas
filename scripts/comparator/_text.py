@@ -158,7 +158,7 @@ def render_summary_table(comps: Seq[ComparisonReport]) -> PyoIterator[str]:
             )
         )
         .collect(Seq)
-        .into(
+        .pipe(
             lambda rows: pl.LazyFrame(
                 rows,
                 schema={
@@ -213,7 +213,7 @@ def _format(results: Vec[ComparisonResult], title: str, *, status: Status) -> st
     """
     return (
         results
-        .into(_by_status, status)
+        .pipe(_by_status, status)
         .then(
             lambda items: (
                 Iter((f"\n### {title} ({items.len()})\n",))

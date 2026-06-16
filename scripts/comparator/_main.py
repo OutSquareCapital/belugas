@@ -63,7 +63,7 @@ def get_comparisons() -> str:
         ))
         .map(lambda comp: comp.to_report())
         .collect(Seq)
-        .into(
+        .pipe(
             lambda comps: (
                 header()
                 .chain(render_summary_table(comps))

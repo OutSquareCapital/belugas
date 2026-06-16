@@ -44,7 +44,7 @@ def test_alias_mutability() -> None:
 )
 def test_when_alias(exprs: ExprPair) -> None:
     pl_cols = _LF.collect().select(exprs.pl_expr).columns
-    bl_cols = _slct(exprs.bl_expr).into(list)
+    bl_cols = _slct(exprs.bl_expr).pipe(list)
     assert bl_cols == pl_cols
 
 
@@ -55,9 +55,16 @@ def test_when_alias_chained_then_lit() -> None:
         .select(pl.when(pl_x.gt(0)).then(1).when(pl_y.gt(0)).then(pl_y).otherwise(pl_x))
         .columns
     )
-    bl_cols = _slct(
-        bl.when(bl_x.gt(0)).then(1).when(bl_y.gt(0)).then(bl_y).otherwise(bl_x)
-    ).into(list)
+    bl_cols = (
+        bl
+        .when(bl_x.gt(0))
+        .then(1)
+        .when(bl_y.gt(0))
+        .then(bl_y)
+        .otherwise(bl_x)
+        .pipe(_slct)
+        .pipe(list)
+    )
     assert bl_cols == pl_cols
 
 
