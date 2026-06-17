@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, override
 
 from pyochain import Dict, Seq
 
-from ..typing import DescConds, FileGlob, PathOrBuffer
+from ..typing import DescConds, ParquetSource, PathOrBuffer
 
 if TYPE_CHECKING:
     from duckdb import DuckDBPyConnection
@@ -124,12 +124,12 @@ class ScanTableFunction(BaseScan):
 
 
 @dataclass(slots=True, repr=False)
-class _ScanFile[F: FileGlob | PathOrBuffer](BaseScan):
+class _ScanFile[F: ParquetSource | PathOrBuffer](BaseScan):
     path: F
 
 
 @dataclass(slots=True, repr=False)
-class ScanParquet(_ScanFile[FileGlob]):
+class ScanParquet(_ScanFile[ParquetSource]):
     options: ParquetOptions
 
 

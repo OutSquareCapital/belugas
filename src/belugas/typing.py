@@ -18,7 +18,6 @@ from sqlglot import exp
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping, Sequence
     from os import PathLike
-    from pathlib import Path
 
     from _duckdb._enums import (  # pyright: ignore[reportMissingModuleSource]
         CSVLineTerminator,
@@ -324,7 +323,7 @@ type Schema = Dict[str, exp.DataType]
 """Types that can be used to define a schema (mapping of column names to data types)."""
 type PathOrBuffer = str | bytes | PathLike[str] | PathLike[bytes] | IO[bytes] | IO[str]
 """Types that can be used to specify a file path or buffer for reading/writing data."""
-type FileGlob = Path | str | Iterable[str] | Iterable[Path]
+type ParquetSource = PathOrBuffer | Sequence[PathOrBuffer]
 # theme marker START
 Themes = Literal[
     "abap",

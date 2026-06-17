@@ -32,11 +32,11 @@ if TYPE_CHECKING:
 
     from .typing import (
         AnyArray,
-        FileGlob,
         IntoArrow,
         IntoDict,
         IntoPolars,
         Orientation,
+        ParquetSource,
         PathOrBuffer,
         PythonLiteral,
         SeqIntoVals,
@@ -94,7 +94,7 @@ def from_arrow(df: IntoArrow, connection: Conn = None) -> LazyFrame:
 
 
 def scan_parquet(  # noqa: PLR0913
-    file_glob: FileGlob,
+    file_glob: ParquetSource,
     /,
     *,
     binary_as_string: bool = False,

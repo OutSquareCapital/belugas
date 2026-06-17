@@ -3,7 +3,6 @@ from __future__ import annotations
 import operator
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Self, cast
 
 import duckdb
@@ -23,6 +22,7 @@ if TYPE_CHECKING:
         IntoDict,
         IntoPolars,
         Orientation,
+        ParquetSource,
         PathOrBuffer,
         PythonLiteral,
         SeqIntoVals,
@@ -205,22 +205,9 @@ def from_table_function(name: str, *args: object) -> ScanResult:
 
 
 def from_parquet(
-    path: Path | str | Iterable[str | Path],
-    connection: Option[DuckDBPyConnection],
-    options: ParquetOptions,
+    path: ParquetSource, connection: Option[DuckDBPyConnection], options: ParquetOptions
 ) -> ScanResult:
-    match path:
-        case Path():
-            target = str(path)
-        case str():
-            target = path
-        case Iterable():
-            target = (
-                Iter(path)
-                .map(lambda x: x if isinstance(x, str) else str(x))
-                .collect(Seq)
-            )
-    rel = _get_conn(connection).from_parquet(target, **options)
+    rel = _get_conn(connection).from_parquet(path, **options)
     return from_query(rel)
 
 
