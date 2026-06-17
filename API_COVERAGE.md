@@ -9,8 +9,8 @@ Each summary cell is relative to Polars.
 
 | Class                 | Coverage                                                                                     | Belugas Total | Compared | Matched | Missing | Mismatched | Belugas Only |
 |-----------------------|----------------------------------------------------------------------------------------------|---------------|----------|---------|---------|------------|--------------|
-| LazyFrame             | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (35.0%) | 63            | 55       | 28      | 25      | 27         | 8            |
-| Expr                  | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (39.3%) | 329           | 128      | 84      | 86      | 44         | 201          |
+| LazyFrame             | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (32.9%) | 63            | 55       | 27      | 27      | 28         | 8            |
+| Expr                  | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (39.1%) | 330           | 129      | 84      | 86      | 45         | 201          |
 | LazyGroupBy           | <span style="color: #27ae60;">██████</span><span style="color: #bdc3c7;">░░░░</span> (62.5%) | 12            | 12       | 10      | 4       | 2          | 0            |
 | ExprStringNameSpace   | <span style="color: #f39c12;">███</span><span style="color: #bdc3c7;">░░░░░░░</span> (31.2%) | 122           | 38       | 15      | 10      | 23         | 84           |
 | ExprListNameSpace     | <span style="color: #f39c12;">████</span><span style="color: #bdc3c7;">░░░░░░</span> (41.9%) | 90            | 28       | 18      | 15      | 10         | 62           |
@@ -25,7 +25,7 @@ Each summary cell is relative to Polars.
 
 ## LazyFrame
 
-### [x] Missing Methods (25)
+### [x] Missing Methods (27)
 
 - `collect_async`
   - **Polars**: (gevent: bool, engine: EngineType, optimizations: QueryOptFlags) -> Awaitable[DataFrame] | _GeventDataFrameResult[DataFrame]
@@ -33,6 +33,10 @@ Each summary cell is relative to Polars.
   - **Polars**: (chunk_size: int | None, maintain_order: bool, lazy: bool, engine: EngineType, optimizations: QueryOptFlags) -> Iterator[DataFrame]
 - `deserialize`
   - **Polars**: (source: str | bytes | Path | IOBase, format: SerializationFormat) -> LazyFrame
+- `execute`
+  - **Polars**: (optimizations: QueryOptFlags, engine: EngineType, **_kwargs: Any) -> QueryResult
+- `gather`
+  - **Polars**: (indices: int | Sequence[int] | IntoExpr | pl.Series | np.ndarray[Any, Any] | pl.LazyFrame, null_on_oob: bool) -> LazyFrame
 - `group_by_dynamic`
   - **Polars**: (index_column: IntoExpr, every: str | timedelta, period: str | timedelta | None, offset: str | timedelta | None, include_boundaries: bool, closed: ClosedInterval, label: Label, group_by: IntoExpr | Iterable[IntoExpr] | None, start_by: StartBy) -> LazyGroupBy
 - `inspect`
@@ -78,7 +82,7 @@ Each summary cell is relative to Polars.
 - `update`
   - **Polars**: (other: LazyFrame, on: str | Sequence[str] | None, how: Literal['left', 'inner', 'full'], left_on: str | Sequence[str] | None, right_on: str | Sequence[str] | None, include_nulls: bool, maintain_order: MaintainOrderJoin | None) -> LazyFrame
 
-### [!] Signature Mismatches (27)
+### [!] Signature Mismatches (28)
 
 - `bottom_k`
   - **Polars**: (k: int, by: IntoExpr | Iterable[IntoExpr], `reverse: bool | Sequence[bool]`) -> LazyFrame
@@ -111,7 +115,7 @@ Each summary cell is relative to Polars.
   - **Polars**: (`value: Any | Expr | None`, strategy: FillNullStrategy | None, limit: int | None, `matches_supertype: bool`) -> LazyFrame
   - **belugas**: (value: IntoExpr, strategy: FillNullStrategy | None, limit: int | None) -> Self
 - `filter`
-  - **Polars**: (`*predicates: IntoExprColumn | Iterable[IntoExprColumn] | bool | list[bool]`, **constraints: Any) -> LazyFrame
+  - **Polars**: (`*predicates: IntoExprColumn | Iterable[IntoExprColumn] | bool | list[bool] | np.ndarray[Any, Any]`, **constraints: Any) -> LazyFrame
   - **belugas**: (predicates: TryIter[IntoExprColumn], *more_predicates: IntoExprColumn, **constraints: IntoExpr) -> Self
 - `group_by`
   - **Polars**: (`*by: IntoExpr | Iterable[IntoExpr]`, `maintain_order: bool`, `**named_by: IntoExpr`) -> LazyGroupBy
@@ -122,6 +126,9 @@ Each summary cell is relative to Polars.
 - `join_asof`
   - **Polars**: (other: LazyFrame, `left_on: str | None | Expr`, `right_on: str | None | Expr`, `on: str | None | Expr`, `by_left: str | Sequence[str] | None`, `by_right: str | Sequence[str] | None`, `by: str | Sequence[str] | None`, strategy: AsofJoinStrategy, suffix: str, `tolerance: str | int | float | timedelta | None`, allow_parallel: bool, force_parallel: bool, `coalesce: bool`, `allow_exact_matches: bool`, `check_sortedness: bool`) -> LazyFrame
   - **belugas**: (other: Self, left_on: str | None, right_on: str | None, on: str | None, `by_left: TryIter[str]`, `by_right: TryIter[str]`, `by: TryIter[str]`, strategy: AsofJoinStrategy, suffix: str) -> Self
+- `pipe`
+  - **Polars**: (`function: Callable[Concatenate[LazyFrame, P], T]`, *args: args, **kwargs: kwargs) -> T
+  - **belugas**: (`func`, *args, **kwargs)
 - `pivot`
   - **Polars**: (`on: ColumnNameOrSelector | Sequence[ColumnNameOrSelector]`, `on_columns: Sequence[Any] | pl.Series | pl.DataFrame`, `index: ColumnNameOrSelector | Sequence[ColumnNameOrSelector] | None`, `values: ColumnNameOrSelector | Sequence[ColumnNameOrSelector] | None`, `aggregate_function: PivotAgg | Expr | None`, maintain_order: bool, separator: str, `column_naming: Literal['auto', 'combine']`) -> LazyFrame
   - **belugas**: (`on: TryIter[str]`, `on_columns: TryIter[PythonLiteral]`, `index: TryIter[str]`, `values: TryIter[str]`, aggregate_function: PivotAgg, maintain_order: bool, separator: str) -> Self
@@ -231,10 +238,8 @@ Each summary cell is relative to Polars.
   - **Polars**: () -> ExprExtensionNameSpace
 - `extend_constant`
   - **Polars**: (value: IntoExpr, n: int | IntoExprColumn) -> Expr
-- `filter`
-  - **Polars**: (*predicates: IntoExprColumn | Iterable[IntoExprColumn], **constraints: Any) -> Expr
 - `gather`
-  - **Polars**: (indices: int | Sequence[int] | IntoExpr | Series | np.ndarray[Any, Any]) -> Expr
+  - **Polars**: (indices: int | Sequence[int] | IntoExpr | Series | np.ndarray[Any, Any], null_on_oob: bool) -> Expr
 - `gather_every`
   - **Polars**: (n: int, offset: int) -> Expr
 - `get`
@@ -251,6 +256,8 @@ Each summary cell is relative to Polars.
   - **Polars**: (method: InterpolationMethod) -> Expr
 - `interpolate_by`
   - **Polars**: (by: IntoExpr) -> Expr
+- `is_empty`
+  - **Polars**: (ignore_nulls: bool) -> Expr
 - `item`
   - **Polars**: (allow_empty: bool) -> Expr
 - `limit`
@@ -350,7 +357,7 @@ Each summary cell is relative to Polars.
 - `value_counts`
   - **Polars**: (sort: bool, parallel: bool, name: str_ | None, normalize: bool) -> Expr
 
-### [!] Signature Mismatches (44)
+### [!] Signature Mismatches (45)
 
 - `alias`
   - **Polars**: (`name: str_`) -> Expr
@@ -439,6 +446,9 @@ Each summary cell is relative to Polars.
 - `pct_change`
   - **Polars**: (`n: int | IntoExprColumn`) -> Expr
   - **belugas**: (n: int) -> Self
+- `pipe`
+  - **Polars**: (`function: Callable[Concatenate[Expr, P], T]`, *args: args, **kwargs: kwargs) -> T
+  - **belugas**: (`func`, *args, **kwargs)
 - `pow`
   - **Polars**: (`exponent: IntoExprColumn | int | float`) -> Expr
   - **belugas**: (`y: IntoExprColumn | float`) -> Self
@@ -1437,7 +1447,7 @@ Each summary cell is relative to Polars.
 - `read_delta`
   - **Polars**: (source: str | Path | DeltaTable, version: int | str | datetime | None, columns: list[str] | None, rechunk: bool | None, storage_options: StorageOptionsDict | None, credential_provider: CredentialProviderFunction | Literal['auto'] | None, delta_table_options: dict[str, Any] | None, use_pyarrow: bool, pyarrow_options: dict[str, Any] | None) -> DataFrame
 - `read_excel`
-  - **Polars**: (source: FileSource, sheet_id: int | Sequence[int] | None, sheet_name: str | list[str] | tuple[str, ...] | None, table_name: str | None, engine: ExcelSpreadsheetEngine, engine_options: dict[str, Any] | None, read_options: dict[str, Any] | None, has_header: bool, columns: Sequence[int] | Sequence[str] | str | None, schema_overrides: SchemaDict | None, infer_schema_length: int | None, include_file_paths: str | None, drop_empty_rows: bool, drop_empty_cols: bool, raise_if_empty: bool) -> DataFrame | dict[str, pl.DataFrame]
+  - **Polars**: (source: FileSource | memoryview[int], sheet_id: int | Sequence[int] | None, sheet_name: str | list[str] | tuple[str, ...] | None, table_name: str | None, engine: ExcelSpreadsheetEngine, engine_options: dict[str, Any] | None, read_options: dict[str, Any] | None, has_header: bool, columns: Sequence[int] | Sequence[str] | str | None, schema_overrides: SchemaDict | None, infer_schema_length: int | None, include_file_paths: str | None, drop_empty_rows: bool, drop_empty_cols: bool, raise_if_empty: bool) -> DataFrame | dict[str, pl.DataFrame]
 - `read_ipc`
   - **Polars**: (source: str | Path | IO[bytes] | bytes, columns: list[int] | list[str] | None, n_rows: int | None, use_pyarrow: bool, memory_map: bool, storage_options: StorageOptionsDict | None, row_index_name: str | None, row_index_offset: int, rechunk: bool) -> DataFrame
 - `read_ipc_schema`
@@ -1614,7 +1624,7 @@ Each summary cell is relative to Polars.
   - **belugas**: (`path_or_buffer: PathOrBuffer`, `header: bool | int | None`, `compression: CsvCompression | None`, `sep: str | None`, `delimiter: str | None`, `files_to_sniff: int | None`, `comment: str | None`, `thousands: str | None`, `dtype: IntoFields | None`, `na_values: str | list[str] | None`, `skiprows: int | None`, `quotechar: str | None`, `escapechar: str | None`, `encoding: CsvEncoding | None`, `parallel: bool | None`, `date_format: str | None`, `timestamp_format: str | None`, `sample_size: int | None`, `auto_detect: bool | int | None`, `all_varchar: bool | None`, `normalize_names: bool | None`, `null_padding: bool | None`, `names: list[str] | None`, `lineterminator: CSVLineTerminator | None`, `columns: ColumnsTypes | None`, `auto_type_candidates: list[StrIntoPyType] | None`, `max_line_size: int | None`, `ignore_errors: bool | None`, `store_rejects: bool | None`, `rejects_table: str | None`, `rejects_scan: str | None`, `rejects_limit: int | None`, `force_not_null: list[str] | None`, `buffer_size: int | None`, `decimal: str | None`, `allow_quoted_nulls: bool | None`, `filename: bool | str | None`, `hive_partitioning: bool | None`, `union_by_name: bool | None`, `hive_types: HiveTypes | None`, `hive_types_autocast: bool | None`, `strict_mode: bool | None`, `connection: Conn`) -> LazyFrame
 - `scan_parquet`
   - **Polars**: (`source: FileSource`, `n_rows: int | None`, `row_index_name: str | None`, `row_index_offset: int`, `parallel: ParallelStrategy`, `use_statistics: bool`, `hive_partitioning: bool | None`, `glob: bool`, `hidden_file_prefix: str | Sequence[str] | None`, `schema: SchemaDict | None`, `hive_schema: SchemaDict | None`, `try_parse_hive_dates: bool`, `rechunk: bool`, `low_memory: bool`, `cache: bool`, `storage_options: StorageOptionsDict | None`, `credential_provider: CredentialProviderFunction | Literal['auto'] | None`, `retries: int | None`, `include_file_paths: str | None`, `missing_columns: Literal['insert', 'raise']`, `allow_missing_columns: bool | None`, `extra_columns: Literal['ignore', 'raise']`, `cast_options: ScanCastOptions | None`, `_column_mapping: ColumnMapping | None`, `_default_values: DefaultFieldValues | None`, `_deletion_files: DeletionFiles | None`, `_table_statistics: DataFrame | None`, `_row_count: tuple[int, int] | None`) -> LazyFrame
-  - **belugas**: (`file_glob: FileGlob`, `binary_as_string: bool`, `file_row_number: bool`, `filename: bool`, hive_partitioning: bool, `union_by_name: bool`, `compression: ParquetCompression | None`, `connection: Conn`) -> LazyFrame
+  - **belugas**: (`file_glob: ParquetSource`, `binary_as_string: bool`, `file_row_number: bool`, `filename: bool`, hive_partitioning: bool, `union_by_name: bool`, `compression: ParquetCompression | None`, `connection: Conn`) -> LazyFrame
 - `sum`
   - **Polars**: (`*names: str`) -> Expr
   - **belugas**: (`cols: TryIter[str]`, *more_cols: str) -> Expr
