@@ -35,7 +35,7 @@
     reportMissingSuperCall = false
     typeCheckingMode       = "all"
 [tool.pyrefly]
-    preset      = "strict"
+    preset      = "all"
     search-path = ["."]
 [tool.pytest.ini_options]
     testpaths = ["tests"]
