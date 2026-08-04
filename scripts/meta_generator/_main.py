@@ -34,7 +34,7 @@ class MetaFnInfo:
     varargs_type: Option[str]
 
     @classmethod
-    def from_row(  # noqa: PLR0913, PLR0917
+    def from_row(  # ruff: ignore[too-many-arguments, too-many-positional-arguments]
         cls,
         name: str,
         final_name: str,

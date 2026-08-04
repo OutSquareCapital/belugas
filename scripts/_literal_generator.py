@@ -32,7 +32,7 @@ THEME_DOC = (
 
 
 def generate_themes(caller: Path) -> tuple[int, Path]:
-    from pygments.styles._mapping import (  # pyright: ignore[reportMissingTypeStubs]  # noqa: PLC2701
+    from pygments.styles._mapping import (  # pyright: ignore[reportMissingTypeStubs]  # ruff: ignore[import-private-name]
         STYLES,
     )
 
@@ -58,7 +58,9 @@ def generate_themes(caller: Path) -> tuple[int, Path]:
 
 
 def generate_nodes(caller: Path) -> tuple[int, Path]:
-    from src.belugas._plan import nodes as node_module  # noqa: PLC2701
+    from src.belugas._plan import (
+        nodes as node_module,
+    )
 
     dest = _resolve_module_path(node_module)
 
@@ -117,8 +119,13 @@ def _resolve_module_path(module: ModuleType) -> Path:
     return Path(file_path)
 
 
-def _build_content(  # noqa: PLR0913, PLR0917
-    dest: Path, caller: Path, start_marker: str, end_marker: str, content: str, doc: str
+def _build_content(  # ruff: ignore[too-many-arguments, too-many-positional-arguments]
+    dest: Path,
+    caller: Path,
+    start_marker: str,
+    end_marker: str,
+    content: str,
+    doc: str,
 ) -> int:
     warning = _warning(caller)
     file_content = dest.read_text(encoding="utf-8")

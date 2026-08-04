@@ -93,7 +93,7 @@ def from_arrow(df: IntoArrow, connection: Conn = None) -> LazyFrame:
     return _from_node(nodes.ScanInMemory(option(connection), df))
 
 
-def scan_parquet(  # noqa: PLR0913
+def scan_parquet(  # ruff: ignore[too-many-arguments]
     file_glob: ParquetSource,
     /,
     *,
@@ -116,7 +116,7 @@ def scan_parquet(  # noqa: PLR0913
     return _from_node(nodes.ScanParquet(option(connection), file_glob, options))
 
 
-def scan_csv(  # noqa: PLR0913
+def scan_csv(  # ruff: ignore[too-many-arguments]
     path_or_buffer: PathOrBuffer,
     *,
     header: bool | int | None = None,
@@ -208,14 +208,14 @@ def scan_csv(  # noqa: PLR0913
     return _from_node(nodes.ScanCSV(option(connection), path_or_buffer, options))
 
 
-def scan_json(  # noqa: PLR0913
+def scan_json(  # ruff: ignore[too-many-arguments]
     path_or_buffer: PathOrBuffer,
     *,
     columns: ColumnsTypes | None = None,
     sample_size: int | None = None,
     maximum_depth: int | None = None,
     records: JsonRecordOptions | None = None,
-    format: JsonFormat | None = None,  # noqa: A002
+    format: JsonFormat | None = None,  # ruff: ignore[builtin-argument-shadowing]
     date_format: str | None = None,
     timestamp_format: str | None = None,
     compression: JsonCompression | None = None,

@@ -624,7 +624,7 @@ class LazyFrame(CoreHandler[nodes.Node]):
             .collect(Dict)
         )
 
-    def join(  # noqa: PLR0913
+    def join(  # ruff: ignore[too-many-arguments]
         self,
         other: Self,
         on: TryIter[str] = None,
@@ -663,7 +663,7 @@ class LazyFrame(CoreHandler[nodes.Node]):
         """
         return self._cls(nodes.JoinCross(self._inner, other.inner, suffix))
 
-    def join_asof(  # noqa: PLR0913
+    def join_asof(  # ruff: ignore[too-many-arguments]
         self,
         other: Self,
         *,
@@ -726,7 +726,7 @@ class LazyFrame(CoreHandler[nodes.Node]):
         """
         return self._cls(nodes.Unique(self._inner, subset, keep, order_by))
 
-    def pivot(  # noqa: PLR0913
+    def pivot(  # ruff: ignore[too-many-arguments]
         self,
         on: TryIter[str],
         on_columns: TryIter[PythonLiteral],
@@ -830,7 +830,7 @@ class LazyFrame(CoreHandler[nodes.Node]):
         """
         return self._cls(nodes.Cast(self._inner, dtypes))
 
-    def sink_parquet(  # noqa: PLR0913
+    def sink_parquet(  # ruff: ignore[too-many-arguments]
         self,
         path: str | Path,
         *,
@@ -864,7 +864,7 @@ class LazyFrame(CoreHandler[nodes.Node]):
             file_size_bytes=file_size_bytes,
         )
 
-    def sink_csv(  # noqa: PLR0913
+    def sink_csv(  # ruff: ignore[too-many-arguments]
         self,
         path: str | Path,
         *,

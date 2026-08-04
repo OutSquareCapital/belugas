@@ -1,33 +1,33 @@
 lint.ignore = [
-    "A001",
-    "A004",
-    "C417",
-    "C901",
-    "COM812",
-    "COM812",
-    "CPY001",
-    "D401",
-    "E501",
-    "FIX002",
-    "PD003",
-    "PLC0415",
-    "PLC1901",
-    "PLC2801",
-    "PLR0904",
-    "PLR0911",
-    "PLR0912",
-    "PLR2004",
-    "S101",
-    "S102",
-    "S404",
-    "S608",
-    "SLF001",
-    "T201",
-    "T203",
-    "TC006",
-    "TD002",
-    "TD003",
-    "TID252",
+    "builtin-variable-shadowing",
+    "builtin-import-shadowing",
+    "unnecessary-map",
+    "complex-structure",
+    "missing-trailing-comma",
+    "missing-trailing-comma",
+    "missing-copyright-notice",
+    "non-imperative-mood",
+    "line-too-long",
+    "line-contains-todo",
+    "pandas-use-of-dot-is-null",
+    "import-outside-top-level",
+    "compare-to-empty-string",
+    "unnecessary-dunder-call",
+    "too-many-public-methods",
+    "too-many-return-statements",
+    "too-many-branches",
+    "magic-value-comparison",
+    "assert",
+    "exec-builtin",
+    "suspicious-subprocess-import",
+    "hardcoded-sql-expression",
+    "private-member-access",
+    "print",
+    "p-print",
+    "runtime-cast-value",
+    "missing-todo-author",
+    "missing-todo-link",
+    "relative-imports",
 ]
 lint.select = ["ALL"]
 preview = true
@@ -38,16 +38,16 @@ preview = true
     convention = "google"
 [lint.per-file-ignores]
     "src/belugas/_fns.py" = [
-        "A002",
-        "ANN401",
-        "FBT001",
-        "FBT002",
-        "PLR0913",
-        "PLW1641",
+        "builtin-argument-shadowing",
+        "any-type",
+        "boolean-type-hint-positional-argument",
+        "boolean-default-value-positional-argument",
+        "too-many-arguments",
+        "eq-without-hash",
     ]
-    "src/belugas/meta.py" = ["FBT001"]
-    "src/belugas/typing.py" = ["ANN401", "D102", "D105", "PLW3201"]
-    "t.py" = ["ANN201", "D100", "D101", "D103"]
-    "tests/*" = ["D100", "D101", "D102", "D103", "D104", "DTZ001", "FBT001"]
+    "src/belugas/meta.py" = ["boolean-type-hint-positional-argument"]
+    "src/belugas/typing.py" = ["any-type", "undocumented-public-method", "undocumented-magic-method", "bad-dunder-method-name"]
+    "t.py" = ["missing-return-type-undocumented-public-function", "undocumented-public-module", "undocumented-public-class", "undocumented-public-function"]
+    "tests/*" = ["undocumented-public-module", "undocumented-public-class", "undocumented-public-method", "undocumented-public-function", "undocumented-public-package", "call-datetime-without-tzinfo", "boolean-type-hint-positional-argument"]
 [lint.isort]
     combine-as-imports = true

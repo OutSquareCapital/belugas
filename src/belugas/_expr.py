@@ -195,7 +195,7 @@ class Expr(Fns):
 
     aliaser: AliasMapper = field(default_factory=AliasMapper)
 
-    def __rich__(self) -> RenderableType:  # noqa: PLW3201
+    def __rich__(self) -> RenderableType:  # ruff: ignore[bad-dunder-method-name]
         from ._show import expr_tree
 
         return expr_tree(self.inner)
@@ -1101,7 +1101,7 @@ class Expr(Fns):
             exp.Filter(this=self.inner, expression=exp.Where(this=condition))
         )
 
-    def window(  # noqa: PLR0913, PLR0917
+    def window(  # ruff: ignore[too-many-arguments, too-many-positional-arguments]
         self,
         partition_by: TryIter[IntoExprColumn] | None = None,
         order_by: TryIter[IntoExprColumn] | None = None,

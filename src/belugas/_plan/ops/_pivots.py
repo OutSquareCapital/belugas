@@ -30,7 +30,7 @@ PIVOT_AGG: dict[PivotAgg, Callable[[Expr], Expr]] = {
 }
 
 
-def pivot(  # noqa: PLR0913, PLR0914, PLR0917
+def pivot(  # ruff: ignore[too-many-arguments, too-many-locals, too-many-positional-arguments]
     ast: exp.Select,
     schema: Schema,
     on: TryIter[str],
@@ -170,7 +170,7 @@ def pivot(  # noqa: PLR0913, PLR0914, PLR0917
     )
 
 
-def unpivot(  # noqa: PLR0913, PLR0917
+def unpivot(  # ruff: ignore[too-many-arguments, too-many-positional-arguments]
     ast: exp.Select,
     schema: Schema,
     on: TryIter[str],

@@ -6,7 +6,9 @@ from pyochain import Iter, Seq
 
 import belugas as bl
 from belugas import typing as t
-from belugas._groupby import LazyGroupBy as blLazyGroupBy  # noqa: PLC2701
+from belugas._groupby import (
+    LazyGroupBy as blLazyGroupBy,
+)
 
 from .._utils import Pql
 from ._rules import IGNORED_MEMBERS

@@ -19,7 +19,7 @@ type OptSeq = Option[Seq[str]]
 type JoinKeysRes[T: Seq[str] | str] = Result[JoinKeys[T], ValueError]
 
 
-def join(  # noqa: PLR0913, PLR0917
+def join(  # ruff: ignore[too-many-arguments, too-many-positional-arguments]
     lhs_ast: exp.Select,
     rhs_ast: exp.Select,
     schema: Schema,
@@ -50,7 +50,7 @@ def join(  # noqa: PLR0913, PLR0917
     )
 
 
-def join_asof(  # noqa: PLR0913, PLR0917
+def join_asof(  # ruff: ignore[too-many-arguments, too-many-positional-arguments]
     lhs_ast: exp.Select,
     rhs_ast: exp.Select,
     schema: Schema,

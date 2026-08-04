@@ -1,4 +1,4 @@
-# ruff: noqa: PLR0917
+# ruff: file-ignore[too-many-positional-arguments]
 
 """DuckDB SQL function wrappers with type hints.
 

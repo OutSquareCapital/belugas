@@ -332,7 +332,7 @@ class ComplexDataType(DataType):
     """Base class for complex data types that need reverse-construction from parsed sqlglot AST."""
 
     @classmethod
-    def __from_raw__(cls, raw: exp.DataType) -> Self:  # noqa: PLW3201
+    def __from_raw__(cls, raw: exp.DataType) -> Self:  # ruff: ignore[bad-dunder-method-name]
         """Construct a DataType instance from a raw sqlglot DataType expression.
 
         Args:

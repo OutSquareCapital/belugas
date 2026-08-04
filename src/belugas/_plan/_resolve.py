@@ -122,7 +122,7 @@ def _resolve_scan(node: nodes.Scan) -> scans.ScanResult:
             return scans.from_json(node.path, node.connection, node.options)
 
 
-def _compile_tree(  # noqa: PLR0915
+def _compile_tree(  # ruff: ignore[too-many-statements]
     src_ast: exp.Select, schema: Schema, node: nodes.Node
 ) -> Result[CompiledPlan, CompilationError]:
     from . import ops

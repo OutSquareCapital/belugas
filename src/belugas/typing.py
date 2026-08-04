@@ -206,7 +206,7 @@ class NPProtocol(Protocol):
     def __array_priority__(self) -> float: ...
 
 
-class NPScalarTypeLike(NPProtocol, Protocol):  # noqa: D101
+class NPScalarTypeLike(NPProtocol, Protocol):  # ruff: ignore[undocumented-public-class]
     @property
     def itemsize(self) -> int: ...
 
@@ -226,7 +226,7 @@ class NPArrayLike[S: tuple[Any, ...], D](NPProtocol, Protocol):
     @property
     def size(self) -> int: ...
     @property
-    def T(self) -> Self: ...  # noqa: N802
+    def T(self) -> Self: ...  # ruff: ignore[invalid-function-name]
 
 
 type AnyArray = NPArrayLike[Any, Any]  # pyright: ignore[reportExplicitAny]

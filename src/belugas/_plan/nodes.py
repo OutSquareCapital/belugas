@@ -48,7 +48,7 @@ class BaseNode:
     def __repr__(self) -> str:
         return node_structure(self)
 
-    def __rich__(self) -> RenderableType:  # noqa: PLW3201
+    def __rich__(self) -> RenderableType:  # ruff: ignore[bad-dunder-method-name]
         from .._show import node_tree
 
         return node_tree(self)

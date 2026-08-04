@@ -35,11 +35,13 @@ def _try_scan(source: Path, *, regenerate: bool) -> pl.LazyFrame:
         return pl.scan_parquet(source)
     import duckdb
 
+    print(Text("Installing and loading DuckDB extensions...", style="yellow"))
     conn = duckdb.connect()
     conn.install_extension("spatial")
     conn.load_extension("spatial")
     conn.install_extension("delta")
     conn.load_extension("delta")
+    print(Text("Introspecting DuckDB functions...", style="yellow"))
     df = conn.table_function("duckdb_functions").pl().cast(TableSchema)
     source.parent.mkdir(parents=True, exist_ok=True)
     df.write_parquet(source)

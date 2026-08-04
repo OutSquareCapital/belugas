@@ -64,7 +64,7 @@ def agg_columns(
     )
 
 
-def agg(  # noqa: PLR0913, PLR0917
+def agg(  # ruff: ignore[too-many-arguments, too-many-positional-arguments]
     ast: exp.Select,
     schema: Schema,
     keys: Seq[Expr],

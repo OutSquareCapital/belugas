@@ -285,7 +285,7 @@ class ExprStringNameSpace(StringFns[Expr]):
         """
         return self.inner.cast(dt.Decimal(scale=scale))
 
-    def to_datetime(self, format: IntoExprColumn | None = None) -> Expr:  # noqa: A002
+    def to_datetime(self, format: IntoExprColumn | None = None) -> Expr:  # ruff: ignore[builtin-argument-shadowing]
         """Parse string values as datetime.
 
         Returns:
@@ -293,7 +293,7 @@ class ExprStringNameSpace(StringFns[Expr]):
         """
         return self.inner.dt.to_datetime(format)
 
-    def to_time(self, format: IntoExprColumn | None = None) -> Expr:  # noqa: A002
+    def to_time(self, format: IntoExprColumn | None = None) -> Expr:  # ruff: ignore[builtin-argument-shadowing]
         """Parse string values as time.
 
         Returns:
@@ -301,7 +301,7 @@ class ExprStringNameSpace(StringFns[Expr]):
         """
         return self.inner.dt.to_time(format)
 
-    def to_date(self, format: IntoExprColumn | None = None) -> Expr:  # noqa: A002
+    def to_date(self, format: IntoExprColumn | None = None) -> Expr:  # ruff: ignore[builtin-argument-shadowing]
         """Parse string values as date.
 
         Returns:
@@ -512,7 +512,7 @@ class ExprDateTimeNameSpace(DateTimeFns[Expr]):
         """
         return self.last_day().add(self.inner.sub(self.trunc(Lit.DAY)))
 
-    def to_datetime(self, format: IntoExprColumn | None = None) -> Expr:  # noqa: A002
+    def to_datetime(self, format: IntoExprColumn | None = None) -> Expr:  # ruff: ignore[builtin-argument-shadowing]
         """Parse string values as datetime.
 
         Args:
@@ -528,7 +528,7 @@ class ExprDateTimeNameSpace(DateTimeFns[Expr]):
             case _:
                 return self.inner.str.strptime(format).cast(dtype)
 
-    def to_time(self, format: IntoExprColumn | None = None) -> Expr:  # noqa: A002
+    def to_time(self, format: IntoExprColumn | None = None) -> Expr:  # ruff: ignore[builtin-argument-shadowing]
         """Parse string values as time.
 
         Args:
@@ -622,7 +622,7 @@ class ExprDateTimeNameSpace(DateTimeFns[Expr]):
         """
         return self.inner.cast(dt.Time())
 
-    def to_string(self, format: IntoExprColumn) -> Expr:  # noqa: A002
+    def to_string(self, format: IntoExprColumn) -> Expr:  # ruff: ignore[builtin-argument-shadowing]
         """Format datetime as string.
 
         Args:

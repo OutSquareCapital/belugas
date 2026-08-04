@@ -10,7 +10,7 @@ from polars.testing import assert_frame_equal
 from pyochain import Seq
 
 import belugas as bl
-from belugas._groupby import LazyGroupBy  # noqa: PLC2701
+from belugas._groupby import LazyGroupBy  # ruff: ignore[import-private-name]
 
 from ._utils import into_ids
 

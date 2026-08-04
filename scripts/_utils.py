@@ -11,7 +11,10 @@ import duckdb
 from pyochain import Dict, Iter, Option, Seq, Set, Vec, option
 
 import belugas as bl
-from belugas import _core as bl_core, namespaces as bl_nm  # noqa: PLC2701
+from belugas import (
+    _core as bl_core,
+    namespaces as bl_nm,
+)
 
 
 class KwordEnum(StrEnum):
