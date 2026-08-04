@@ -44,9 +44,6 @@ def gen_fns(
     output: OutputPath = _Paths.FNS,
     *,
     check_only: CheckArg = False,
-    profile: Annotated[
-        bool, typer.Option("--p", help="Enable profiling of the pipeline")
-    ] = False,
     regenerate: Annotated[
         bool,
         typer.Option(
@@ -58,9 +55,7 @@ def gen_fns(
     from .fn_generator import run_pipeline
 
     console.print("Fetching functions from DuckDB...")
-    content = run_pipeline(
-        _Paths.SELF, data_path, profile=profile, regenerate=regenerate
-    )
+    content = run_pipeline(_Paths.SELF, data_path, regenerate=regenerate)
 
     output.parent.mkdir(parents=True, exist_ok=True)
     res = output.write_text(content, encoding="utf-8")

@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import polars as pl
-from polars.exceptions import ComputeError
 from pyochain import Iter, Seq
 from rich import print
 from rich.text import Text
@@ -18,13 +17,10 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def run_pipeline(
-    caller: Path, source: Path, *, profile: bool = False, regenerate: bool
-) -> str:
+def run_pipeline(caller: Path, source: Path, *, regenerate: bool) -> str:
     return (
         _try_scan(source, regenerate=regenerate)
         .pipe(run_qry)
-        .pipe(_inspect if profile else lambda lf: lf)
         .collect()
         .map_rows(lambda x: FunctionInfo(*x), return_dtype=pl.Object)  # pyright: ignore[reportAny]
         .pipe(lambda df: Iter[FunctionInfo](df.to_series()))
@@ -48,13 +44,3 @@ def _try_scan(source: Path, *, regenerate: bool) -> pl.LazyFrame:
     source.parent.mkdir(parents=True, exist_ok=True)
     df.write_parquet(source)
     return df.lazy()
-
-
-def _inspect(lf: pl.LazyFrame) -> pl.LazyFrame:
-    try:
-        lf.profile()[1].with_columns(
-            pl.col("end").sub(pl.col("start")).alias("duration")
-        ).sort("duration", descending=True).show(10, fmt_str_lengths=100)
-    except ComputeError:
-        return lf
-    return lf
