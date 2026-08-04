@@ -23,7 +23,7 @@ def _run_qry() -> str:
     original = Dict(DuckDBParser.FUNCTIONS)  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType, reportUnknownVariableType]
     _check_no_overlap(original)  # pyright: ignore[reportUnknownArgumentType]
     import belugas as bl
-    from belugas._sqlglot_patch import (
+    from belugas._sqlglot_patch import (  # noqa: PLC2701
         DUCKDB_FUNCTIONS,
     )
 
@@ -93,13 +93,13 @@ def _run_qry() -> str:
                     how="left",
                 )
                 .with_columns(patched.fill_null(value=False))
-            )
+            ),
         )
         .drop("alias_root")
         .with_columns(
             all_aliases.list.set_difference(pl.concat_list(function_name)).alias(
-                "other_aliases"
-            )
+                "other_aliases",
+            ),
         )
         .pipe(
             lambda lf: lf.join(
@@ -108,10 +108,10 @@ def _run_qry() -> str:
                     .unique()
                     .sort()
                     .implode()
-                    .alias("known_function_names")
+                    .alias("known_function_names"),
                 ),
                 how="cross",
-            )
+            ),
         )
         .select(
             function_name.pipe(_emphase).alias("function_name"),
