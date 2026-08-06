@@ -23,7 +23,7 @@ def _run_qry() -> str:
     original = Dict(DuckDBParser.FUNCTIONS)  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType, reportUnknownVariableType]
     _check_no_overlap(original)  # pyright: ignore[reportUnknownArgumentType]
     import belugas as bl
-    from belugas._sqlglot_patch import (  # noqa: PLC2701
+    from belugas._sqlglot_patch import (  # ruff: ignore[import-private-name]
         DUCKDB_FUNCTIONS,
     )
 

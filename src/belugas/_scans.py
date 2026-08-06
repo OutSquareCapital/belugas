@@ -13,10 +13,8 @@ if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
     import pandas as pd
-    from _duckdb._enums import (  # pyright: ignore[reportMissingModuleSource]
-        CSVLineTerminator,
-    )
-    from _duckdb._typing import (  # pyright: ignore[reportMissingModuleSource]
+    from _duckdb._enums import CSVLineTerminator
+    from _duckdb._typing import (
         ColumnsTypes,
         CsvCompression,
         CsvEncoding,

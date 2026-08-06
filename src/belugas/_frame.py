@@ -20,14 +20,8 @@ if TYPE_CHECKING:
 
     import polars as pl
     from _duckdb import ExplainType
-    from _duckdb._enums import (  # pyright: ignore[reportMissingModuleSource]
-        ExplainTypeLiteral,
-        RenderModeLiteral,
-    )
-    from _duckdb._typing import (  # pyright: ignore[reportMissingModuleSource]
-        CsvCompression,
-        ParquetFieldsOptions,
-    )
+    from _duckdb._enums import ExplainTypeLiteral, RenderModeLiteral
+    from _duckdb._typing import CsvCompression, ParquetFieldsOptions
     from duckdb import DuckDBPyConnection
     from pyochain import PyoKeysView, PyoValuesView
 
@@ -587,18 +581,18 @@ class LazyFrame(CoreHandler[nodes.Node]):
 
     @property
     def columns(self) -> PyoKeysView[str]:
-        """Get column names."""
+        """The column names."""
         return compile_plan(self._inner).schema.keys()
 
     @property
     def dtypes(self) -> PyoValuesView[dt.DataType]:
-        """Get column data types."""
+        """The column data types."""
         # NOTE: here we rely on `DuckDBPyRelation`, since ATM we still have `sqlglot::exp::DType::UNKNOWN` in the compiled results
         return self.schema.values()
 
     @property
     def width(self) -> int:
-        """Get number of columns."""
+        """The number of columns."""
         return compile_plan(self._inner).schema.len()
 
     @property

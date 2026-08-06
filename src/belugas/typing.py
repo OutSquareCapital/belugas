@@ -19,10 +19,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping, Sequence
     from os import PathLike
 
-    from _duckdb._enums import (  # pyright: ignore[reportMissingModuleSource]
-        CSVLineTerminator,
-    )
-    from _duckdb._typing import (  # pyright: ignore[reportMissingModuleSource]  # pyright: ignore[reportMissingModuleSource]
+    from _duckdb._enums import CSVLineTerminator
+    from _duckdb._typing import (
         BlobLiteral as DuckBlobLit,
         ColumnsTypes,
         CsvCompression,

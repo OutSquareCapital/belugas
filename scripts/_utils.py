@@ -12,7 +12,7 @@ from pyochain import Dict, Iter, Option, Seq, Set, Vec, option
 
 import belugas as bl
 from belugas import (
-    _core as bl_core,
+    _core as bl_core,  # ruff: ignore[import-private-name]
     namespaces as bl_nm,
 )
 

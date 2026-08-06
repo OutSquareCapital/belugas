@@ -9,9 +9,7 @@ import pytest
 import belugas as bl
 
 if TYPE_CHECKING:
-    from _duckdb._typing import (  # pyright: ignore[reportMissingModuleSource]
-        StrIntoPyType,
-    )
+    from _duckdb._typing import StrIntoPyType
     from pyochain import Dict
 
 

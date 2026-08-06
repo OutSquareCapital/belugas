@@ -58,7 +58,7 @@ def generate_themes(caller: Path) -> tuple[int, Path]:
 
 
 def generate_nodes(caller: Path) -> tuple[int, Path]:
-    from src.belugas._plan import (
+    from src.belugas._plan import (  # ruff: ignore[import-private-name]
         nodes as node_module,
     )
 

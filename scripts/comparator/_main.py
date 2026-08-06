@@ -6,7 +6,7 @@ from pyochain import Iter, Seq
 
 import belugas as bl
 from belugas import typing as t
-from belugas._groupby import (
+from belugas._groupby import (  # ruff: ignore[import-private-name]
     LazyGroupBy as blLazyGroupBy,
 )
 

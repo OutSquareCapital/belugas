@@ -26,10 +26,7 @@ from pyochain import Dict, Iter, Seq, Vec
 from sqlglot import exp
 
 if TYPE_CHECKING:
-    from _duckdb._typing import (  # pyright: ignore[reportMissingModuleSource]
-        IntoPyType,
-        StrIntoPyType,
-    )
+    from _duckdb._typing import IntoPyType, StrIntoPyType
     from pyochain.abc import PyoIterator
 
     from .typing import EpochTimeUnit, IntoDict
@@ -482,12 +479,12 @@ class Decimal(NumericType, ComplexDataType):
 
     @property
     def precision(self) -> int:
-        """Get the precision of the decimal type."""
+        """The precision of the decimal type."""
         return int(self.raw.expressions[0].this.this)  # pyright: ignore[reportAny]
 
     @property
     def scale(self) -> int:
-        """Get the scale of the decimal type."""
+        """The scale of the decimal type."""
         return int(self.raw.expressions[1].this.this)  # pyright: ignore[reportAny]
 
 
@@ -645,7 +642,7 @@ class Enum(StringType, ComplexDataType):
 
     @property
     def categories(self) -> Seq[str]:
-        """Get the categories of the enum type."""
+        """The categories of the enum type."""
         exprs: list[exp.Expr] = self.raw.expressions
         return (
             Iter(exprs).map(lambda lit: lit.this).collect(Seq)  # pyright: ignore[reportAny]
@@ -686,7 +683,7 @@ class Union(NestedType, ComplexDataType):
 
     @property
     def fields(self) -> Seq[DataType]:
-        """Get the fields of the union type."""
+        """The fields of the union type."""
         return (
             Iter(self.raw.expressions)
             .map(lambda col_def: self.from_sql(col_def.kind))  # pyright: ignore[reportAny]
@@ -725,12 +722,12 @@ class Map(NestedType, ComplexDataType):
 
     @property
     def key(self) -> DataType:
-        """Get the key type of the map."""
+        """The key type of the map."""
         return self.from_sql(self.raw.expressions[0])  # pyright: ignore[reportAny]
 
     @property
     def value(self) -> DataType:
-        """Get the value type of the map."""
+        """The value type of the map."""
         return self.from_sql(self.raw.expressions[1])  # pyright: ignore[reportAny]
 
 
@@ -766,7 +763,7 @@ class Struct(NestedType, ComplexDataType):
 
     @property
     def fields(self) -> Dict[str, DataType]:
-        """Get the fields of the struct type."""
+        """The fields of the struct type."""
         return (
             extract_struct_fields(self.raw)
             .map_star(lambda k, v: (k, self.from_sql(v)))
@@ -847,12 +844,12 @@ class Array(NestedType, ComplexDataType):
 
     @property
     def inner(self) -> DataType:
-        """Get the inner type of the array."""
+        """The inner type of the array."""
         return self.from_sql(self.raw.expressions[0])  # pyright: ignore[reportAny]
 
     @property
     def shape(self) -> int:
-        """Get the number of dimensions of the array."""
+        """The number of dimensions of the array."""
         values: exp.Values | None = self.raw.args.get("values")
         return int(values[0].this) if values else 1  # pyright: ignore[reportAny]
 
@@ -879,7 +876,7 @@ class List(NestedType, ComplexDataType):
 
     @property
     def inner(self) -> DataType:
-        """Get the inner type of the list."""
+        """The inner type of the list."""
         return self.from_sql(self.raw.expressions[0])  # pyright: ignore[reportAny]
 
 

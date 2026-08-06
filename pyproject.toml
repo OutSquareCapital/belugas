@@ -10,7 +10,6 @@
     dev = [
         "basedpyright>=1.38.2",
         "ibis>=3.3.0",
-        "matplotlib>=3.10.8",
         "narwhals>=2.15.0",
         "numpy>=2.4.2",
         "pandas-stubs>=3.0.0.260204",
