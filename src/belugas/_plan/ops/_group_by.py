@@ -112,10 +112,7 @@ def agg(  # ruff: ignore[too-many-arguments, too-many-positional-arguments]
         )
         return acc
 
-    select_exprs, out_schema = projections.iter().fold(
-        (key_glots, key_schema.items().iter().collect(Dict)),
-        _acc,
-    )
+    select_exprs, out_schema = projections.iter().fold((key_glots, key_schema), _acc)
     ast = exp.select(*select_exprs).from_(
         ast.subquery(Tables.SRC, copy=False), copy=False
     )

@@ -72,13 +72,7 @@ def _compile_scan(node: nodes.Node) -> CompiledPlan:
             compiled_node = compiled_src.ast.pipe(
                 _compile_tree, compiled_src.schema, node
             ).unwrap()
-            sources = (
-                compiled_src.sources
-                .items()
-                .iter()
-                .chain(compiled_node.sources.items())
-                .collect(Dict)
-            )
+            sources = compiled_src.sources.union(compiled_node.sources)
             return CompiledPlan(compiled_node.ast, compiled_node.schema, sources)
         case nodes.BaseScan():
             source = _resolve_scan(node).set_alias()  # pyright: ignore[reportArgumentType]
@@ -294,10 +288,8 @@ def _compile_tree(  # ruff: ignore[too-many-statements]
             return Ok(CompiledPlan(ast, new_schema, other.sources))
         case nodes.JoinCross():
             other = compile_plan(node.other, optimize=False)
-            ast, new_schema = ops.join_cross(
-                src_ast, other.ast, schema, other.schema, node.suffix
-            )
-            return Ok(CompiledPlan(ast, new_schema, other.sources))
+            ast = ops.join_cross(src_ast, other.ast, schema, other.schema, node.suffix)
+            return Ok(CompiledPlan(ast, schema, other.sources))
         case nodes.JoinAsof():
             other = compile_plan(node.other, optimize=False)
             ast, new_schema = ops.join_asof(

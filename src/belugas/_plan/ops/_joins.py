@@ -90,20 +90,15 @@ def join_asof(  # ruff: ignore[too-many-arguments, too-many-positional-arguments
         .reduce(Expr.and_)
         .inner
     )
-    new_schema = (
-        schema
+    new_schema = schema.union(
+        other
         .items()
         .iter()
-        .chain(
-            other
-            .items()
-            .iter()
-            .filter_star(lambda name, _: name not in drop_keys)
-            .map_star(
-                lambda name, dtype: (
-                    f"{name}{suffix}" if name in schema else name,
-                    dtype,
-                )
+        .filter_star(lambda name, _: name not in drop_keys)
+        .map_star(
+            lambda name, dtype: (
+                f"{name}{suffix}" if name in schema else name,
+                dtype,
             )
         )
         .collect(Dict)
@@ -134,7 +129,7 @@ def join_cross(
     schema: Schema,
     other: Schema,
     suffix: str = "_right",
-) -> tuple[exp.Select, Schema]:
+) -> exp.Select:
     builder = JoinBuilder(suffix, schema.keys(), other)
     exprs = builder.get_join_cols_cross()
     ast = (
@@ -143,8 +138,8 @@ def join_cross(
         .from_(lhs_ast.subquery(Tables.LHS, copy=False), copy=False)
         .join(rhs_ast.subquery(Tables.RHS, copy=False), join_type="cross")
     )
-    new_schema = builder.join_schema_cross(schema, other)
-    return ast, new_schema
+    _ = schema.union_mut(builder.join_schema_cross(other))
+    return ast
 
 
 @dataclass(slots=True)
@@ -243,8 +238,8 @@ class JoinBuilder:
                 )
         return left_pairs.chain(right_pairs).collect(Dict)
 
-    def join_schema_cross(self, left_schema: Schema, right_schema: Schema) -> Schema:
-        right_pairs = (
+    def join_schema_cross(self, right_schema: Schema) -> Schema:
+        return (
             right_schema
             .items()
             .iter()
@@ -254,8 +249,8 @@ class JoinBuilder:
                     dtype,
                 )
             )
+            .collect(Dict)
         )
-        return left_schema.items().iter().chain(right_pairs).collect(Dict)
 
     def get_join_cols(
         self, other: Schema, join_keys: JoinKeys[Seq[str]], how: JoinStrategy

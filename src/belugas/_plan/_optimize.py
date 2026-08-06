@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import TYPE_CHECKING
 
-from pyochain import NONE, Dict, Iter, Null, Option, Seq, Some
+from pyochain import NONE, Dict, Iter, Null, Option, Some
 
 from ..utils import try_iter
 from . import nodes
@@ -154,10 +154,10 @@ def _merge_drops(lhs: nodes.Drop, rhs: nodes.Drop) -> nodes.Drop:
 
 
 def _merge_renames(lhs: nodes.Rename, rhs: nodes.Rename) -> nodes.Rename:
-    names = Iter(lhs.mapping.keys()).chain(rhs.mapping.keys()).collect(Seq)
+
     mapping = (
-        names
-        .iter()
+        Iter(lhs.mapping.keys())
+        .chain(rhs.mapping.keys())
         .map(
             lambda name: (
                 name,
