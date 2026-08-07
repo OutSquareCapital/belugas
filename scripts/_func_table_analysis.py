@@ -83,7 +83,7 @@ def _analyze_multi_category(lf: pl.LazyFrame) -> None:
     table.add_column("Count", justify="right", style="green")
 
     df.pipe(_df_to_iter).for_each_star(
-        lambda name, cats, n: table.add_row(name, ", ".join(cats), str(n))  # pyright: ignore[reportAny]
+        lambda name, cats, n: table.add_row(name, Iter(cats).join(", "), str(n))  # pyright: ignore[reportAny]
     )
 
     CONSOLE.print(table)

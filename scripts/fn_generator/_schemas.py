@@ -2,7 +2,7 @@ from dataclasses import asdict, dataclass, field
 from typing import final
 
 import polars as pl
-from pyochain import Dict, Iter
+from pyochain import Dict
 
 from ._dtypes import CATEGORY_TYPES, DTYPES, FUNC_TYPES, SchemaName, Stability
 
@@ -22,7 +22,14 @@ def schema(cls: type[object]) -> pl.Schema:
             isinstance(v, pl.DataType) or issubclass(v, pl.DataType)
         )
 
-    return Iter(cls.__dict__.items()).filter_star(_is_polars_dtype).collect(pl.Schema)
+    return (
+        Dict
+        .from_object(cls)
+        .items()
+        .iter()
+        .filter_star(_is_polars_dtype)
+        .collect(pl.Schema)
+    )
 
 
 @final

@@ -2,7 +2,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import NamedTuple, Self
 
-from pyochain import Iter
+from pyochain import Dict, Iter
 from pyochain.abc import PyoIterator
 
 SCAN_DOC = """All nodes that represent logical scan sources.
@@ -40,7 +40,12 @@ def generate_themes(caller: Path) -> tuple[int, Path]:
 
     dest = _resolve_module_path(typing_module)
     content = (
-        Iter(STYLES.values()).map_star(lambda _, style, __: f'"{style}"').join(" ,")
+        Dict
+        .from_ref(STYLES)
+        .values()
+        .iter()
+        .map_star(lambda _, style, __: f'"{style}"')
+        .join(" ,")
     )
     content = f"Themes = Literal[{content}]"
 

@@ -211,17 +211,12 @@ def _format(results: Vec[ComparisonResult], title: str, *, status: Status) -> st
     Returns:
         str: The formatted section of the report.
     """
-    return (
-        results
-        .pipe(_by_status, status)
-        .then(
-            lambda items: (
-                Iter((f"\n### {title} ({items.len()})\n",))
-                .chain(items.iter().flat_map(lambda r: r.to_format(status=status)))
-                .join("\n")
+    return results.pipe(_by_status, status).pipe(
+        lambda items: (
+            Iter.once(f"\n### {title} ({items.len()})\n").chain(
+                items.iter().flat_map(lambda r: r.to_format(status=status))
             )
-        )
-        .unwrap_or("")
+        ).join("\n")
     )
 
 

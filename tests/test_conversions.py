@@ -7,7 +7,7 @@ import numpy as np
 import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
-from pyochain import Iter, Seq
+from pyochain import Iter, Range, Seq
 
 import belugas as bl
 import belugas.typing as t
@@ -159,7 +159,7 @@ def test_from_seq_of_dicts() -> None:
 
 
 def test_from_seq_of_seqs() -> None:
-    seqs = Iter(range(10)).map(lambda _: tuple(range(5))).collect(Seq)
+    seqs = Range(0, 10).iter().map(lambda _: Range(0, 5).pipe(tuple)).collect(Seq)
     assert_eq(bl.LazyFrame(seqs).collect(), pl.DataFrame(seqs))
     assert_eq(bl.from_records(seqs).collect(), pl.from_records(seqs))
 
@@ -178,7 +178,7 @@ def test_from_seq_of_seqs_orient(orient: t.Orientation) -> None:
 
 
 def test_from_seq_of_vals() -> None:
-    vals = Iter(range(10)).map(lambda _: 42).collect(Seq)
+    vals = Range(0, 10).iter().map(lambda _: 42).collect(Seq)
     assert_eq(bl.LazyFrame(vals).collect(), pl.DataFrame(vals))
     assert_eq(bl.from_records(vals).collect(), pl.from_records(vals))
 

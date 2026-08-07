@@ -180,7 +180,8 @@ def from_seq_col(data: NestedSeq) -> ScanResult:
 def from_seq_row(data: NestedSeq) -> ScanResult:
     width = len(data[0])
     return (
-        Iter(range(width))
+        Range(0, width)
+        .iter()
         .map(lambda j: (_named(j), _into_tup(data, j)))
         .pipe(from_dict)
     )

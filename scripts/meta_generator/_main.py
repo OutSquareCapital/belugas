@@ -79,7 +79,11 @@ def {self.final_name}({self._signature()}) -> LazyFrame:
     def _description(self) -> str:
         return self.description.map(
             lambda d: (
-                " ".join(d.split()).rstrip(".").replace('"', "").replace("\u2019", "'")
+                Iter(d.split())
+                .join(" ")
+                .rstrip(".")
+                .replace('"', "")
+                .replace("\u2019", "'")
             )
         ).unwrap_or(f"SQL {self.name} table function")
 
