@@ -3318,6 +3318,16 @@ class Fns(ExprHandler):
         """
         return self._cls(func("VARIANCE", self.inner))
 
+    def variant_bytes_to_variant(self) -> Self:
+        """SQL variant_bytes_to_variant function.
+
+        **SQL name**: *variant_bytes_to_variant*
+
+        Returns:
+            Self
+        """
+        return self._cls(anon("variant_bytes_to_variant", self.inner))
+
     def variant_extract(self, col1: IntoExprColumn | int) -> Self:
         """SQL variant_extract function.
 
@@ -12090,6 +12100,20 @@ class GeoSpatialFns[T: Fns](NameSpaceHandler[T]):
             T
         """
         return self._cls(anon("ST_SimplifyPreserveTopology", self.inner, tolerance))
+
+    def snap(self, snap_to: IntoExprColumn, tolerance: IntoExprColumn | float) -> T:
+        """Snaps the vertices and segments of a geometry to another geometry's vertices within the given tolerance.
+
+        **SQL name**: *ST_Snap*
+
+        Args:
+            snap_to (IntoExprColumn): `GEOMETRY` expression
+            tolerance (IntoExprColumn | float): `DOUBLE` expression
+
+        Returns:
+            T
+        """
+        return self._cls(anon("ST_Snap", self.inner, snap_to, tolerance))
 
     def startpoint(self) -> T:
         """Returns the start point of a LINESTRING.
