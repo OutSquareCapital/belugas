@@ -229,6 +229,7 @@ def unpivot(  # ruff: ignore[too-many-arguments, too-many-positional-arguments]
         .pipe(
             lambda selected: (
                 try_iter(order_by)
+                .collect(Seq)
                 .then(lambda cols: selected.order_by(*cols, copy=False))
                 .unwrap_or(selected)
             )
