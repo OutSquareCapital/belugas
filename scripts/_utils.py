@@ -35,7 +35,7 @@ class KwordEnum(StrEnum):
         return f"{self.value}[{type_union}]"
 
     def into_union(self, *args: str) -> str:
-        return Iter(args).insert(self).join(" | ")
+        return Iter.once(self).chain(args).join(" | ")
 
 
 def get_attr(obj: object, name: str) -> Option[object]:

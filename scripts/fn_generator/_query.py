@@ -298,7 +298,7 @@ def _namespace_specs(cats: pl.Expr, fn_name: pl.Expr) -> pl.Expr:
                 .or_(fn_name.is_in(spec.explicit_names))
             ).then(pl.lit(spec.name))
         )
-        .pipe(pl.coalesce)
+        .pipe(pl.coalesce)  # pyright: ignore[reportArgumentType]
         .pipe(
             lambda prefix_ns: pl.when(prefix_ns.is_not_null()).then(
                 pl.concat_list(prefix_ns)

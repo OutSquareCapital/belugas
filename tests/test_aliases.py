@@ -1,5 +1,6 @@
 import polars as pl
 import pytest
+from pyochain import Some
 from pyochain.abc import PyoIterable
 
 import belugas as bl
@@ -19,9 +20,9 @@ def test_alias_mutability() -> None:
     prefixed = bl_x.name.prefix("pre_")
     aliased = prefixed.alias("renamed")
 
-    assert _slct(bl_x).first() == "x"
-    assert _slct(prefixed).first() == "pre_x"
-    assert _slct(aliased).first() == "renamed"
+    assert _slct(bl_x).iter().next() == Some("x")
+    assert _slct(prefixed).iter().next() == Some("pre_x")
+    assert _slct(aliased).iter().next() == Some("renamed")
 
 
 @pytest.mark.parametrize(

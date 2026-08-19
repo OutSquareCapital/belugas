@@ -558,7 +558,7 @@ def _expand_columns(
     match expr.inner:
         case exp.Alias():
             unaliased = expr.inner.unalias().pipe(expr.__class__)
-            alias = output_names.first()
+            alias = output_names.iter().next().unwrap()
             return base_names.iter().map(
                 lambda col_name: _resolved(unaliased, col_name, alias)
             )

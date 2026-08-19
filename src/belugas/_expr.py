@@ -694,7 +694,7 @@ class Expr(Fns):
                             exprs: PyoIterator[Expr] = iterator.map(self.shift)
                         case _:
                             exprs = iterator.map(lambda offset: self.shift(-offset))
-                    return Ok(exprs.insert(self).reduce(self.coalesce))
+                    return Ok(self.coalesce(self, *exprs))
                 case (_, _, Some(_)):
                     msg = "can only specify `limit` when strategy is set to 'backward' or 'forward'"
                     return Err(ValueError(msg))

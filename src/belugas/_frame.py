@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from _duckdb._enums import ExplainTypeLiteral, RenderModeLiteral
     from _duckdb._typing import CsvCompression, ParquetFieldsOptions
     from duckdb import DuckDBPyConnection
-    from pyochain import PyoKeysView, PyoValuesView
+    from pyochain.abc import PyoKeysView, PyoValuesView
 
     from ._groupby import LazyGroupBy
     from ._show import QueryTree

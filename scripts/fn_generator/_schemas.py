@@ -28,7 +28,7 @@ def schema(cls: type[object]) -> pl.Schema:
         .items()
         .iter()
         .filter_star(_is_polars_dtype)
-        .collect(pl.Schema)
+        .collect(pl.Schema)  # pyright: ignore[reportArgumentType]
     )
 
 

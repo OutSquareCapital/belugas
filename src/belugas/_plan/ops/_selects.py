@@ -35,8 +35,8 @@ def with_columns(
     def _resolved(updates: Dict[str, Expr]) -> PyoIterator[exp.Expr]:
         update_iter = updates.items().iter()
         if not updates.iter().any(lambda name: name in schema):
-            return update_iter.map_star(lambda _name, expr: expr.inner).insert(
-                exp.Star()
+            return Iter.once(exp.Star()).chain(
+                update_iter.map_star(lambda _name, expr: expr.inner)
             )
         return (
             schema

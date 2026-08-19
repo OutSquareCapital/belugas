@@ -16,12 +16,10 @@ DK_FUNC_KEYS = pl.LazyFrame({"glot_name": tuple(DuckDBParser.FUNCTIONS)})  # pyr
 """DuckDBParser.FUNCTIONS keys as a single-column LazyFrame."""
 
 SHADOWERS = (
-    Pql
-    .into_iter()
-    .chain(Typing, Builtins)
-    .map(lambda s: s.value)
+    Iter
+    .once("l")
+    .chain(Pql.into_iter().chain(Typing, Builtins).map(lambda s: s.value))
     .chain(dir(builtins), keyword.kwlist)
-    .insert("l")
     .collect(Set)
 )
 """Names that should be renamed to avoid shadowing."""
