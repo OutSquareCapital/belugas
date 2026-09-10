@@ -14,6 +14,7 @@ from ..datatypes import DataType
 from ..typing import CSVOptions, JsonOptions, LitSeq, NestedSeq, ParquetOptions, Schema
 
 if TYPE_CHECKING:
+    from _typeshed import SupportsGetItem
     from sqlglot import exp
 
     from ..typing import (
@@ -191,9 +192,7 @@ def _named(j: object) -> str:
     return f"column_{j}"
 
 
-def _into_tup[T](
-    vals: Iterable[Sequence[T]] | Iterable[Mapping[T, object]], key: T
-) -> tuple[T, ...]:
+def _into_tup[T](vals: Iterable[SupportsGetItem[T, T]], key: T) -> tuple[T, ...]:
     return Iter(vals).map(operator.itemgetter(key)).collect(tuple)
 
 
